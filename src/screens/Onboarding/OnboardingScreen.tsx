@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, FlatList, Button } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Slide from './Slide';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -26,12 +26,12 @@ const slides = [
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
 const OnboardingScreen: React.FC<Props> = ({ navigation }) => {
-  const renderItem = ({ item }: { item: { title: string; description: string } }) => (
-    <Slide title={item.title} description={item.description} />
-  );
+  const renderItem = ({ item }: { item: { title: string; description: string } }) => {
+    return <Slide title={item.title} description={item.description} />;
+  };
 
   const renderPagination = () => {
-    // We can add pagination dots here later
+   
     return null;
   };
 
@@ -56,7 +56,12 @@ const OnboardingScreen: React.FC<Props> = ({ navigation }) => {
       />
       {renderPagination()}
       <View className="absolute bottom-12 w-full px-5">
-        <Button title="Get Started" onPress={onGetStarted} />
+        <TouchableOpacity
+          className="bg-backgroundColor py-3 px-6 rounded-lg items-center"
+          onPress={onGetStarted}
+        >
+          <Text className="text-white font-semibold text-base">Get Started</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
