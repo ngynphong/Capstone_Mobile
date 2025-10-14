@@ -1,20 +1,32 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  loginApi,
+  registerApi,
+  verifyEmailApi,
+} from '../services/authService';
+import {
+  LoginRequest,
+  RegisterRequest,
+  VerifyEmailRequest,
+} from '../types/authTypes';
 
 export interface User {
-  id: string;
+  id?: string;
   email: string;
   firstName: string;
   lastName: string;
-  role: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'TUTOR' | 'PARENT';
-  dob?: Date;
+  roles: string[];
+  dob?: string;
 }
 
 interface AuthContextType {
   isLoggedIn: boolean;
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, firstName: string, lastName: string, dob: Date) => Promise<boolean>;
+  login: (credentials: LoginRequest) => Promise<boolean>;
+  register: (userData: RegisterRequest) => Promise<boolean>;
+  verifyEmail: (verificationData: VerifyEmailRequest) => Promise<boolean>;
   logout: () => void;
   setIsLoggedIn: (isLoggedIn: boolean) => void;
 }
@@ -38,34 +50,63 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  useEffect(() => {
+    console.log('AuthContext - isLoggedIn changed:', isLoggedIn);
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const storeTokens = async (token: string) => {
+    await AsyncStorage.setItem('accessToken', token);
+    // await AsyncStorage.setItem('refreshToken', refreshToken);
+  };
+
+  const getTokens = async () => {
+    const accessToken = await AsyncStorage.getItem('accessToken');
+    // const refreshToken = await AsyncStorage.getItem('refreshToken');
+    return { accessToken }; // Removed refreshToken
+  };
+
+  const clearTokens = async () => {
+    await AsyncStorage.removeItem('accessToken');
+    // await AsyncStorage.removeItem('refreshToken');
+  };
+
+  const checkAuthStatus = async () => {
+    try {
+      const { accessToken } = await getTokens();
+      if (accessToken) {
+        // Giả sử nếu có token là đã đăng nhập.
+        // Bạn có thể thêm logic gọi API để xác thực token ở đây nếu cần.
+        setIsLoggedIn(true);
+      }
+    } catch (error) {
+      console.error('Failed to check auth status:', error);
+    } finally {
+      setIsLoading(false); // Kết thúc loading sau khi kiểm tra xong
+    }
+  };
+
+  const login = async (credentials: LoginRequest): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // Fake authentication logic for testing
-      const fakeUsers = [
-        { email: 'test@example.com', password: 'password123', firstName: 'Test', lastName: 'User', role: 'STUDENT' as const },
-        { email: 'admin@test.com', password: 'admin123', firstName: 'Admin', lastName: 'User', role: 'ADMIN' as const },
-        { email: 'teacher@test.com', password: 'teacher123', firstName: 'Teacher', lastName: 'User', role: 'TEACHER' as const },
-        { email: 'tutor@test.com', password: 'tutor123', firstName: 'Tutor', lastName: 'User', role: 'TUTOR' as const },
-        { email: 'parent@test.com', password: 'parent123', firstName: 'Parent', lastName: 'User', role: 'PARENT' as const },
-      ];
-
-      const foundUser = fakeUsers.find(user => user.email === email && user.password === password);
-
-      if (foundUser) {
-        const userData: User = {
-          id: Math.random().toString(36).substr(2, 9),
-          email: foundUser.email,
-          firstName: foundUser.firstName,
-          lastName: foundUser.lastName,
-          role: foundUser.role,
+      const response = await loginApi(credentials);
+      if (response.data.authenticated) {
+        const newUser: User = {
+          email: credentials.email,
+          firstName: '',
+          lastName: '',
+          roles: response.data.roles,
         };
-        setUser(userData);
+        setUser(newUser);
         setIsLoggedIn(true);
+        console.log('Login API Response Data:', response.data);
+        await storeTokens(response.data.token);
         return true;
-      } else {
-        return false;
       }
+      return false;
     } catch (error) {
       console.error('Login error:', error);
       return false;
@@ -74,22 +115,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (email: string, password: string, firstName: string, lastName: string, dob: Date): Promise<boolean> => {
+  const register = async (userData: RegisterRequest): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // Fake registration logic for testing
-      const newUser: User = {
-        id: Math.random().toString(36).substr(2, 9),
-        email,
-        firstName,
-        lastName,
-        role: 'STUDENT', // Default role for new registrations
-        dob,
-      };
-
-      setUser(newUser);
-      setIsLoggedIn(true);
-      return true;
+      const response = await registerApi(userData);
+     
+      if (response.data.id) {
+       
+        return true;
+      }
+      return false;
     } catch (error) {
       console.error('Registration error:', error);
       return false;
@@ -98,10 +133,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setIsLoggedIn(false);
+  const verifyEmail = async (verificationData: VerifyEmailRequest): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      const response = await verifyEmailApi(verificationData);
+      if (response.data) {
+        // Email successfully verified
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Email verification error:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const logout = async () => {
+    setIsLoading(true);
+    try {
+      await clearTokens();
+      setUser(null);
+      setIsLoggedIn(false);
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    // Bạn có thể hiển thị một màn hình chờ (splash screen) ở đây
+    return null;
+  }
 
   return (
     <AuthContext.Provider value={{
@@ -110,6 +175,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       isLoading,
       login,
       register,
+      verifyEmail,
       logout,
       setIsLoggedIn
     }}>

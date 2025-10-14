@@ -1,6 +1,5 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../screens/Home/HomeScreen';
 import SubjectsScreen from '../screens/Subjects/SubjectsScreen';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
@@ -40,7 +39,6 @@ const TabNavigator = () => {
           ),
         }}
       />
-      
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}

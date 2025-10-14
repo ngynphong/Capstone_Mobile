@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView
 } from 'react-native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/types';
 import { useAuth } from '../../context/AuthContext';
@@ -31,53 +32,50 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [dobError, setDobError] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const { register, isLoading } = useAuth();
 
   const validateForm = () => {
     const errors: string[] = [];
 
-    // First Name validation
+    
     if (!firstName.trim()) {
       errors.push('First name is required');
     } else if (firstName.trim().length < 2) {
       errors.push('First name must be at least 2 characters long');
     }
 
-    // Last Name validation
+    
     if (!lastName.trim()) {
       errors.push('Last name is required');
     } else if (lastName.trim().length < 2) {
       errors.push('Last name must be at least 2 characters long');
     }
 
-    // Date of Birth validation
+
     if (!dob.trim()) {
       errors.push('Date of birth is required');
     } else {
+      // DateTimePicker ensures valid date and past date, so we only need to check age
       const birthDate = new Date(dob);
       const today = new Date();
 
-      // Check if date is valid
-      if (isNaN(birthDate.getTime())) {
-        errors.push('Please enter a valid date of birth');
-      } else if (birthDate >= today) {
-        errors.push('Date of birth must be in the past');
-      } else {
-        // Check if user is at least 13 years old
-        const age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
 
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-          if (age - 1 < 13) {
-            errors.push('You must be at least 13 years old to register');
-          }
-        } else if (age < 13) {
-          errors.push('You must be at least 13 years old to register');
-        }
+      let isUnderage = false;
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        isUnderage = age - 1 < 13;
+      } else {
+        isUnderage = age < 13;
+      }
+
+      if (isUnderage) {
+        errors.push('You must be at least 13 years old to register');
       }
     }
 
-    // Email validation
+    
     if (!email.trim()) {
       errors.push('Email is required');
     } else {
@@ -89,7 +87,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       }
     }
 
-    // Password validation
+   
     if (!password) {
       errors.push('Password is required');
     } else {
@@ -110,7 +108,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       }
     }
 
-    // Confirm Password validation
+   
     if (!confirmPassword) {
       errors.push('Please confirm your password');
     } else if (password !== confirmPassword) {
@@ -123,7 +121,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const handleSignUp = async () => {
     const errors = validateForm();
     if (errors.length > 0) {
-      // Set errors for each field
+      
       setFirstNameError(errors.find(e => e.includes('First name')) || '');
       setLastNameError(errors.find(e => e.includes('Last name')) || '');
       setDobError(errors.find(e => e.includes('Date of birth') || e.includes('age')) || '');
@@ -132,7 +130,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       setConfirmPasswordError(errors.find(e => e.includes('Passwords do not match')) || '');
       return;
     } else {
-      // Clear all errors if validation passes
+    
       setFirstNameError('');
       setLastNameError('');
       setDobError('');
@@ -141,13 +139,13 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       setConfirmPasswordError('');
     }
 
-    const success = await register(
-      email.trim().toLowerCase(),
-      password,
-      firstName.trim(),
-      lastName.trim(),
-      new Date(dob)
-    );
+    const success = await register({
+      email: email.trim().toLowerCase(),
+      password: password,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      dob: dob, 
+    });
 
     if (!success) {
       Alert.alert('Registration Failed', 'Unable to create account. Please try again.');
@@ -200,7 +198,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
               }}
               autoCapitalize="words"
             />
-            {firstNameError ? <Text className="text-red-500 text-sm mt-1">{firstNameError}</Text> : null}
+            {firstNameError && <Text className="text-red-500 text-sm mt-1">{firstNameError}</Text>}
           </View>
 
           {/* Last Name Input */}
@@ -225,51 +223,54 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
               autoCapitalize="words"
             />
 
-            {lastNameError ? <Text className="text-red-500 text-sm mt-1">{lastNameError}</Text> : null}
+            {lastNameError && <Text className="text-red-500 text-sm mt-1">{lastNameError}</Text>}
           </View>
 
           {/* Date of Birth Input */}
           <View className="mb-4">
             <Text className="text-sm font-medium text-gray-700 mb-2">Date of Birth</Text>
-            <TextInput
-              className={`w-full h-12 border rounded-lg px-4  bg-white ${dobError ? 'border-red-500' : 'border-gray-300'}`}
-              placeholder="YYYY-MM-DD"
-              value={dob}
-              onChangeText={(text) => {
-                setDob(text);
-                if (dobError) {
-                  if (!text.trim()) {
-                    setDobError('Date of birth is required');
-                  } else {
-                    const birthDate = new Date(text);
+            <TouchableOpacity
+              className={`w-full h-12 border rounded-lg px-4 bg-white  justify-center ${dobError ? 'border-red-500' : 'border-gray-300'}`}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text className={`${dob ? 'text-black' : 'text-gray-500'}`}>
+                {dob ? new Date(dob).toLocaleDateString() : 'Select your date of birth'}
+              </Text>
+            </TouchableOpacity>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={dob ? new Date(dob) : new Date()}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+                  setShowDatePicker(false);
+                  if (selectedDate) {
                     const today = new Date();
+                    const age = today.getFullYear() - selectedDate.getFullYear();
+                    const monthDiff = today.getMonth() - selectedDate.getMonth();
 
-                    if (isNaN(birthDate.getTime())) {
-                      setDobError('Please enter a valid date of birth');
-                    } else if (birthDate >= today) {
-                      setDobError('Date of birth must be in the past');
+                    let isUnderage = false;
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < selectedDate.getDate())) {
+                      isUnderage = age - 1 < 13;
                     } else {
-                      const age = today.getFullYear() - birthDate.getFullYear();
-                      const monthDiff = today.getMonth() - birthDate.getMonth();
+                      isUnderage = age < 13;
+                    }
 
-                      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-                        if (age - 1 < 13) {
-                          setDobError('You must be at least 13 years old to register');
-                        } else {
-                          setDobError('');
-                        }
-                      } else if (age < 13) {
-                        setDobError('You must be at least 13 years old to register');
-                      } else {
-                        setDobError('');
-                      }
+                    if (selectedDate >= today) {
+                      setDobError('Date of birth must be in the past');
+                    } else if (isUnderage) {
+                      setDobError('You must be at least 13 years old to register');
+                    } else {
+                      setDobError('');
+                      setDob(selectedDate.toISOString().split('T')[0]);
                     }
                   }
-                }
-              }}
-              keyboardType="numeric"
-            />
-            {dobError ? <Text className="text-red-500 text-sm mt-1">{dobError}</Text> : null}
+                }}
+                maximumDate={new Date()}
+              />
+            )}
+            {dobError && <Text className="text-red-500 text-sm mt-1">{dobError}</Text>}
           </View>
 
           {/* Email Input */}
@@ -301,7 +302,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
               autoCorrect={false}
             />
 
-            {emailError ? <Text className="text-red-500 text-sm mt-1">{emailError}</Text> : null}
+            {emailError && <Text className="text-red-500 text-sm mt-1">{emailError}</Text>}
           </View>
 
           {/* Password Input */}
@@ -343,7 +344,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                 </Text>
               </TouchableOpacity>
             </View>
-            {passwordError ? <Text className="text-red-500 text-sm mt-1">{passwordError}</Text> : null}
+            {passwordError && <Text className="text-red-500 text-sm mt-1">{passwordError}</Text>}
           </View>
 
           {/* Confirm Password Input */}
@@ -377,7 +378,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                 </Text>
               </TouchableOpacity>
             </View>
-            {confirmPasswordError ? <Text className="text-red-500 text-sm mt-1">{confirmPasswordError}</Text> : null}
+            {confirmPasswordError && <Text className="text-red-500 text-sm mt-1">{confirmPasswordError}</Text>}
           </View>
 
           {/* Sign Up Button */}
@@ -399,10 +400,12 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
           className="items-center"
           onPress={() => navigation.navigate('Login')}
         >
-          <Text className="text-gray-600">
-            Already have an account?{' '}
+          <View className='flex-row gap-1'>
+            <Text className="text-gray-600">
+              Already have an account?
+            </Text>
             <Text className="text-brightColor font-semibold">Sign In</Text>
-          </Text>
+          </View>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Image
+  Image,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/types';
 import { useAuth } from '../../context/AuthContext';
-
+import AntDesign from '@expo/vector-icons/AntDesign';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -25,11 +25,11 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const [rememberMe, setRememberMe] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const { login, isLoading, isLoggedIn, user } = useAuth();
+  const { login, isLoading } = useAuth();
 
   const handleLogin = async () => {
     let valid = true;
-    // Email validation
+
     if (!email.trim()) {
       setEmailError('Email is required');
       valid = false;
@@ -43,7 +43,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
       }
     }
 
-    // Password validation
+
     if (!password.trim()) {
       setPasswordError('Password is required');
       valid = false;
@@ -58,14 +58,12 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
       return;
     }
 
-    const success = await login(email.trim(), password);
+    const success = await login({ email: email.trim(), password: password });
     if (!success) {
       Alert.alert('Login Failed', 'Invalid email or password. Please try again.');
     }
   };
 
-  // The navigation will be handled automatically by App.tsx when isLoggedIn becomes true
-  // No need to manually navigate here as the entire navigator switches
 
   const handleGoogleLogin = () => {
     Alert.alert('Google Login', 'Google login functionality will be implemented later.');
@@ -104,7 +102,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
               autoCorrect={false}
             />
 
-            {emailError ? <Text className="text-red-500 text-sm mt-1">{emailError}</Text> : null}
+            {emailError && <Text className="text-red-500 text-sm mt-1">{emailError}</Text>}
           </View>
 
           {/* Password Input */}
@@ -139,7 +137,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 </Text>
               </TouchableOpacity>
             </View>
-            {passwordError ? <Text className="text-red-500 text-sm mt-1">{passwordError}</Text> : null}
+            {passwordError && <Text className="text-red-500 text-sm mt-1">{passwordError}</Text>}
           </View>
 
           {/* Remember Me & Forgot Password */}
@@ -183,7 +181,8 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             className="w-full h-12 border border-gray-300 rounded-lg items-center justify-center flex-row"
             onPress={handleGoogleLogin}
           >
-            <Text className="text-gray-500 text-sm mr-2">🔵</Text>
+            {/* <Image source={require('../../../assets/google-icon.svg')} className="w-5 h-5 mr-3" /> */}
+            <AntDesign name="google" size={24} color="black" className='mr-3'/>
             <Text className="text-gray-700 font-medium">Continue with Google</Text>
           </TouchableOpacity>
         </View>
@@ -193,10 +192,12 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
           className="items-center"
           onPress={() => navigation.navigate('SignUp')}
         >
-          <Text className="text-gray-600">
-            Don't have an account?{' '}
+          <View className='flex-row gap-1'>
+            <Text className="text-gray-600">
+              Don't have an account?
+            </Text>
             <Text className="text-brightColor font-semibold">Sign Up</Text>
-          </Text>
+          </View>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>

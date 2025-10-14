@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StatusBar } from 'expo-status-bar';
+// import { StatusBar } from 'expo-status-bar';
 
 import OnboardingScreen from './src/screens/Onboarding/OnboardingScreen';
 import LoginScreen from './src/screens/Login/LoginScreen';
@@ -28,13 +28,12 @@ const AppContent: React.FC = () => {
   }, []);
 
   if (isFirstLaunch === null) {
-    return null; // or a loading screen
+    return null; 
   }
 
   return (
     <>
-      <StatusBar style="auto" />
-      <NavigationContainer>
+      <NavigationContainer key={isLoggedIn ? 'loggedIn' : 'loggedOut'}> 
         {isLoggedIn ? (
           <TabNavigator />
         ) : (
