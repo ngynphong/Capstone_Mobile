@@ -14,6 +14,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/types';
 import { useAuth } from '../../context/AuthContext';
+import { useAppToast } from '../../utils/toast';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
@@ -34,6 +35,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const [dobError, setDobError] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const { register, isLoading } = useAuth();
+  const toast = useAppToast();
 
   const validateForm = () => {
     const errors: string[] = [];
@@ -148,18 +150,13 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
     });
 
     if (!success) {
-      Alert.alert('Registration Failed', 'Unable to create account. Please try again.');
+      toast.error('Unable to create account. Please try again.');
     } else {
-      Alert.alert(
-        'Registration Successful',
-        'Your account has been created successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('Login')
-          }
-        ]
-      );
+      toast.success('Your account has been created successfully!');
+      // Đợi 1 giây để user thấy toast, sau đó navigate
+      setTimeout(() => {
+        navigation.navigate('Login');
+      }, 1000);
     }
   };
 

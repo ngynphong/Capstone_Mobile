@@ -4,16 +4,15 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Image,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/types';
 import { useAuth } from '../../context/AuthContext';
+import { useAppToast } from '../../utils/toast';
 import AntDesign from '@expo/vector-icons/AntDesign';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
@@ -26,6 +25,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const { login, isLoading } = useAuth();
+  const toast = useAppToast();
 
   const handleLogin = async () => {
     let valid = true;
@@ -60,13 +60,14 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
     const success = await login({ email: email.trim(), password: password });
     if (!success) {
-      Alert.alert('Login Failed', 'Invalid email or password. Please try again.');
+      toast.error('Invalid email or password. Please try again.');
     }
+    toast.success('Login successful!');
   };
 
 
   const handleGoogleLogin = () => {
-    Alert.alert('Google Login', 'Google login functionality will be implemented later.');
+    toast.info('Google login functionality will be implemented later.');
   };
 
   return (
@@ -151,7 +152,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
               </View>
               <Text className="text-sm text-gray-600">Remember me</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => Alert.alert('Forgot Password', 'Forgot password functionality will be implemented later.')}>
+            <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
               <Text className="text-sm text-brightColor">Forgot password?</Text>
             </TouchableOpacity>
           </View>

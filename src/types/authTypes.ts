@@ -62,3 +62,25 @@ export interface RefreshTokenResponse {
         roles: string[];
     };
 }
+
+export interface ForgotPasswordRequest {
+    email: string;
+}
+
+export interface ForgotPasswordResponse {
+    code: string;
+    message: string;
+    data: {};
+}
+
+export interface VerifyOTPRequest {
+    email: string;
+    otp: string;
+    newPassword: string;
+}
+
+export interface VerifyOTPResponse {
+    code: string;
+    message: string;
+    data: {};
+}

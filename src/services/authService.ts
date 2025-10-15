@@ -9,14 +9,18 @@ import {
   VerifyEmailResponse,
   RefreshTokenRequest,
   RefreshTokenResponse,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
+  VerifyOTPRequest,
+  VerifyOTPResponse,
 } from '../types/authTypes';
 
 const handleApiError = (error: unknown, defaultMessage: string): never => {
-  console.error('API Error Details:', {
-    error,
-    response: isAxiosError(error) ? error.response : undefined, 
-    message: error instanceof Error ? error.message : 'Unknown error',
-  });
+  // console.error('API Error Details:', {
+  //   error,
+  //   response: isAxiosError(error) ? error.response : undefined, 
+  //   message: error instanceof Error ? error.message : 'Unknown error',
+  // });
 
   if (isAxiosError(error) && error.response) { 
     const responseData = error.response.data;
@@ -59,9 +63,27 @@ export const verifyEmailApi = async (verificationData: VerifyEmailRequest): Prom
 
 export const refreshTokenApi = async (data: RefreshTokenRequest): Promise<RefreshTokenResponse> => {
   try {
-    const response = await api.post<RefreshTokenResponse>('/auth/refresh-token', data); 
+    const response = await api.post<RefreshTokenResponse>('/auth/refresh-token', data);
     return response.data;
   } catch (error: unknown) {
-    return handleApiError(error, 'Token refresh failed'); 
+    return handleApiError(error, 'Token refresh failed');
+  }
+};
+
+export const forgotPasswordApi = async (data: ForgotPasswordRequest): Promise<ForgotPasswordResponse> => {
+  try {
+    const response = await api.post<ForgotPasswordResponse>('/auth/forgot-password', data);
+    return response.data;
+  } catch (error: unknown) {
+    return handleApiError(error, 'Failed to send password reset email');
+  }
+};
+
+export const verifyOTPApi = async (data: VerifyOTPRequest): Promise<VerifyOTPResponse> => {
+  try {
+    const response = await api.post<VerifyOTPResponse>('/auth/verify-otp', data);
+    return response.data;
+  } catch (error: unknown) {
+    return handleApiError(error, 'Failed to verify OTP');
   }
 };

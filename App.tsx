@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ToastProvider } from 'react-native-toast-notifications';
 // import { StatusBar } from 'expo-status-bar';
 
 import OnboardingScreen from './src/screens/Onboarding/OnboardingScreen';
 import LoginScreen from './src/screens/Login/LoginScreen';
 import SignUpScreen from './src/screens/SignUp/SignUpScreen';
+import ForgotPasswordScreen from './src/screens/ForgotPassword/ForgotPasswordScreen';
+import VerifyOTPScreen from './src/screens/VerifyOTP/VerifyOTPScreen';
 import TabNavigator from './src/navigation/TabNavigator';
 import { RootStackParamList } from './src/types/types';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
@@ -43,6 +46,8 @@ const AppContent: React.FC = () => {
             )}
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="SignUp" component={SignUpScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+            <Stack.Screen name="VerifyOTP" component={VerifyOTPScreen} />
           </Stack.Navigator>
         )}
       </NavigationContainer>
@@ -52,9 +57,22 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ToastProvider
+      placement="top"
+      duration={3000}
+      animationType="slide-in"
+      animationDuration={250}
+      successColor="#4CAF50"
+      dangerColor="#F44336"
+      warningColor="#FF9800"
+      normalColor="#2196F3"
+      textStyle={{ fontSize: 16 }}
+      offset={50}
+    >
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ToastProvider>
   );
 };
 
