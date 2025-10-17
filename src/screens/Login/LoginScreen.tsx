@@ -61,8 +61,9 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     const success = await login({ email: email.trim(), password: password });
     if (!success) {
       toast.error('Invalid email or password. Please try again.');
+    } else {
+      toast.success('Login successful!');
     }
-    toast.success('Login successful!');
   };
 
 
