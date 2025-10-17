@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Alert } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
+import { useScroll } from '../../context/ScrollContext';
 import ProfileHeader from '../../components/Profile/ProfileHeader';
 import MenuSection from '../../components/Profile/MenuSection';
 import EditProfileModal from '../../components/Profile/EditProfileModal';
@@ -8,6 +9,7 @@ import ChangePasswordModal from '../../components/Profile/ChangePasswordModal';
 
 const ProfileScreen = () => {
   const { user, logout, refreshUser } = useAuth();
+  const { handleScroll } = useScroll();
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isChangePasswordModalVisible, setIsChangePasswordModalVisible] = useState(false);
 
@@ -55,6 +57,13 @@ const ProfileScreen = () => {
       onPress: () => setIsChangePasswordModalVisible(true),
     },
     {
+      id: 'exam',
+      title: 'Exams',
+      subtitle: 'Do Exams and view results',
+      icon: '📝',
+      onPress: () => {},
+    },
+    {
       id: 'settings',
       title: 'Settings',
       subtitle: 'App preferences and notifications',
@@ -70,6 +79,7 @@ const ProfileScreen = () => {
       variant: 'danger' as const,
       showArrow: false,
     },
+    
   ];
 
   if (!user) {
@@ -81,11 +91,13 @@ const ProfileScreen = () => {
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-gray-50 mb-10">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ flexGrow: 1 }}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}        
+        onScroll={handleScroll} // scroll behavior 
+        scrollEventThrottle={16} // scroll behavior 
       >
         {/* Header with gradient background */}
         <ProfileHeader
