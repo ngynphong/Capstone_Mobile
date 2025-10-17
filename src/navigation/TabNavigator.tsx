@@ -43,6 +43,7 @@ const TabNavigator = () => {
         name="Profile"
         component={ProfileScreen}
         options={{
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Text style={{ color, fontSize: size }}>P</Text>
           ),

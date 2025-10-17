@@ -5,20 +5,15 @@ import {
   registerApi,
   verifyEmailApi,
 } from '../services/authService';
+import { getUserProfile } from '../services/userService';
 import {
   LoginRequest,
   RegisterRequest,
   VerifyEmailRequest,
 } from '../types/authTypes';
+import { UserProfile } from '../types/userTypes';
 
-export interface User {
-  id?: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  roles: string[];
-  dob?: string;
-}
+export interface User extends UserProfile {}
 
 interface AuthContextType {
   isLoggedIn: boolean;
@@ -29,6 +24,7 @@ interface AuthContextType {
   verifyEmail: (verificationData: VerifyEmailRequest) => Promise<boolean>;
   logout: () => void;
   setIsLoggedIn: (isLoggedIn: boolean) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -78,9 +74,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const { accessToken } = await getTokens();
       if (accessToken) {
-        // Giả sử nếu có token là đã đăng nhập.
-        // Bạn có thể thêm logic gọi API để xác thực token ở đây nếu cần.
         setIsLoggedIn(true);
+        // Fetch user profile when app starts and user is already logged in
+        try {
+          await fetchUserProfile();
+        } catch (error) {
+          console.error('Failed to fetch user profile on app start:', error);
+        }
       }
     } catch (error) {
       console.error('Failed to check auth status:', error);
@@ -89,21 +89,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const fetchUserProfile = async (): Promise<void> => {
+    try {
+      const response = await getUserProfile();
+
+      // API returns { code, data, message }, we need the data part
+      let userProfile: UserProfile;
+      if (response && typeof response === 'object' && 'data' in response) {
+        // Response has { code, data, message } format
+        userProfile = response.data as UserProfile;
+      } else {
+        // Response is directly the user profile
+        userProfile = response as UserProfile;
+      }
+
+      setUser(userProfile);
+    } catch (error) {
+      console.error('❌ Failed to fetch user profile:', error);
+      // Don't logout user if profile fetch fails, just keep them logged in
+    }
+  };
+
   const login = async (credentials: LoginRequest): Promise<boolean> => {
     setIsLoading(true);
     try {
       const response = await loginApi(credentials);
       if (response.data.authenticated) {
-        const newUser: User = {
-          email: credentials.email,
-          firstName: '',
-          lastName: '',
-          roles: response.data.roles,
-        };
-        setUser(newUser);
+        // Store token first
+        await storeTokens(response.data.token);
+
+        // Fetch complete user profile
+        try {
+          await fetchUserProfile();
+        } catch (profileError) {
+          // If profile fetch fails, create basic user object
+          const basicUser: User = {
+            id: '',
+            email: credentials.email,
+            firstName: '',
+            lastName: '',
+            dob: '',
+            roles: response.data.roles,
+          };
+          setUser(basicUser);
+        }
+
         setIsLoggedIn(true);
         console.log('Login API Response Data:', response.data);
-        await storeTokens(response.data.token);
         return true;
       }
       return false;
@@ -163,6 +195,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    await fetchUserProfile();
+  };
+
   if (isLoading) {
     // Bạn có thể hiển thị một màn hình chờ (splash screen) ở đây
     return null;
@@ -177,7 +213,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       register,
       verifyEmail,
       logout,
-      setIsLoggedIn
+      setIsLoggedIn,
+      refreshUser
     }}>
       {children}
     </AuthContext.Provider>
