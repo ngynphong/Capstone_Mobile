@@ -72,15 +72,15 @@ axiosInstance.interceptors.response.use(
         }
 
         // For other errors, log detailed error information and reject
-        // console.error('API Error Details:', {
-        //     url: error.config?.url,
-        //     method: error.config?.method,
-        //     status: error.response?.status,
-        //     statusText: error.response?.statusText,
-        //     data: error.response?.data,
-        //     message: error.message,
-        //     fullError: error
-        // });
+        console.error('API Error Details:', {
+            url: error.config?.url,
+            method: error.config?.method,
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            message: error.message,
+            fullError: error
+        });
         return Promise.reject(error);
     }
 );

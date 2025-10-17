@@ -13,6 +13,7 @@ import VerifyOTPScreen from './src/screens/VerifyOTP/VerifyOTPScreen';
 import TabNavigator from './src/navigation/TabNavigator';
 import { RootStackParamList } from './src/types/types';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { ScrollProvider } from './src/context/ScrollContext';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -70,7 +71,9 @@ const App: React.FC = () => {
       offset={50}
     >
       <AuthProvider>
-        <AppContent />
+        <ScrollProvider>
+          <AppContent />
+        </ScrollProvider>
       </AuthProvider>
     </ToastProvider>
   );
