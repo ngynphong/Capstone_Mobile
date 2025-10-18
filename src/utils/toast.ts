@@ -1,4 +1,4 @@
-import { useToast } from 'react-native-toast-notifications';
+import {useToast} from 'react-native-toast-notifications';
 
 // Hook để sử dụng toast trong components
 export const useAppToast = () => {
@@ -42,17 +42,25 @@ export const useAppToast = () => {
 // Toast utility functions that work with ToastProvider context
 // These functions need to be called from within a component that has access to toast context
 export const showSuccessToast = (message: string) => {
-  console.warn('showSuccessToast should be used within a component with useAppToast hook');
+  console.warn(
+    'showSuccessToast should be used within a component with useAppToast hook',
+  );
 };
 
 export const showErrorToast = (message: string) => {
-  console.warn('showErrorToast should be used within a component with useAppToast hook');
+  console.warn(
+    'showErrorToast should be used within a component with useAppToast hook',
+  );
 };
 
 export const showInfoToast = (message: string) => {
-  console.warn('showInfoToast should be used within a component with useAppToast hook');
+  console.warn(
+    'showInfoToast should be used within a component with useAppToast hook',
+  );
 };
 
 export const showWarningToast = (message: string) => {
-  console.warn('showWarningToast should be used within a component with useAppToast hook');
+  console.warn(
+    'showWarningToast should be used within a component with useAppToast hook',
+  );
 };

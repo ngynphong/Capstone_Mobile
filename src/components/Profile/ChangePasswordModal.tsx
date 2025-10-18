@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,10 @@ import {
   Modal,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from '../../context/AuthContext';
-import { changePassword } from '../../services/userService';
-import { ChangePasswordRequest } from '../../types/userTypes';
-import { useAppToast } from '../../utils/toast';
+import {useAuth} from '../../context/AuthContext';
+import {changePassword} from '../../services/userService';
+import {ChangePasswordRequest} from '../../types/userTypes';
+import {useAppToast} from '../../utils/toast';
 
 interface ChangePasswordModalProps {
   visible: boolean;
@@ -30,7 +30,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const toast = useAppToast();
-  const { logout } = useAuth();
+  const {logout} = useAuth();
 
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
@@ -45,15 +45,17 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 
     setIsLoading(true);
     try {
-      const token = await AsyncStorage.getItem('accessToken') || '';
+      const token = (await AsyncStorage.getItem('accessToken')) || '';
       const passwordData: ChangePasswordRequest = {
         token,
         currentPassword,
         newPassword,
       };
-      console.log('Password data', passwordData)
+      console.log('Password data', passwordData);
       await changePassword(passwordData);
-      toast.success('Password changed successfully! Please login again with your new password.');
+      toast.success(
+        'Password changed successfully! Please login again with your new password.',
+      );
 
       // Close modal and logout user
       onClose();
@@ -64,7 +66,9 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         logout();
       }, 1500); // Delay to allow user to see the success toast
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to change password');
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to change password',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -95,13 +99,15 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             <Text className="text-white text-lg">Cancel</Text>
           </TouchableOpacity>
           <Text className="text-white text-xl font-bold">Change Password</Text>
-          <View style={{ width: 60 }} />
+          <View style={{width: 60}} />
         </View>
 
         {/* Form */}
         <ScrollView className="flex-1 px-6 py-6">
           <View className="mb-6">
-            <Text className="text-gray-700 text-lg font-medium mb-3">Current Password</Text>
+            <Text className="text-gray-700 text-lg font-medium mb-3">
+              Current Password
+            </Text>
             <View className="relative">
               <TextInput
                 className="border-2 border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50"
@@ -124,7 +130,9 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
           </View>
 
           <View className="mb-6">
-            <Text className="text-gray-700 text-lg font-medium mb-3">New Password</Text>
+            <Text className="text-gray-700 text-lg font-medium mb-3">
+              New Password
+            </Text>
             <View className="relative">
               <TextInput
                 className="border-2 border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50"
@@ -146,7 +154,9 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
           </View>
 
           <View className="mb-8">
-            <Text className="text-gray-700 text-lg font-medium mb-3">Confirm New Password</Text>
+            <Text className="text-gray-700 text-lg font-medium mb-3">
+              Confirm New Password
+            </Text>
             <View className="relative">
               <TextInput
                 className="border-2 border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50"

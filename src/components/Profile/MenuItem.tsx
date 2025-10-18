@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import {View, Text, TouchableOpacity} from 'react-native';
 
 interface MenuItemProps {
   title: string;
@@ -25,12 +25,17 @@ const MenuItem: React.FC<MenuItemProps> = ({
           backgroundColor: '#FEF2F2',
           borderColor: '#FECACA',
           borderWidth: 1,
+          shadowColor: '#000',
+          shadowOffset: {width: 0, height: 2},
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 3,
         };
       default:
         return {
           backgroundColor: '#FFFFFF',
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
+          shadowOffset: {width: 0, height: 2},
           shadowOpacity: 0.1,
           shadowRadius: 4,
           elevation: 3,
@@ -56,24 +61,18 @@ const MenuItem: React.FC<MenuItemProps> = ({
       <View className="flex-row items-center justify-between">
         <View className="flex-1">
           <View className="flex-row items-center mb-1">
-            {icon && (
-              <Text className="text-lg mr-3">{icon}</Text>
-            )}
+            {icon && <Text className="text-lg mr-3">{icon}</Text>}
             <Text className={`text-lg font-semibold ${getTextColor()}`}>
               {title}
             </Text>
           </View>
 
           {subtitle && (
-            <Text className="text-gray-600 text-sm ml-0 mt-1">
-              {subtitle}
-            </Text>
+            <Text className="text-gray-600 text-sm ml-0 mt-1">{subtitle}</Text>
           )}
         </View>
 
-        {showArrow && (
-          <Text className="text-gray-400 text-lg">›</Text>
-        )}
+        {showArrow && <Text className="text-gray-400 text-lg">›</Text>}
       </View>
     </TouchableOpacity>
   );
