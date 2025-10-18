@@ -1,17 +1,17 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import SearchBar from './SearchBar';
 import FilterButton from './FilterButton';
 import FilterModal from './FilterModal';
 import MaterialList from '../../components/Material/MaterialList';
-import { AuthContext } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 const MaterialsScreen = () => {
   const [searchText, setSearchText] = useState('');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const auth = useContext(AuthContext);
+  const { isLoggedIn } = useAuth();
 
-  if (!auth?.isLoggedIn) {
+  if (!isLoggedIn) {
     return (
       <View style={[styles.container, styles.center]}>
         <Text>Please login to view materials</Text>

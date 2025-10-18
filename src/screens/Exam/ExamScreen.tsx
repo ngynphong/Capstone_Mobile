@@ -1,12 +1,7 @@
-import React from 'react';
-import { View, Text } from 'react-native';
+import ExamStack from '../../navigation/ExamStack';
 
 const ExamScreen = () => {
-  return (
-    <View className="flex-1 justify-center items-center">
-      <Text>Exam Screen</Text>
-    </View>
-  );
+  return <ExamStack />;
 };
 
 export default ExamScreen;

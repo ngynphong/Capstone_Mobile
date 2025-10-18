@@ -258,11 +258,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await fetchUserProfile();
   };
 
-  if (isLoading) {
-    // Bạn có thể hiển thị một màn hình chờ (splash screen) ở đây
-    return null;
-  }
-
   return (
     <AuthContext.Provider value={{
       isLoggedIn,

@@ -10,6 +10,7 @@ import ExamScreen from '../screens/Exam/ExamScreen';
 import { TabParamList } from '../types/types';
 import { useScroll } from '../context/ScrollContext';
 import MaterialsScreen from '../screens/Materials/MaterialsScreen';
+import ProfileStack from './ProfileStack';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
@@ -165,7 +166,7 @@ const TabNavigator = () => {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Materials" component={MaterialsScreen} />
       <Tab.Screen name="Exams" component={ExamScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Profile" component={ProfileStack} />
     </Tab.Navigator>
   );
 };

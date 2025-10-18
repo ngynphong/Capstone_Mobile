@@ -18,6 +18,7 @@ import { Exam, Subject, SubjectType, ExamFilters, ExamSortOption, ExamStackParam
 import { ExamService } from '../../services/examService';
 import ExamCard from '../../components/Exam/ExamCard';
 import SubjectFilter from '../../components/Exam/SubjectFilter';
+import { useScroll } from '../../context/ScrollContext';
 
 type NavigationProp = NativeStackNavigationProp<ExamStackParamList>;
 
@@ -25,7 +26,7 @@ const { width } = Dimensions.get('window');
 
 const ExamLibraryScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-
+  const { handleScroll } = useScroll();
   // State management
   const [exams, setExams] = useState<Exam[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -141,13 +142,13 @@ const ExamLibraryScreen = () => {
 
   return (
     <View className="flex-1 bg-gray-50">
-      
+
       {/* Header */}
       <View className="bg-white pt-12 pb-4 px-6 shadow-sm">
         <View className="flex-row justify-between items-center mb-4">
           <View>
             <Text className="text-2xl font-bold text-gray-900">Exam Test</Text>
-          </View>        
+          </View>
         </View>
 
         {/* Search Bar */}
@@ -187,6 +188,8 @@ const ExamLibraryScreen = () => {
           padding: 16,
           paddingBottom: 100, // Space for tab bar
         }}
+        onScroll={handleScroll} // scroll behavior 
+        scrollEventThrottle={16} // scroll behavior 
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

@@ -19,7 +19,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const AppContent: React.FC = () => {
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isLoading } = useAuth();
 
   useEffect(() => {
     AsyncStorage.getItem('onboardingViewed').then(value => {
@@ -31,8 +31,9 @@ const AppContent: React.FC = () => {
     });
   }, []);
 
-  if (isFirstLaunch === null) {
-    return null; 
+  // Show loading screen while checking auth status or first launch
+  if (isFirstLaunch === null || isLoading) {
+    return null; // You can replace this with a proper loading component
   }
 
   return (
