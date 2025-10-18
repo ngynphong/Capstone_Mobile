@@ -1,9 +1,12 @@
+import { ExamStackParamList } from './examTypes';
+
 export type RootStackParamList = {
   Onboarding: undefined;
   Login: undefined;
   SignUp: undefined;
   ForgotPassword: undefined;
   VerifyOTP: { email: string };
+  ExamStack: undefined;
 };
 
 export type TabParamList = {
@@ -12,3 +15,5 @@ export type TabParamList = {
   Profile: undefined;
   Exams: undefined;
 };
+
+export type { ExamStackParamList };
