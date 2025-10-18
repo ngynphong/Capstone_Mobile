@@ -1,7 +1,10 @@
-import React from "react";
+import React, { useContext } from "react";
 import { View, Text, Image, StyleSheet } from "react-native";
+import { AuthContext } from "../../context/AuthContext";
 
 const HeroSection = () => {
+  const auth = useContext(AuthContext);
+  if (!auth) throw new Error("AuthContext must be used within AuthProvider");
   return (
     <View style={styles.container}>
       {/* Header user info */}
@@ -9,13 +12,17 @@ const HeroSection = () => {
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
             <Image
-              source={{ uri: "https://placehold.co/50x50" }}
+              source={{ 
+                uri: auth.user?.avatar || auth.user?.imgUrl || "https://placehold.co/50x50"
+              }}
               style={styles.avatar}
             />
           </View>
           <View style={styles.textSection}>
             <Text style={styles.greeting}>Good morning</Text>
-            <Text style={styles.name}>Jack Sparrow</Text>
+            <Text style={styles.name}>
+              {auth.user ? `${auth.user.firstName} ${auth.user.lastName}` : 'Guest'}
+            </Text>
           </View>
         </View>
 
