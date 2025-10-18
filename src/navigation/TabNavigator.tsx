@@ -4,11 +4,12 @@ import { View, Text, TouchableOpacity, Animated, Dimensions } from 'react-native
 import { BlurView } from 'expo-blur';
 import { Home, BookOpen, User, FileText } from 'lucide-react-native';
 import HomeScreen from '../screens/Home/HomeScreen';
-import SubjectsScreen from '../screens/Subjects/SubjectsScreen';
+
 import ProfileScreen from '../screens/Profile/ProfileScreen';
 import ExamScreen from '../screens/Exam/ExamScreen';
 import { TabParamList } from '../types/types';
 import { useScroll } from '../context/ScrollContext';
+import MaterialsScreen from '../screens/Materials/MaterialsScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
@@ -50,14 +51,14 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
 
   const iconMap = {
     Home: Home,
-    Subjects: BookOpen,
+    Materials: BookOpen,
     Exams: FileText,
     Profile: User,
   };
 
   const labelMap = {
     Home: 'Home',
-    Subjects: 'Subjects',
+    Materials: 'Materials',
     Exams: 'Exams',
     Profile: 'Profile',
   };
@@ -162,7 +163,7 @@ const TabNavigator = () => {
       }}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Subjects" component={SubjectsScreen} />
+      <Tab.Screen name="Materials" component={MaterialsScreen} />
       <Tab.Screen name="Exams" component={ExamScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
