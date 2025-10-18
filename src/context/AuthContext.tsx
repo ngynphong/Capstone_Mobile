@@ -4,12 +4,14 @@ import {
   loginApi,
   registerApi,
   verifyEmailApi,
+  refreshTokenApi,
 } from '../services/authService';
 import { getUserProfile } from '../services/userService';
 import {
   LoginRequest,
   RegisterRequest,
   VerifyEmailRequest,
+  RefreshTokenRequest,
 } from '../types/authTypes';
 import { UserProfile } from '../types/userTypes';
 
@@ -45,6 +47,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [refreshTimer, setRefreshTimer] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     console.log('AuthContext - isLoggedIn changed:', isLoggedIn);
@@ -53,6 +56,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     checkAuthStatus();
   }, []);
+
+  // Auto refresh token every 30 minutes
+  useEffect(() => {
+    if (isLoggedIn) {
+      const timer = setInterval(() => {
+        refreshToken();
+      }, 30 * 60 * 1000); // 30 minutes
+
+      setRefreshTimer(timer);
+
+      // Cleanup timer on unmount
+      return () => {
+        if (timer) {
+          clearInterval(timer);
+        }
+      };
+    } else {
+      // Clear timer when user logs out
+      if (refreshTimer) {
+        clearInterval(refreshTimer);
+        setRefreshTimer(null);
+      }
+    }
+  }, [isLoggedIn]);
 
   const storeTokens = async (token: string) => {
     await AsyncStorage.setItem('accessToken', token);
@@ -192,6 +219,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Logout error:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const refreshToken = async (): Promise<void> => {
+    try {
+      const { accessToken } = await getTokens();
+      if (!accessToken) {
+        console.log('No access token found, cannot refresh');
+        return;
+      }
+
+      const refreshRequest: RefreshTokenRequest = {
+        token: accessToken
+      };
+
+      // Use publicAxios directly to avoid interceptor
+      const { publicAxios } = await import('../configs/axios');
+      const response = await publicAxios.post('/auth/refresh-token', refreshRequest);
+
+      if (response.data.authenticated && response.data.token) {
+        // Update token in AsyncStorage (using same key as requested)
+        await storeTokens(response.data.token);
+        console.log('Token refreshed successfully');
+      } else {
+        console.log('Token refresh failed - invalid response');
+        // If refresh fails, logout user
+        await logout();
+      }
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      // If refresh fails, logout user
+      await logout();
     }
   };
 

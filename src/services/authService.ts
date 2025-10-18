@@ -1,5 +1,5 @@
-import { isAxiosError } from 'axios'; 
-import api from './../configs/axios'; 
+import { isAxiosError } from 'axios';
+import api, { publicAxios } from './../configs/axios';
 import {
   LoginRequest,
   AuthResponse,
@@ -63,7 +63,7 @@ export const verifyEmailApi = async (verificationData: VerifyEmailRequest): Prom
 
 export const refreshTokenApi = async (data: RefreshTokenRequest): Promise<RefreshTokenResponse> => {
   try {
-    const response = await api.post<RefreshTokenResponse>('/auth/refresh-token', data);
+    const response = await publicAxios.post<RefreshTokenResponse>('/auth/refresh-token', data);
     return response.data;
   } catch (error: unknown) {
     return handleApiError(error, 'Token refresh failed');

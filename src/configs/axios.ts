@@ -1,6 +1,7 @@
 import axios from 'axios';
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { refreshTokenApi } from '../services/authService';
+import { RefreshTokenRequest } from '../types/authTypes';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL; // Use EXPO_PUBLIC_API_URL for Expo
 
@@ -46,28 +47,49 @@ axiosInstance.interceptors.response.use(
         const originalRequest = error.config;
 
         // Check if error is due to token expiration (401) and not already retried
-        if (error.response?.status === 401 && !originalRequest._retry) {
-
+        // Also skip refresh for the refresh token endpoint itself to avoid infinite loop
+        if (error.response?.status === 401 &&
+            !originalRequest._retry &&
+            !originalRequest.url?.includes('/auth/refresh-token')) {
             originalRequest._retry = true;
-           
 
             try {
-               
-                await AsyncStorage.removeItem('accessToken'); // Clear access token on 401
-                
-                console.log('Access token expired. User needs to re-login.');
-                return Promise.reject(error); // Reject the original request
-            } catch (refreshError) {
-                
-                await AsyncStorage.removeItem('accessToken'); // Changed from 'token' to 'accessToken'
-                
-                console.error('Token refresh failed:', refreshError);
-                console.log('Authentication failed - user needs to login again');
+                // Get current token for refresh
+                const currentToken = await AsyncStorage.getItem('accessToken');
 
-               
+                if (!currentToken) {
+                    console.log('No token found for refresh');
+                    await AsyncStorage.removeItem('accessToken');
+                    return Promise.reject(error);
+                }
+
+                const refreshRequest: RefreshTokenRequest = {
+                    token: currentToken
+                };
+
+                const refreshResponse = await refreshTokenApi(refreshRequest);
+
+                if (refreshResponse.data.authenticated && refreshResponse.data.token) {
+                    // Update token in AsyncStorage
+                    await AsyncStorage.setItem('accessToken', refreshResponse.data.token);
+
+                    // Update authorization header in original request
+                    originalRequest.headers.Authorization = `Bearer ${refreshResponse.data.token}`;
+
+                    console.log('Token refreshed successfully, retrying original request');
+
+                    // Retry the original request with new token
+                    return axiosInstance(originalRequest);
+                } else {
+                    console.log('Token refresh failed - invalid response');
+                    await AsyncStorage.removeItem('accessToken');
+                    return Promise.reject(error);
+                }
+            } catch (refreshError) {
+                console.error('Token refresh error:', refreshError);
+                await AsyncStorage.removeItem('accessToken');
+                console.log('Authentication failed - user needs to login again');
                 return Promise.reject(refreshError);
-            } finally {
-                
             }
         }
 
