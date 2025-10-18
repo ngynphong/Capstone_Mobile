@@ -558,4 +558,98 @@ export class ExamService {
       throw error;
     }
   }
+
+  // Get user's exam attempts/results
+  static async getUserExamAttempts(userId: string): Promise<ExamAttempt[]> {
+    try {
+      // In real implementation: return await axios.get(`/users/${userId}/exam-attempts`);
+
+      // Mock data for development - in real app, this would come from the backend
+      const mockAttempts: ExamAttempt[] = [
+        {
+          id: '1',
+          examId: '1',
+          userId: userId,
+          startTime: new Date('2024-01-15T10:00:00'),
+          endTime: new Date('2024-01-15T11:00:00'),
+          score: 85,
+          totalQuestions: 40,
+          correctAnswers: 34,
+          timeSpent: 45,
+          completed: true,
+          answers: []
+        },
+        {
+          id: '2',
+          examId: '2',
+          userId: userId,
+          startTime: new Date('2024-01-14T14:30:00'),
+          endTime: new Date('2024-01-14T16:00:00'),
+          score: 72,
+          totalQuestions: 40,
+          correctAnswers: 29,
+          timeSpent: 75,
+          completed: true,
+          answers: []
+        },
+        {
+          id: '3',
+          examId: '3',
+          userId: userId,
+          startTime: new Date('2024-01-13T09:15:00'),
+          endTime: new Date('2024-01-13T10:00:00'),
+          score: 90,
+          totalQuestions: 60,
+          correctAnswers: 54,
+          timeSpent: 35,
+          completed: true,
+          answers: []
+        },
+        {
+          id: '4',
+          examId: '5',
+          userId: userId,
+          startTime: new Date('2024-01-12T16:20:00'),
+          endTime: new Date('2024-01-12T17:10:00'),
+          score: 78,
+          totalQuestions: 70,
+          correctAnswers: 55,
+          timeSpent: 40,
+          completed: true,
+          answers: []
+        },
+        {
+          id: '5',
+          examId: '8',
+          userId: userId,
+          startTime: new Date('2024-01-11T11:45:00'),
+          endTime: new Date('2024-01-11T12:45:00'),
+          score: 65,
+          totalQuestions: 100,
+          correctAnswers: 65,
+          timeSpent: 50,
+          completed: true,
+          answers: []
+        }
+      ];
+
+      return mockAttempts;
+    } catch (error) {
+      console.error('Error fetching user exam attempts:', error);
+      throw error;
+    }
+  }
+
+  // Get exam attempt by ID with full details
+  static async getExamAttemptById(attemptId: string): Promise<ExamAttempt | null> {
+    try {
+      // In real implementation: return await axios.get(`/exam-attempts/${attemptId}`);
+
+      // For now, return null as we don't have detailed attempt data in mock
+      return null;
+    } catch (error) {
+      console.error('Error fetching exam attempt:', error);
+      throw error;
+    }
+  }
 }

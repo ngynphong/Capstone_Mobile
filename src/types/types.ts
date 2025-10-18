@@ -1,4 +1,4 @@
-import { ExamStackParamList } from './examTypes';
+import { ExamStackParamList, ExamAttempt } from './examTypes';
 
 export type RootStackParamList = {
   Onboarding: undefined;
@@ -14,6 +14,12 @@ export type TabParamList = {
   Subjects: undefined;
   Profile: undefined;
   Exams: undefined;
+};
+
+export type ProfileStackParamList = {
+  ProfileMain: undefined;
+  ExamResults: undefined;
+  ExamResultDetail: { attempt: ExamAttempt };
 };
 
 export type { ExamStackParamList };

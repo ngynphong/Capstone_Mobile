@@ -5,7 +5,7 @@ import { BlurView } from 'expo-blur';
 import { Home, BookOpen, User, FileText } from 'lucide-react-native';
 import HomeScreen from '../screens/Home/HomeScreen';
 import SubjectsScreen from '../screens/Subjects/SubjectsScreen';
-import ProfileScreen from '../screens/Profile/ProfileScreen';
+import ProfileStack from '../navigation/ProfileStack';
 import ExamScreen from '../screens/Exam/ExamScreen';
 import { TabParamList } from '../types/types';
 import { useScroll } from '../context/ScrollContext';
@@ -164,7 +164,7 @@ const TabNavigator = () => {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Subjects" component={SubjectsScreen} />
       <Tab.Screen name="Exams" component={ExamScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Profile" component={ProfileStack} />
     </Tab.Navigator>
   );
 };
