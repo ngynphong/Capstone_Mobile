@@ -8,16 +8,13 @@ interface ProfileHeaderProps {
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, onChangeAvatar }) => {
-  console.log('🎨 ProfileHeader rendering with user:', user);
 
   const getUserDisplayName = () => {
     if (user?.firstName || user?.lastName) {
       const name = `${user.firstName || ''} ${user.lastName || ''}`.trim();
-      console.log('👤 Display name:', name);
       return name;
     }
     const emailName = user?.email || 'User';
-    console.log('👤 Fallback to email:', emailName);
     return emailName;
   };
 
@@ -25,7 +22,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, onChangeAvatar }) =
     const first = user?.firstName?.[0] || '';
     const last = user?.lastName?.[0] || '';
     const initials = (first + last).toUpperCase() || 'U';
-    console.log('🔤 User initials:', initials);
     return initials;
   };
 
