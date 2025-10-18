@@ -1,14 +1,14 @@
 import React from 'react';
-import {View, Text, TouchableOpacity} from 'react-native';
-import {Clock, Users, BookOpen, TrendingUp} from 'lucide-react-native';
-import {Exam} from '../../types/examTypes';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { Clock, Users, BookOpen, TrendingUp } from 'lucide-react-native';
+import { Exam } from '../../types/examTypes';
 
 interface ExamCardProps {
   exam: Exam;
   onPress: () => void;
 }
 
-const ExamCard: React.FC<ExamCardProps> = ({exam, onPress}) => {
+const ExamCard: React.FC<ExamCardProps> = ({ exam, onPress }) => {
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'Easy':
@@ -41,7 +41,7 @@ const ExamCard: React.FC<ExamCardProps> = ({exam, onPress}) => {
       className="bg-white rounded-2xl p-6 mb-4 shadow-sm border border-gray-100"
       style={{
         shadowColor: '#000',
-        shadowOffset: {width: 0, height: 2},
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
@@ -58,11 +58,9 @@ const ExamCard: React.FC<ExamCardProps> = ({exam, onPress}) => {
         <View className="flex-row items-center">
           <View
             className={`w-2 h-2 rounded-full mr-2`}
-            style={{backgroundColor: getDifficultyDotColor(exam.difficulty)}}
+            style={{ backgroundColor: getDifficultyDotColor(exam.difficulty) }}
           />
-          <Text
-            className={`text-xs font-medium px-2 py-1 rounded-full ${getDifficultyColor(exam.difficulty)}`}
-          >
+          <Text className={`text-xs font-medium px-2 py-1 rounded-full ${getDifficultyColor(exam.difficulty)}`}>
             {exam.difficulty}
           </Text>
         </View>
@@ -95,7 +93,7 @@ const ExamCard: React.FC<ExamCardProps> = ({exam, onPress}) => {
         <View className="w-full bg-gray-200 rounded-full h-2">
           <View
             className="bg-teal-400 h-2 rounded-full"
-            style={{width: `${Math.min(100, (exam.attempts || 0) / 5)}%`}}
+            style={{ width: `${Math.min(100, (exam.attempts || 0) / 5)}%` }}
           />
         </View>
       </View>

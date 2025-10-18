@@ -1,25 +1,13 @@
-import React, {useState, useEffect} from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-} from 'react-native';
-import {useAuth} from '../../context/AuthContext';
-import {useScroll} from '../../context/ScrollContext';
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {ExamService} from '../../services/examService';
-import {ExamAttempt, Exam} from '../../types/examTypes';
-import {ProfileStackParamList} from '../../types/types';
-import {
-  ChevronLeft,
-  Calendar,
-  Clock,
-  CheckCircle,
-  Target,
-} from 'lucide-react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { useAuth } from '../../context/AuthContext';
+import { useScroll } from '../../context/ScrollContext';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ExamService } from '../../services/examService';
+import { ExamAttempt, Exam } from '../../types/examTypes';
+import { ProfileStackParamList } from '../../types/types';
+import { ChevronLeft, Calendar, Clock, CheckCircle, Target } from 'lucide-react-native';
 
 type NavigationProp = NativeStackNavigationProp<ProfileStackParamList>;
 
@@ -27,9 +15,9 @@ interface ExamResultsScreenProps {
   navigation: any;
 }
 
-const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({navigation}) => {
-  const {user} = useAuth();
-  const {handleScroll} = useScroll();
+const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => {
+  const { user } = useAuth();
+  const { handleScroll } = useScroll();
   const typedNavigation = useNavigation<NavigationProp>();
   const [examAttempts, setExamAttempts] = useState<ExamAttempt[]>([]);
   const [exams, setExams] = useState<Map<string, Exam>>(new Map());
@@ -88,9 +76,7 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({navigation}) => {
     }
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0
-      ? `${hours}h ${remainingMinutes}m`
-      : `${hours}h`;
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
   };
 
   const getScoreColor = (score: number) => {
@@ -116,7 +102,7 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({navigation}) => {
         key={attempt.id}
         className={`bg-white rounded-xl p-4 mb-3 border ${getScoreBgColor(attempt.score)}`}
         onPress={() => {
-          typedNavigation.navigate('ExamResultDetail', {attempt});
+          typedNavigation.navigate('ExamResultDetail', { attempt });
         }}
       >
         <View className="flex-row justify-between items-start mb-2">
@@ -128,12 +114,8 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({navigation}) => {
               {exam.subject.name} • {exam.level} • {exam.difficulty}
             </Text>
           </View>
-          <View
-            className={`px-3 py-1 rounded-full border ${getScoreBgColor(attempt.score)}`}
-          >
-            <Text
-              className={`text-sm font-semibold ${getScoreColor(attempt.score)}`}
-            >
+          <View className={`px-3 py-1 rounded-full border ${getScoreBgColor(attempt.score)}`}>
+            <Text className={`text-sm font-semibold ${getScoreColor(attempt.score)}`}>
               {attempt.score}%
             </Text>
           </View>
@@ -198,7 +180,7 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({navigation}) => {
       {/* Content */}
       <ScrollView
         className="flex-1 px-6"
-        contentContainerStyle={{paddingTop: 16, paddingBottom: 100}}
+        contentContainerStyle={{ paddingTop: 16, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
@@ -213,8 +195,7 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({navigation}) => {
               No Exam Results Yet
             </Text>
             <Text className="text-gray-600 text-center px-8">
-              Complete your first exam to see your results here. Your progress
-              will be tracked and displayed.
+              Complete your first exam to see your results here. Your progress will be tracked and displayed.
             </Text>
           </View>
         ) : (
@@ -233,13 +214,7 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({navigation}) => {
                 </View>
                 <View className="items-center">
                   <Text className="text-2xl font-bold text-blue-600">
-                    {Math.round(
-                      examAttempts.reduce(
-                        (acc, attempt) => acc + attempt.score,
-                        0,
-                      ) / examAttempts.length,
-                    )}
-                    %
+                    {Math.round(examAttempts.reduce((acc, attempt) => acc + attempt.score, 0) / examAttempts.length)}%
                   </Text>
                   <Text className="text-sm text-gray-600">Average Score</Text>
                 </View>
@@ -258,11 +233,7 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({navigation}) => {
                 Recent Results
               </Text>
               {examAttempts
-                .sort(
-                  (a, b) =>
-                    new Date(b.startTime).getTime() -
-                    new Date(a.startTime).getTime(),
-                )
+                .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
                 .map(renderExamResult)}
             </View>
           </>

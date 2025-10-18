@@ -1,6 +1,6 @@
 import React from 'react';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {ExamStackParamList} from '../types/examTypes';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { ExamStackParamList } from '../types/examTypes';
 
 // Import all exam screens
 import ExamLibraryScreen from '../screens/Exam/ExamLibraryScreen';

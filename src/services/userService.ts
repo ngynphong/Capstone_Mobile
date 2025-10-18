@@ -1,4 +1,4 @@
-import {isAxiosError} from 'axios';
+import { isAxiosError } from 'axios';
 import api from './../configs/axios';
 import {
   UserProfile,
@@ -28,7 +28,7 @@ const handleApiError = (error: unknown, defaultMessage: string): never => {
 export const getUserProfile = async (): Promise<UserProfile> => {
   try {
     const response = await api.get<UserProfile>('/users/me');
-
+    
     return response.data;
   } catch (error: unknown) {
     return handleApiError(error, 'Failed to fetch user profile');
@@ -39,9 +39,7 @@ export const getUserProfile = async (): Promise<UserProfile> => {
  * Update current user's profile information
  * PUT /users/me
  */
-export const updateUserProfile = async (
-  data: UpdateProfileRequest,
-): Promise<UpdateProfileResponse> => {
+export const updateUserProfile = async (data: UpdateProfileRequest): Promise<UpdateProfileResponse> => {
   try {
     const response = await api.put<UpdateProfileResponse>('/users/me', data);
     return response.data;
@@ -54,14 +52,9 @@ export const updateUserProfile = async (
  * Change user's password
  * POST /auth/change-password
  */
-export const changePassword = async (
-  data: ChangePasswordRequest,
-): Promise<ChangePasswordResponse> => {
+export const changePassword = async (data: ChangePasswordRequest): Promise<ChangePasswordResponse> => {
   try {
-    const response = await api.post<ChangePasswordResponse>(
-      '/auth/change-password',
-      data,
-    );
+    const response = await api.post<ChangePasswordResponse>('/auth/change-password', data);
     return response.data;
   } catch (error: unknown) {
     return handleApiError(error, 'Failed to change password');

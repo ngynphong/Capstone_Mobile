@@ -1,5 +1,5 @@
-import {isAxiosError} from 'axios';
-import api, {publicAxios} from './../configs/axios';
+import { isAxiosError } from 'axios';
+import api, { publicAxios } from './../configs/axios';
 import {
   LoginRequest,
   AuthResponse,
@@ -18,11 +18,11 @@ import {
 const handleApiError = (error: unknown, defaultMessage: string): never => {
   // console.error('API Error Details:', {
   //   error,
-  //   response: isAxiosError(error) ? error.response : undefined,
+  //   response: isAxiosError(error) ? error.response : undefined, 
   //   message: error instanceof Error ? error.message : 'Unknown error',
   // });
 
-  if (isAxiosError(error) && error.response) {
+  if (isAxiosError(error) && error.response) { 
     const responseData = error.response.data;
     if (responseData && responseData.message) {
       throw new Error(responseData.message);
@@ -34,78 +34,54 @@ const handleApiError = (error: unknown, defaultMessage: string): never => {
   throw new Error(defaultMessage);
 };
 
-export const loginApi = async (
-  credentials: LoginRequest,
-): Promise<AuthResponse> => {
+export const loginApi = async (credentials: LoginRequest): Promise<AuthResponse> => {
   try {
-    const response = await api.post<AuthResponse>('/auth/token', credentials);
+    const response = await api.post<AuthResponse>('/auth/token', credentials); 
     return response.data;
   } catch (error: unknown) {
-    return handleApiError(error, 'Login failed');
+    return handleApiError(error, 'Login failed'); 
   }
 };
 
-export const registerApi = async (
-  userData: RegisterRequest,
-): Promise<RegisterResponse> => {
+export const registerApi = async (userData: RegisterRequest): Promise<RegisterResponse> => {
   try {
-    const response = await api.post<RegisterResponse>('/users', userData);
+    const response = await api.post<RegisterResponse>('/users', userData); 
     return response.data;
   } catch (error: unknown) {
-    return handleApiError(error, 'Registration failed');
+    return handleApiError(error, 'Registration failed'); 
   }
 };
 
-export const verifyEmailApi = async (
-  verificationData: VerifyEmailRequest,
-): Promise<VerifyEmailResponse> => {
+export const verifyEmailApi = async (verificationData: VerifyEmailRequest): Promise<VerifyEmailResponse> => {
   try {
-    const response = await api.post<VerifyEmailResponse>(
-      '/auth/verify-email',
-      verificationData,
-    );
+    const response = await api.post<VerifyEmailResponse>('/auth/verify-email', verificationData); 
     return response.data;
   } catch (error: unknown) {
-    return handleApiError(error, 'Email verification failed');
+    return handleApiError(error, 'Email verification failed'); 
   }
 };
 
-export const refreshTokenApi = async (
-  data: RefreshTokenRequest,
-): Promise<RefreshTokenResponse> => {
+export const refreshTokenApi = async (data: RefreshTokenRequest): Promise<RefreshTokenResponse> => {
   try {
-    const response = await publicAxios.post<RefreshTokenResponse>(
-      '/auth/refresh-token',
-      data,
-    );
+    const response = await publicAxios.post<RefreshTokenResponse>('/auth/refresh-token', data);
     return response.data;
   } catch (error: unknown) {
     return handleApiError(error, 'Token refresh failed');
   }
 };
 
-export const forgotPasswordApi = async (
-  data: ForgotPasswordRequest,
-): Promise<ForgotPasswordResponse> => {
+export const forgotPasswordApi = async (data: ForgotPasswordRequest): Promise<ForgotPasswordResponse> => {
   try {
-    const response = await api.post<ForgotPasswordResponse>(
-      '/auth/forgot-password',
-      data,
-    );
+    const response = await api.post<ForgotPasswordResponse>('/auth/forgot-password', data);
     return response.data;
   } catch (error: unknown) {
     return handleApiError(error, 'Failed to send password reset email');
   }
 };
 
-export const verifyOTPApi = async (
-  data: VerifyOTPRequest,
-): Promise<VerifyOTPResponse> => {
+export const verifyOTPApi = async (data: VerifyOTPRequest): Promise<VerifyOTPResponse> => {
   try {
-    const response = await api.post<VerifyOTPResponse>(
-      '/auth/verify-otp',
-      data,
-    );
+    const response = await api.post<VerifyOTPResponse>('/auth/verify-otp', data);
     return response.data;
   } catch (error: unknown) {
     return handleApiError(error, 'Failed to verify OTP');

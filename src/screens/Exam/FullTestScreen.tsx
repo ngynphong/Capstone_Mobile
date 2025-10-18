@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,14 +8,14 @@ import {
   ActivityIndicator,
   TextInput,
 } from 'react-native';
-import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {ArrowLeft, CheckCircle, AlertTriangle} from 'lucide-react-native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ArrowLeft, Clock, FileText, Edit3, CheckCircle, AlertTriangle } from 'lucide-react-native';
 
-import {Exam, Question, ExamStackParamList} from '../../types/examTypes';
-import {ExamService} from '../../services/examService';
-import {useScroll} from '../../context/ScrollContext';
-import {useAppToast} from '../../utils/toast';
+import { Exam, Question, ExamStackParamList } from '../../types/examTypes';
+import { ExamService } from '../../services/examService';
+import { useScroll } from '../../context/ScrollContext';
+import { useAppToast } from '../../utils/toast';
 
 type NavigationProp = NativeStackNavigationProp<ExamStackParamList>;
 type RouteProps = RouteProp<ExamStackParamList, 'FullTest'>;
@@ -25,7 +25,7 @@ type TestSection = 'MCQ' | 'FRQ';
 const FullTestScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const {examId} = route.params;
+  const { examId } = route.params;
 
   const [exam, setExam] = useState<Exam | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -35,7 +35,7 @@ const FullTestScreen = () => {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [startTime] = useState(Date.now());
-  const {handleScroll} = useScroll();
+  const { handleScroll } = useScroll();
   const toast = useAppToast();
 
   useEffect(() => {
@@ -88,7 +88,9 @@ const FullTestScreen = () => {
     Alert.alert(
       'Hết thời gian!',
       'Bạn đã hết thời gian làm bài. Bài làm sẽ được nộp tự động.',
-      [{text: 'Xem kết quả', onPress: () => submitTest()}],
+      [
+        { text: 'Xem kết quả', onPress: () => submitTest() },
+      ]
     );
   };
 
@@ -143,13 +145,9 @@ const FullTestScreen = () => {
       'Nộp bài thi',
       `Bạn đã hoàn thành:\n\n📝 Trắc nghiệm: ${mcqAnswered}/${mcqQuestions.length}\n✍️ Tự luận: ${frqAnswered}/${frqQuestions.length}\n\nBạn có muốn nộp bài không?`,
       [
-        {text: 'Hủy', style: 'cancel'},
-        {
-          text: 'Nộp bài',
-          style: 'destructive',
-          onPress: () => confirmSubmission(),
-        },
-      ],
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Nộp bài', style: 'destructive', onPress: () => confirmSubmission() },
+      ]
     );
   };
 
@@ -178,7 +176,8 @@ const FullTestScreen = () => {
 
       // Submit attempt and navigate to results
       const attempt = await ExamService.submitExamAttempt(attemptData);
-      navigation.navigate('TestResults', {attempt});
+      navigation.navigate('TestResults', { attempt });
+
     } catch (error) {
       console.error('Error submitting test:', error);
       Alert.alert('Error', 'Failed to submit test. Please try again.');
@@ -217,12 +216,9 @@ const FullTestScreen = () => {
   if (questions.length === 0) {
     return (
       <View className="flex-1 justify-center items-center bg-gray-50 px-6">
-        <Text className="text-xl font-semibold text-gray-900 mb-4">
-          No Questions Available
-        </Text>
+        <Text className="text-xl font-semibold text-gray-900 mb-4">No Questions Available</Text>
         <Text className="text-gray-600 text-center mb-6">
-          This exam doesn't have any questions yet. Please try another exam or
-          contact support.
+          This exam doesn't have any questions yet. Please try another exam or contact support.
         </Text>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -284,28 +280,20 @@ const FullTestScreen = () => {
         {/* Section Tabs */}
         <View className="flex-row bg-gray-100 rounded-xl p-1 mb-4">
           <TouchableOpacity
-            className={`flex-1 py-3 rounded-lg ${
-              currentSection === 'MCQ' ? 'bg-teal-400' : ''
-            }`}
-          >
-            <Text
-              className={`font-semibold text-center ${
-                currentSection === 'MCQ' ? 'text-white' : 'text-gray-600'
+            className={`flex-1 py-3 rounded-lg ${currentSection === 'MCQ' ? 'bg-teal-400' : ''
               }`}
-            >
+          >
+            <Text className={`font-semibold text-center ${currentSection === 'MCQ' ? 'text-white' : 'text-gray-600'
+              }`}>
               Trắc nghiệm ({mcqQuestions.length})
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            className={`flex-1 py-3 rounded-lg ${
-              currentSection === 'FRQ' ? 'bg-purple-400' : ''
-            }`}
-          >
-            <Text
-              className={`font-semibold text-center ${
-                currentSection === 'FRQ' ? 'text-white' : 'text-gray-600'
+            className={`flex-1 py-3 rounded-lg ${currentSection === 'FRQ' ? 'bg-purple-400' : ''
               }`}
-            >
+          >
+            <Text className={`font-semibold text-center ${currentSection === 'FRQ' ? 'text-white' : 'text-gray-600'
+              }`}>
               Tự luận ({frqQuestions.length})
             </Text>
           </TouchableOpacity>
@@ -315,8 +303,7 @@ const FullTestScreen = () => {
         <View className="mb-4">
           <View className="flex-row justify-between items-center mb-2">
             <Text className="text-sm text-gray-600">
-              Câu {currentQuestionIndex + 1} / {currentQuestions.length} (
-              {currentSection})
+              Câu {currentQuestionIndex + 1} / {currentQuestions.length} ({currentSection})
             </Text>
             <Text className="text-sm text-gray-600">
               Tiến độ: {Object.keys(answers).length} / {questions.length}
@@ -325,20 +312,17 @@ const FullTestScreen = () => {
           <View className="w-full bg-gray-200 rounded-full h-2">
             <View
               className="bg-teal-400 h-2 rounded-full"
-              style={{
-                width: `${(Object.keys(answers).length / questions.length) * 100}%`,
-              }}
+              style={{ width: `${(Object.keys(answers).length / questions.length) * 100}%` }}
             />
           </View>
         </View>
       </View>
 
       {/* Question Content */}
-      <ScrollView
-        className="flex-1 px-6"
+      <ScrollView className="flex-1 px-6"
         showsVerticalScrollIndicator={false}
-        onScroll={handleScroll} // scroll behavior
-        scrollEventThrottle={16} // scroll behavior
+        onScroll={handleScroll} // scroll behavior 
+        scrollEventThrottle={16} // scroll behavior 
       >
         <View className="bg-white rounded-2xl p-6 my-6 shadow-sm border border-gray-100">
           {/* Question */}
@@ -353,29 +337,18 @@ const FullTestScreen = () => {
                 <TouchableOpacity
                   key={index}
                   onPress={() => handleMCQAnswer(currentQuestion.id, option)}
-                  className={`p-4 my-1 rounded-xl border-2 ${
-                    answers[currentQuestion.id] === option
-                      ? 'bg-teal-100 border-teal-300'
-                      : 'bg-white border-gray-200'
-                  }`}
+                  className={`p-4 my-1 rounded-xl border-2 ${answers[currentQuestion.id] === option
+                    ? 'bg-teal-100 border-teal-300'
+                    : 'bg-white border-gray-200'
+                    }`}
                 >
                   <View className="flex-row items-center">
-                    <Text
-                      className={`text-lg font-semibold mr-3 ${
-                        answers[currentQuestion.id] === option
-                          ? 'text-teal-700'
-                          : 'text-gray-700'
-                      }`}
-                    >
+                    <Text className={`text-lg font-semibold mr-3 ${answers[currentQuestion.id] === option ? 'text-teal-700' : 'text-gray-700'
+                      }`}>
                       {String.fromCharCode(65 + index)}.
                     </Text>
-                    <Text
-                      className={`text-base flex-1 ${
-                        answers[currentQuestion.id] === option
-                          ? 'text-teal-700'
-                          : 'text-gray-700'
-                      }`}
-                    >
+                    <Text className={`text-base flex-1 ${answers[currentQuestion.id] === option ? 'text-teal-700' : 'text-gray-700'
+                      }`}>
                       {option}
                     </Text>
                     {answers[currentQuestion.id] === option && (
@@ -398,10 +371,10 @@ const FullTestScreen = () => {
                 placeholder="Nhập câu trả lời của bạn..."
                 placeholderTextColor="#9CA3AF"
                 value={answers[currentQuestion.id] || ''}
-                onChangeText={text => handleFRQAnswer(currentQuestion.id, text)}
+                onChangeText={(text) => handleFRQAnswer(currentQuestion.id, text)}
                 multiline
                 textAlignVertical="top"
-                style={{maxHeight: 300}}
+                style={{ maxHeight: 300 }}
               />
               <Text className="text-sm text-gray-500 mt-2 text-right">
                 {answers[currentQuestion.id]?.length || 0} ký tự
@@ -421,23 +394,19 @@ const FullTestScreen = () => {
                 <TouchableOpacity
                   key={question.id}
                   onPress={() => navigateToQuestion(index)}
-                  className={`w-10 h-10 mx-1 rounded-lg items-center justify-center ${
-                    index === currentQuestionIndex
-                      ? 'bg-teal-400'
-                      : answers[question.id]
-                        ? 'bg-green-100 border border-green-300'
-                        : 'bg-gray-100'
-                  }`}
-                >
-                  <Text
-                    className={`font-medium ${
-                      index === currentQuestionIndex
-                        ? 'text-white'
-                        : answers[question.id]
-                          ? 'text-green-800'
-                          : 'text-gray-600'
+                  className={`w-10 h-10 mx-1 rounded-lg items-center justify-center ${index === currentQuestionIndex
+                    ? 'bg-teal-400'
+                    : answers[question.id]
+                      ? 'bg-green-100 border border-green-300'
+                      : 'bg-gray-100'
                     }`}
-                  >
+                >
+                  <Text className={`font-medium ${index === currentQuestionIndex
+                    ? 'text-white'
+                    : answers[question.id]
+                      ? 'text-green-800'
+                      : 'text-gray-600'
+                    }`}>
                     {index + 1}
                   </Text>
                 </TouchableOpacity>
@@ -449,19 +418,12 @@ const FullTestScreen = () => {
         {/* Action Buttons */}
         <View className="flex-row justify-between items-center mb-8">
           <TouchableOpacity
-            onPress={() =>
-              navigateToQuestion(Math.max(0, currentQuestionIndex - 1))
-            }
+            onPress={() => navigateToQuestion(Math.max(0, currentQuestionIndex - 1))}
             disabled={currentQuestionIndex === 0}
-            className={`px-6 py-3 rounded-xl ${
-              currentQuestionIndex === 0
-                ? 'bg-gray-100'
-                : 'bg-white border border-gray-200'
-            }`}
+            className={`px-6 py-3 rounded-xl ${currentQuestionIndex === 0 ? 'bg-gray-100' : 'bg-white border border-gray-200'
+              }`}
           >
-            <Text
-              className={`font-medium ${currentQuestionIndex === 0 ? 'text-gray-400' : 'text-gray-700'}`}
-            >
+            <Text className={`font-medium ${currentQuestionIndex === 0 ? 'text-gray-400' : 'text-gray-700'}`}>
               ← Trước
             </Text>
           </TouchableOpacity>
@@ -476,25 +438,13 @@ const FullTestScreen = () => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() =>
-              navigateToQuestion(
-                Math.min(currentQuestions.length - 1, currentQuestionIndex + 1),
-              )
-            }
+            onPress={() => navigateToQuestion(Math.min(currentQuestions.length - 1, currentQuestionIndex + 1))}
             disabled={currentQuestionIndex === currentQuestions.length - 1}
-            className={`px-6 py-3 rounded-xl ${
-              currentQuestionIndex === currentQuestions.length - 1
-                ? 'bg-gray-100'
-                : 'bg-white border border-gray-200'
-            }`}
-          >
-            <Text
-              className={`font-medium ${
-                currentQuestionIndex === currentQuestions.length - 1
-                  ? 'text-gray-400'
-                  : 'text-gray-700'
+            className={`px-6 py-3 rounded-xl ${currentQuestionIndex === currentQuestions.length - 1 ? 'bg-gray-100' : 'bg-white border border-gray-200'
               }`}
-            >
+          >
+            <Text className={`font-medium ${currentQuestionIndex === currentQuestions.length - 1 ? 'text-gray-400' : 'text-gray-700'
+              }`}>
               Tiếp →
             </Text>
           </TouchableOpacity>
@@ -502,13 +452,11 @@ const FullTestScreen = () => {
 
         {/* Warning */}
         <View className="bg-red-50 rounded-xl p-4 mb-8">
-          <Text className="text-sm font-medium text-red-800 mb-2">
-            ⚠️ Lưu ý:
-          </Text>
+          <Text className="text-sm font-medium text-red-800 mb-2">⚠️ Lưu ý:</Text>
           <Text className="text-sm text-red-700">
-            • Thời gian sẽ được tính cho toàn bộ bài thi{'\n'}• Không thể quay
-            lại phần trước khi chuyển tiếp{'\n'}• Hãy kiểm tra kỹ trước khi nộp
-            bài
+            • Thời gian sẽ được tính cho toàn bộ bài thi{'\n'}
+            • Không thể quay lại phần trước khi chuyển tiếp{'\n'}
+            • Hãy kiểm tra kỹ trước khi nộp bài
           </Text>
         </View>
       </ScrollView>

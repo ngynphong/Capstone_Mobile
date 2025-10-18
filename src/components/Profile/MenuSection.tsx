@@ -1,5 +1,5 @@
 import React from 'react';
-import {View} from 'react-native';
+import { View } from 'react-native';
 import MenuItem from './MenuItem';
 
 interface MenuItemData {
@@ -16,10 +16,10 @@ interface MenuSectionProps {
   items: MenuItemData[];
 }
 
-const MenuSection: React.FC<MenuSectionProps> = ({items}) => {
+const MenuSection: React.FC<MenuSectionProps> = ({ items }) => {
   return (
     <View className="mt-6">
-      {items.map(item => (
+      {items.map((item) => (
         <MenuItem
           key={item.id}
           title={item.title}

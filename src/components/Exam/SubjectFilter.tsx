@@ -1,6 +1,6 @@
 import React from 'react';
-import {ScrollView, TouchableOpacity, Text, View} from 'react-native';
-import {Subject, SubjectType} from '../../types/examTypes';
+import { ScrollView, TouchableOpacity, Text, View } from 'react-native';
+import { Subject, SubjectType } from '../../types/examTypes';
 
 interface SubjectFilterProps {
   subjects: Subject[];
@@ -17,10 +17,10 @@ const SubjectFilter: React.FC<SubjectFilterProps> = ({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{paddingHorizontal: 0, gap: 8}}
+      contentContainerStyle={{ paddingHorizontal: 0, gap: 8 }}
       className="mb-2"
     >
-      {subjects.map(subject => (
+      {subjects.map((subject) => (
         <TouchableOpacity
           key={subject.id}
           onPress={() => onSubjectSelect(subject.name)}
@@ -30,15 +30,15 @@ const SubjectFilter: React.FC<SubjectFilterProps> = ({
               : 'bg-white border-gray-300'
           }`}
           style={{
-            backgroundColor:
-              selectedSubject === subject.name ? subject.color : 'white',
-            borderColor:
-              selectedSubject === subject.name ? subject.color : '#D1D5DB',
+            backgroundColor: selectedSubject === subject.name ? subject.color : 'white',
+            borderColor: selectedSubject === subject.name ? subject.color : '#D1D5DB',
           }}
         >
           <Text
             className={`font-medium text-sm ${
-              selectedSubject === subject.name ? 'text-white' : 'text-gray-700'
+              selectedSubject === subject.name
+                ? 'text-white'
+                : 'text-gray-700'
             }`}
           >
             {subject.name}

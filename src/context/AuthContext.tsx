@@ -1,20 +1,19 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {loginApi, registerApi, verifyEmailApi} from '../services/authService';
-import {getUserProfile} from '../services/userService';
+import {
+  loginApi,
+  registerApi,
+  verifyEmailApi,
+  refreshTokenApi,
+} from '../services/authService';
+import { getUserProfile } from '../services/userService';
 import {
   LoginRequest,
   RegisterRequest,
   VerifyEmailRequest,
   RefreshTokenRequest,
 } from '../types/authTypes';
-import {UserProfile} from '../types/userTypes';
+import { UserProfile } from '../types/userTypes';
 
 export interface User extends UserProfile {}
 
@@ -44,7 +43,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -61,12 +60,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
   // Auto refresh token every 30 minutes
   useEffect(() => {
     if (isLoggedIn) {
-      const timer = setInterval(
-        () => {
-          refreshToken();
-        },
-        30 * 60 * 1000,
-      ); // 30 minutes
+      const timer = setInterval(() => {
+        refreshToken();
+      }, 30 * 60 * 1000); // 30 minutes
 
       setRefreshTimer(timer);
 
@@ -93,7 +89,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
   const getTokens = async () => {
     const accessToken = await AsyncStorage.getItem('accessToken');
     // const refreshToken = await AsyncStorage.getItem('refreshToken');
-    return {accessToken}; // Removed refreshToken
+    return { accessToken }; // Removed refreshToken
   };
 
   const clearTokens = async () => {
@@ -103,7 +99,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 
   const checkAuthStatus = async () => {
     try {
-      const {accessToken} = await getTokens();
+      const { accessToken } = await getTokens();
       if (accessToken) {
         setIsLoggedIn(true);
         // Fetch user profile when app starts and user is already logged in
@@ -182,8 +178,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
     setIsLoading(true);
     try {
       const response = await registerApi(userData);
-
+     
       if (response.data.id) {
+       
         return true;
       }
       return false;
@@ -195,9 +192,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
     }
   };
 
-  const verifyEmail = async (
-    verificationData: VerifyEmailRequest,
-  ): Promise<boolean> => {
+  const verifyEmail = async (verificationData: VerifyEmailRequest): Promise<boolean> => {
     setIsLoading(true);
     try {
       const response = await verifyEmailApi(verificationData);
@@ -229,22 +224,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 
   const refreshToken = async (): Promise<void> => {
     try {
-      const {accessToken} = await getTokens();
+      const { accessToken } = await getTokens();
       if (!accessToken) {
         console.log('No access token found, cannot refresh');
         return;
       }
 
       const refreshRequest: RefreshTokenRequest = {
-        token: accessToken,
+        token: accessToken
       };
 
       // Use publicAxios directly to avoid interceptor
-      const {publicAxios} = await import('../configs/axios');
-      const response = await publicAxios.post(
-        '/auth/refresh-token',
-        refreshRequest,
-      );
+      const { publicAxios } = await import('../configs/axios');
+      const response = await publicAxios.post('/auth/refresh-token', refreshRequest);
 
       if (response.data.authenticated && response.data.token) {
         // Update token in AsyncStorage (using same key as requested)
@@ -272,19 +264,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
   }
 
   return (
-    <AuthContext.Provider
-      value={{
-        isLoggedIn,
-        user,
-        isLoading,
-        login,
-        register,
-        verifyEmail,
-        logout,
-        setIsLoggedIn,
-        refreshUser,
-      }}
-    >
+    <AuthContext.Provider value={{
+      isLoggedIn,
+      user,
+      isLoading,
+      login,
+      register,
+      verifyEmail,
+      logout,
+      setIsLoggedIn,
+      refreshUser
+    }}>
       {children}
     </AuthContext.Provider>
   );

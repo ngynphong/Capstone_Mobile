@@ -1,11 +1,17 @@
-import React, {useState} from 'react';
-import {View, Text, TouchableOpacity, ScrollView, Alert} from 'react-native';
-import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {ArrowLeft, RotateCcw, CheckCircle, XCircle} from 'lucide-react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+} from 'react-native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ArrowLeft, RotateCcw, CheckCircle, XCircle, Clock } from 'lucide-react-native';
 
-import {ExamStackParamList} from '../../types/examTypes';
-import {useScroll} from '../../context/ScrollContext';
+import { PracticeSession, ExamStackParamList } from '../../types/examTypes';
+import { useScroll } from '../../context/ScrollContext';
 
 type NavigationProp = NativeStackNavigationProp<ExamStackParamList>;
 type RouteProps = RouteProp<ExamStackParamList, 'Quiz'>;
@@ -13,16 +19,14 @@ type RouteProps = RouteProp<ExamStackParamList, 'Quiz'>;
 const QuizScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const {session} = route.params;
+  const { session } = route.params;
 
   const [currentIndex, setCurrentIndex] = useState(session.currentIndex);
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
-  const [answers, setAnswers] = useState<Record<string, string>>(
-    session.answers || {},
-  );
+  const [answers, setAnswers] = useState<Record<string, string>>(session.answers || {});
   const [showResult, setShowResult] = useState(false);
   const [startTime] = useState(Date.now());
-  const {handleScroll} = useScroll();
+  const { handleScroll } = useScroll();
 
   const currentQuestion = session.questions[currentIndex];
   const progress = ((currentIndex + 1) / session.questions.length) * 100;
@@ -56,19 +60,17 @@ const QuizScreen = () => {
     } else {
       // Quiz completed
       const finalScore = calculateScore();
-      const percentage = Math.round(
-        (finalScore / session.questions.length) * 100,
-      );
+      const percentage = Math.round((finalScore / session.questions.length) * 100);
       const timeSpent = Math.floor((Date.now() - startTime) / 1000);
 
       Alert.alert(
         'Hoàn thành Quiz!',
         `Điểm số: ${finalScore}/${session.questions.length} (${percentage}%)\nThời gian: ${timeSpent}s`,
         [
-          {text: 'Xem lại', onPress: () => reviewAnswers()},
-          {text: 'Làm lại', onPress: () => resetQuiz()},
-          {text: 'Thoát', onPress: () => navigation.goBack()},
-        ],
+          { text: 'Xem lại', onPress: () => reviewAnswers() },
+          { text: 'Làm lại', onPress: () => resetQuiz() },
+          { text: 'Thoát', onPress: () => navigation.goBack() },
+        ]
       );
     }
   };
@@ -85,10 +87,7 @@ const QuizScreen = () => {
   // Check answer
   const checkAnswer = () => {
     if (!selectedAnswer) {
-      Alert.alert(
-        'Chọn đáp án',
-        'Vui lòng chọn một đáp án trước khi tiếp tục.',
-      );
+      Alert.alert('Chọn đáp án', 'Vui lòng chọn một đáp án trước khi tiếp tục.');
       return;
     }
     setShowResult(true);
@@ -105,10 +104,7 @@ const QuizScreen = () => {
   // Review answers
   const reviewAnswers = () => {
     // Navigate to results screen or show review modal
-    Alert.alert(
-      'Tính năng đang phát triển',
-      'Chức năng xem lại đáp án sẽ có trong phiên bản tiếp theo.',
-    );
+    Alert.alert('Tính năng đang phát triển', 'Chức năng xem lại đáp án sẽ có trong phiên bản tiếp theo.');
   };
 
   // Get option letter
@@ -119,9 +115,7 @@ const QuizScreen = () => {
   // Get option background color
   const getOptionBgColor = (option: string, index: number) => {
     if (!showResult) {
-      return selectedAnswer === option
-        ? 'bg-teal-100 border-teal-300'
-        : 'bg-white border-gray-200';
+      return selectedAnswer === option ? 'bg-teal-100 border-teal-300' : 'bg-white border-gray-200';
     }
 
     const correctAnswer = currentQuestion.correctAnswer;
@@ -151,12 +145,10 @@ const QuizScreen = () => {
   };
 
   if (!currentQuestion) {
-    console.log('Quiz Error - No current question:', {currentIndex, session});
+    console.log('Quiz Error - No current question:', { currentIndex, session });
     return (
       <View className="flex-1 justify-center items-center bg-gray-50 px-6">
-        <Text className="text-xl font-semibold text-gray-900 mb-4">
-          No Question Available
-        </Text>
+        <Text className="text-xl font-semibold text-gray-900 mb-4">No Question Available</Text>
         <Text className="text-gray-600 text-center mb-6">
           Current Index: {currentIndex}
         </Text>
@@ -208,7 +200,7 @@ const QuizScreen = () => {
           <View className="w-full bg-gray-200 rounded-full h-2">
             <View
               className="bg-teal-400 h-2 rounded-full"
-              style={{width: `${progress}%`}}
+              style={{ width: `${progress}%` }}
             />
           </View>
         </View>
@@ -222,11 +214,10 @@ const QuizScreen = () => {
       </View>
 
       {/* Question Card */}
-      <ScrollView
-        className="flex-1 px-6"
+      <ScrollView className="flex-1 px-6"
         showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
+        onScroll={handleScroll} 
+        scrollEventThrottle={16} 
       >
         <View className="bg-white rounded-2xl p-6 my-6 shadow-sm border border-gray-100">
           {/* Question */}
@@ -245,32 +236,24 @@ const QuizScreen = () => {
                   className={`p-4 my-1 rounded-xl border-2 ${getOptionBgColor(option, index)}`}
                 >
                   <View className="flex-row items-center">
-                    <Text
-                      className={`text-lg font-semibold mr-3 ${getOptionTextColor(option, index)}`}
-                    >
+                    <Text className={`text-lg font-semibold mr-3 ${getOptionTextColor(option, index)}`}>
                       {getOptionLetter(index)}.
                     </Text>
-                    <Text
-                      className={`text-base flex-1 ${getOptionTextColor(option, index)}`}
-                    >
+                    <Text className={`text-base flex-1 ${getOptionTextColor(option, index)}`}>
                       {option}
                     </Text>
                     {showResult && option === currentQuestion.correctAnswer && (
                       <CheckCircle size={20} color="#10B981" />
                     )}
-                    {showResult &&
-                      option === selectedAnswer &&
-                      option !== currentQuestion.correctAnswer && (
-                        <XCircle size={20} color="#EF4444" />
-                      )}
+                    {showResult && option === selectedAnswer && option !== currentQuestion.correctAnswer && (
+                      <XCircle size={20} color="#EF4444" />
+                    )}
                   </View>
                 </TouchableOpacity>
               ))
             ) : (
               <View className="p-4 bg-gray-100 rounded-xl">
-                <Text className="text-gray-600 text-center">
-                  No options available for this question
-                </Text>
+                <Text className="text-gray-600 text-center">No options available for this question</Text>
               </View>
             )}
           </View>
@@ -278,12 +261,8 @@ const QuizScreen = () => {
           {/* Explanation */}
           {showResult && currentQuestion.explanation && (
             <View className="mt-6 p-4 bg-blue-50 rounded-xl">
-              <Text className="text-sm font-medium text-blue-800 mb-2">
-                Giải thích:
-              </Text>
-              <Text className="text-sm text-blue-700">
-                {currentQuestion.explanation}
-              </Text>
+              <Text className="text-sm font-medium text-blue-800 mb-2">Giải thích:</Text>
+              <Text className="text-sm text-blue-700">{currentQuestion.explanation}</Text>
             </View>
           )}
         </View>
@@ -293,15 +272,10 @@ const QuizScreen = () => {
           <TouchableOpacity
             onPress={handlePrevious}
             disabled={currentIndex === 0}
-            className={`flex-row items-center px-6 py-3 rounded-xl ${
-              currentIndex === 0
-                ? 'bg-gray-100'
-                : 'bg-white border border-gray-200'
-            }`}
+            className={`flex-row items-center px-6 py-3 rounded-xl ${currentIndex === 0 ? 'bg-gray-100' : 'bg-white border border-gray-200'
+              }`}
           >
-            <Text
-              className={`font-medium ${currentIndex === 0 ? 'text-gray-400' : 'text-gray-700'}`}
-            >
+            <Text className={`font-medium ${currentIndex === 0 ? 'text-gray-400' : 'text-gray-700'}`}>
               ← Trước
             </Text>
           </TouchableOpacity>
@@ -319,12 +293,11 @@ const QuizScreen = () => {
               className="bg-teal-400 px-8 py-3 rounded-xl"
             >
               <Text className="text-white font-semibold">
-                {currentIndex === session.questions.length - 1
-                  ? 'Hoàn thành'
-                  : 'Tiếp →'}
+                {currentIndex === session.questions.length - 1 ? 'Hoàn thành' : 'Tiếp →'}
               </Text>
             </TouchableOpacity>
           )}
+
         </View>
 
         {/* Progress Summary */}

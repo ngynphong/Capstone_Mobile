@@ -1,73 +1,53 @@
-import React, {useState, useRef} from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  Animated,
-  Dimensions,
-} from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, FlatList, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Slide from './Slide';
-import {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../../types/types';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../types/types';
+import { LinearGradient } from 'expo-linear-gradient';
 
-const {width} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const slides = [
   {
     key: '1',
     title: 'Master AP Exams',
-    description:
-      'Practice with thousands of real AP questions, detailed explanations, and comprehensive study guides to ace your exams.',
+    description: 'Practice with thousands of real AP questions, detailed explanations, and comprehensive study guides to ace your exams.',
   },
   {
     key: '2',
     title: 'Track Your Progress',
-    description:
-      'Monitor your performance with detailed analytics, identify weak areas, and watch your scores improve over time.',
+    description: 'Monitor your performance with detailed analytics, identify weak areas, and watch your scores improve over time.',
   },
   {
     key: '3',
     title: 'Join the Community',
-    description:
-      'Connect with fellow AP students, share study tips, and get motivated by the achievements of others.',
+    description: 'Connect with fellow AP students, share study tips, and get motivated by the achievements of others.',
   },
   {
     key: '4',
     title: 'Achieve Excellence',
-    description:
-      'Unlock your full potential with personalized learning paths and expert-curated content for every AP subject.',
+    description: 'Unlock your full potential with personalized learning paths and expert-curated content for every AP subject.',
   },
 ];
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
-const OnboardingScreen: React.FC<Props> = ({navigation}) => {
+const OnboardingScreen: React.FC<Props> = ({ navigation }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<FlatList>(null);
 
-  const renderItem = ({
-    item,
-  }: {
-    item: {key: string; title: string; description: string};
-  }) => {
+  const renderItem = ({ item }: { item: { key: string; title: string; description: string } }) => {
     const index = parseInt(item.key) - 1;
-    return (
-      <Slide title={item.title} description={item.description} index={index} />
-    );
+    return <Slide title={item.title} description={item.description} index={index} />;
   };
 
   const renderPagination = () => {
     return (
       <View className="flex-row justify-center items-center mb-8">
         {slides.map((_, index) => {
-          const inputRange = [
-            (index - 1) * width,
-            index * width,
-            (index + 1) * width,
-          ];
+          const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
           const dotWidth = scrollX.interpolate({
             inputRange,
             outputRange: [8, 20, 8],
@@ -95,7 +75,7 @@ const OnboardingScreen: React.FC<Props> = ({navigation}) => {
     );
   };
 
-  const onViewableItemsChanged = useRef(({viewableItems}: any) => {
+  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems.length > 0) {
       setCurrentIndex(viewableItems[0].index);
     }
@@ -139,10 +119,10 @@ const OnboardingScreen: React.FC<Props> = ({navigation}) => {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        keyExtractor={item => item.key}
+        keyExtractor={(item) => item.key}
         onScroll={Animated.event(
-          [{nativeEvent: {contentOffset: {x: scrollX}}}],
-          {useNativeDriver: false},
+          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+          { useNativeDriver: false }
         )}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
@@ -157,11 +137,10 @@ const OnboardingScreen: React.FC<Props> = ({navigation}) => {
       {/* Bottom Controls */}
       <View className="absolute bottom-12 left-0 right-0 px-6">
         {currentIndex === slides.length - 1 ? (
-          <TouchableOpacity
-            onPress={onGetStarted}
-            className="flex px-4 py-6 rounded-2xl bg-backgroundColor items-center justify-center shadow-lg"
-          >
+          <TouchableOpacity onPress={onGetStarted} className='flex px-4 py-6 rounded-2xl bg-backgroundColor items-center justify-center shadow-lg'>
+
             <Text className="text-white font-bold text-lg">Get Started</Text>
+
           </TouchableOpacity>
         ) : (
           <View className="flex-row justify-between items-center">
@@ -169,11 +148,10 @@ const OnboardingScreen: React.FC<Props> = ({navigation}) => {
               <Text className="text-white/80 text-base font-medium">Skip</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={onNext}
-              className="flex items-center justify-center py-3 px-6 rounded-xl shadow-lg bg-backgroundColor"
-            >
-              <Text className="text-white font-semibold text-base">Next</Text>
+              <TouchableOpacity onPress={onNext} className='flex items-center justify-center py-3 px-6 rounded-xl shadow-lg bg-backgroundColor'>
+             
+                <Text className="text-white font-semibold text-base">Next</Text>
+              
             </TouchableOpacity>
           </View>
         )}

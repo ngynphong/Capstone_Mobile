@@ -1,23 +1,17 @@
-import {
-  Exam,
-  Question,
-  ExamAttempt,
-  Subject,
-  ExamFilters,
-  ExamSortOption,
-} from '../types/examTypes';
+import axios from '../configs/axios';
+import { Exam, Question, ExamAttempt, Subject, SubjectType, ExamFilters, ExamSortOption } from '../types/examTypes';
 
 // Mock data for development - replace with actual API calls
 const SUBJECTS: Subject[] = [
-  {id: '1', name: 'All', color: '#3CBCB2'},
-  {id: '2', name: 'Math', color: '#FF6B6B'},
-  {id: '3', name: 'History', color: '#4ECDC4'},
-  {id: '4', name: 'Art', color: '#45B7D1'},
-  {id: '5', name: 'Biology', color: '#96CEB4'},
-  {id: '6', name: 'Chemistry', color: '#FFEAA7'},
-  {id: '7', name: 'Physics', color: '#DDA0DD'},
-  {id: '8', name: 'English', color: '#98D8C8'},
-  {id: '9', name: 'Music', color: '#F7DC6F'},
+  { id: '1', name: 'All', color: '#3CBCB2' },
+  { id: '2', name: 'Math', color: '#FF6B6B' },
+  { id: '3', name: 'History', color: '#4ECDC4' },
+  { id: '4', name: 'Art', color: '#45B7D1' },
+  { id: '5', name: 'Biology', color: '#96CEB4' },
+  { id: '6', name: 'Chemistry', color: '#FFEAA7' },
+  { id: '7', name: 'Physics', color: '#DDA0DD' },
+  { id: '8', name: 'English', color: '#98D8C8' },
+  { id: '9', name: 'Music', color: '#F7DC6F' },
 ];
 
 const MOCK_EXAMS: Exam[] = [
@@ -120,8 +114,7 @@ const MOCK_EXAMS: Exam[] = [
 ];
 
 const MOCK_QUESTIONS: Record<string, Question[]> = {
-  '1': [
-    // English Language Test questions
+  '1': [ // English Language Test questions
     {
       id: 'q1',
       type: 'MCQ',
@@ -158,19 +151,16 @@ const MOCK_QUESTIONS: Record<string, Question[]> = {
       id: 'q5',
       type: 'FRQ',
       question: 'Explain the main theme of "To Kill a Mockingbird."',
-      explanation:
-        'The novel explores themes of racial injustice, moral growth, and empathy.',
+      explanation: 'The novel explores themes of racial injustice, moral growth, and empathy.',
     },
     {
       id: 'q6',
       type: 'FRQ',
       question: 'Describe the process of photosynthesis.',
-      explanation:
-        'Photosynthesis is the process by which plants convert light energy into chemical energy.',
+      explanation: 'Photosynthesis is the process by which plants convert light energy into chemical energy.',
     },
   ],
-  '2': [
-    // Advanced Mathematics questions
+  '2': [ // Advanced Mathematics questions
     {
       id: 'm1',
       type: 'MCQ',
@@ -199,8 +189,7 @@ const MOCK_QUESTIONS: Record<string, Question[]> = {
       id: 'm4',
       type: 'FRQ',
       question: 'Explain the Pythagorean theorem and provide an example.',
-      explanation:
-        'Pythagorean theorem states that in a right triangle, a² + b² = c² where c is the hypotenuse.',
+      explanation: 'Pythagorean theorem states that in a right triangle, a² + b² = c² where c is the hypotenuse.',
     },
     {
       id: 'm5',
@@ -209,32 +198,20 @@ const MOCK_QUESTIONS: Record<string, Question[]> = {
       explanation: 'The area of a circle is πr² where r is the radius.',
     },
   ],
-  '3': [
-    // History of Arts questions
+  '3': [ // History of Arts questions
     {
       id: 'a1',
       type: 'MCQ',
       question: 'Who painted the Mona Lisa?',
-      options: [
-        'Vincent van Gogh',
-        'Pablo Picasso',
-        'Leonardo da Vinci',
-        'Michelangelo',
-      ],
+      options: ['Vincent van Gogh', 'Pablo Picasso', 'Leonardo da Vinci', 'Michelangelo'],
       correctAnswer: 'Leonardo da Vinci',
-      explanation:
-        'Leonardo da Vinci painted the Mona Lisa between 1503 and 1519.',
+      explanation: 'Leonardo da Vinci painted the Mona Lisa between 1503 and 1519.',
     },
     {
       id: 'a2',
       type: 'MCQ',
       question: 'In which period was the Renaissance?',
-      options: [
-        '14th-15th century',
-        '15th-16th century',
-        '16th-17th century',
-        '17th-18th century',
-      ],
+      options: ['14th-15th century', '15th-16th century', '16th-17th century', '17th-18th century'],
       correctAnswer: '15th-16th century',
       explanation: 'The Renaissance period was from the 15th to 16th century.',
     },
@@ -242,19 +219,16 @@ const MOCK_QUESTIONS: Record<string, Question[]> = {
       id: 'a3',
       type: 'FRQ',
       question: 'Describe the main characteristics of Baroque art.',
-      explanation:
-        'Baroque art is characterized by dramatic lighting, intense emotions, and grandeur.',
+      explanation: 'Baroque art is characterized by dramatic lighting, intense emotions, and grandeur.',
     },
     {
       id: 'a4',
       type: 'FRQ',
       question: 'Explain the significance of the Sistine Chapel ceiling.',
-      explanation:
-        'The Sistine Chapel ceiling painted by Michelangelo depicts scenes from Genesis and is a masterpiece of Renaissance art.',
+      explanation: 'The Sistine Chapel ceiling painted by Michelangelo depicts scenes from Genesis and is a masterpiece of Renaissance art.',
     },
   ],
-  '4': [
-    // Physics Olympiad Prep questions
+  '4': [ // Physics Olympiad Prep questions
     {
       id: 'p1',
       type: 'MCQ',
@@ -274,28 +248,24 @@ const MOCK_QUESTIONS: Record<string, Question[]> = {
     {
       id: 'p3',
       type: 'FRQ',
-      question: "Explain Newton's first law of motion.",
-      explanation:
-        'An object at rest stays at rest and an object in motion stays in motion unless acted upon by an external force.',
+      question: 'Explain Newton\'s first law of motion.',
+      explanation: 'An object at rest stays at rest and an object in motion stays in motion unless acted upon by an external force.',
     },
     {
       id: 'p4',
       type: 'FRQ',
       question: 'Describe the relationship between velocity and acceleration.',
-      explanation:
-        'Acceleration is the rate of change of velocity with respect to time.',
+      explanation: 'Acceleration is the rate of change of velocity with respect to time.',
     },
   ],
-  '5': [
-    // Biology Basics questions
+  '5': [ // Biology Basics questions
     {
       id: 'b1',
       type: 'MCQ',
       question: 'What is the powerhouse of the cell?',
       options: ['Nucleus', 'Mitochondria', 'Ribosome', 'Endoplasmic reticulum'],
       correctAnswer: 'Mitochondria',
-      explanation:
-        'Mitochondria are known as the powerhouse of the cell because they produce energy.',
+      explanation: 'Mitochondria are known as the powerhouse of the cell because they produce energy.',
     },
     {
       id: 'b2',
@@ -309,8 +279,7 @@ const MOCK_QUESTIONS: Record<string, Question[]> = {
       id: 'b3',
       type: 'FRQ',
       question: 'Explain the process of mitosis.',
-      explanation:
-        'Mitosis is cell division that results in two identical daughter cells.',
+      explanation: 'Mitosis is cell division that results in two identical daughter cells.',
     },
     {
       id: 'b4',
@@ -319,15 +288,14 @@ const MOCK_QUESTIONS: Record<string, Question[]> = {
       explanation: 'DNA is a double helix structure composed of nucleotides.',
     },
   ],
-  '6': [
-    // Chemistry Exam questions
+  '6': [ // Chemistry Exam questions
     {
       id: 'c1',
       type: 'MCQ',
       question: 'What is the chemical symbol for gold?',
       options: ['Go', 'Gd', 'Au', 'Ag'],
       correctAnswer: 'Au',
-      explanation: "Gold's chemical symbol is Au from the Latin word aurum.",
+      explanation: 'Gold\'s chemical symbol is Au from the Latin word aurum.',
     },
     {
       id: 'c2',
@@ -335,8 +303,7 @@ const MOCK_QUESTIONS: Record<string, Question[]> = {
       question: 'What type of bond is formed when electrons are shared?',
       options: ['Ionic', 'Covalent', 'Metallic', 'Hydrogen'],
       correctAnswer: 'Covalent',
-      explanation:
-        'Covalent bonds are formed when electrons are shared between atoms.',
+      explanation: 'Covalent bonds are formed when electrons are shared between atoms.',
     },
     {
       id: 'c3',
@@ -348,12 +315,10 @@ const MOCK_QUESTIONS: Record<string, Question[]> = {
       id: 'c4',
       type: 'FRQ',
       question: 'Describe the periodic table organization.',
-      explanation:
-        'The periodic table is organized by atomic number and groups elements with similar properties.',
+      explanation: 'The periodic table is organized by atomic number and groups elements with similar properties.',
     },
   ],
-  '7': [
-    // Music Theory questions
+  '7': [ // Music Theory questions
     {
       id: 'mu1',
       type: 'MCQ',
@@ -374,19 +339,16 @@ const MOCK_QUESTIONS: Record<string, Question[]> = {
       id: 'mu3',
       type: 'FRQ',
       question: 'Explain the concept of rhythm in music.',
-      explanation:
-        'Rhythm is the pattern of sounds and silences in music over time.',
+      explanation: 'Rhythm is the pattern of sounds and silences in music over time.',
     },
     {
       id: 'mu4',
       type: 'FRQ',
       question: 'Describe the difference between major and minor scales.',
-      explanation:
-        'Major scales sound happy and bright, while minor scales sound sad and dark.',
+      explanation: 'Major scales sound happy and bright, while minor scales sound sad and dark.',
     },
   ],
-  '8': [
-    // General Knowledge questions
+  '8': [ // General Knowledge questions
     {
       id: 'g1',
       type: 'MCQ',
@@ -415,15 +377,13 @@ const MOCK_QUESTIONS: Record<string, Question[]> = {
       id: 'g4',
       type: 'FRQ',
       question: 'Explain the importance of recycling.',
-      explanation:
-        'Recycling helps conserve resources, reduce pollution, and protect the environment.',
+      explanation: 'Recycling helps conserve resources, reduce pollution, and protect the environment.',
     },
     {
       id: 'g5',
       type: 'FRQ',
       question: 'Describe the benefits of regular exercise.',
-      explanation:
-        'Regular exercise improves physical health, mental well-being, and overall quality of life.',
+      explanation: 'Regular exercise improves physical health, mental well-being, and overall quality of life.',
     },
   ],
 };
@@ -441,10 +401,7 @@ export class ExamService {
   }
 
   // Get all exams with optional filtering
-  static async getExams(
-    filters?: ExamFilters,
-    sort?: ExamSortOption,
-  ): Promise<Exam[]> {
+  static async getExams(filters?: ExamFilters, sort?: ExamSortOption): Promise<Exam[]> {
     try {
       // In real implementation: return await axios.get('/exams', { params: { filters, sort } });
 
@@ -453,43 +410,32 @@ export class ExamService {
       // Apply filters
       if (filters) {
         if (filters.subject && filters.subject !== 'All') {
-          filteredExams = filteredExams.filter(
-            exam => exam.subject.name === filters.subject,
-          );
+          filteredExams = filteredExams.filter(exam => exam.subject.name === filters.subject);
         }
 
         if (filters.level) {
-          filteredExams = filteredExams.filter(
-            exam => exam.level === filters.level,
-          );
+          filteredExams = filteredExams.filter(exam => exam.level === filters.level);
         }
 
         if (filters.difficulty) {
-          filteredExams = filteredExams.filter(
-            exam => exam.difficulty === filters.difficulty,
-          );
+          filteredExams = filteredExams.filter(exam => exam.difficulty === filters.difficulty);
         }
 
         if (filters.duration) {
           if (filters.duration.min) {
-            filteredExams = filteredExams.filter(
-              exam => exam.duration >= filters.duration!.min!,
-            );
+            filteredExams = filteredExams.filter(exam => exam.duration >= filters.duration!.min!);
           }
           if (filters.duration.max) {
-            filteredExams = filteredExams.filter(
-              exam => exam.duration <= filters.duration!.max!,
-            );
+            filteredExams = filteredExams.filter(exam => exam.duration <= filters.duration!.max!);
           }
         }
 
         if (filters.searchQuery) {
           const query = filters.searchQuery.toLowerCase();
-          filteredExams = filteredExams.filter(
-            exam =>
-              exam.title.toLowerCase().includes(query) ||
-              exam.description?.toLowerCase().includes(query) ||
-              exam.subject.name.toLowerCase().includes(query),
+          filteredExams = filteredExams.filter(exam =>
+            exam.title.toLowerCase().includes(query) ||
+            exam.description?.toLowerCase().includes(query) ||
+            exam.subject.name.toLowerCase().includes(query)
           );
         }
       }
@@ -517,7 +463,7 @@ export class ExamService {
               bValue = b.attempts || 0;
               break;
             case 'difficulty':
-              const difficultyOrder = {Easy: 1, Medium: 2, Hard: 3};
+              const difficultyOrder = { 'Easy': 1, 'Medium': 2, 'Hard': 3 };
               aValue = difficultyOrder[a.difficulty];
               bValue = difficultyOrder[b.difficulty];
               break;
@@ -563,9 +509,7 @@ export class ExamService {
   }
 
   // Submit exam attempt
-  static async submitExamAttempt(
-    attempt: Omit<ExamAttempt, 'id'>,
-  ): Promise<ExamAttempt> {
+  static async submitExamAttempt(attempt: Omit<ExamAttempt, 'id'>): Promise<ExamAttempt> {
     try {
       // In real implementation: return await axios.post('/exam-attempts', attempt);
       const newAttempt: ExamAttempt = {
@@ -608,7 +552,7 @@ export class ExamService {
   // Search exams
   static async searchExams(query: string): Promise<Exam[]> {
     try {
-      return this.getExams({searchQuery: query});
+      return this.getExams({ searchQuery: query });
     } catch (error) {
       console.error('Error searching exams:', error);
       throw error;
@@ -633,7 +577,7 @@ export class ExamService {
           correctAnswers: 34,
           timeSpent: 45,
           completed: true,
-          answers: [],
+          answers: []
         },
         {
           id: '2',
@@ -646,7 +590,7 @@ export class ExamService {
           correctAnswers: 29,
           timeSpent: 75,
           completed: true,
-          answers: [],
+          answers: []
         },
         {
           id: '3',
@@ -659,7 +603,7 @@ export class ExamService {
           correctAnswers: 54,
           timeSpent: 35,
           completed: true,
-          answers: [],
+          answers: []
         },
         {
           id: '4',
@@ -672,7 +616,7 @@ export class ExamService {
           correctAnswers: 55,
           timeSpent: 40,
           completed: true,
-          answers: [],
+          answers: []
         },
         {
           id: '5',
@@ -685,8 +629,8 @@ export class ExamService {
           correctAnswers: 65,
           timeSpent: 50,
           completed: true,
-          answers: [],
-        },
+          answers: []
+        }
       ];
 
       return mockAttempts;
@@ -697,9 +641,7 @@ export class ExamService {
   }
 
   // Get exam attempt by ID with full details
-  static async getExamAttemptById(
-    attemptId: string,
-  ): Promise<ExamAttempt | null> {
+  static async getExamAttemptById(attemptId: string): Promise<ExamAttempt | null> {
     try {
       // In real implementation: return await axios.get(`/exam-attempts/${attemptId}`);
 
