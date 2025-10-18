@@ -22,7 +22,7 @@ const handleApiError = (error: unknown, defaultMessage: string): never => {
   //   message: error instanceof Error ? error.message : 'Unknown error',
   // });
 
-  if (isAxiosError(error) && error.response) { 
+  if (isAxiosError(error) && error.response) {
     const responseData = error.response.data;
     if (responseData && responseData.message) {
       throw new Error(responseData.message);
@@ -36,28 +36,28 @@ const handleApiError = (error: unknown, defaultMessage: string): never => {
 
 export const loginApi = async (credentials: LoginRequest): Promise<AuthResponse> => {
   try {
-    const response = await api.post<AuthResponse>('/auth/token', credentials); 
+    const response = await api.post<AuthResponse>('/auth/token', credentials);
     return response.data;
   } catch (error: unknown) {
-    return handleApiError(error, 'Login failed'); 
+    return handleApiError(error, 'Login failed');
   }
 };
 
 export const registerApi = async (userData: RegisterRequest): Promise<RegisterResponse> => {
   try {
-    const response = await api.post<RegisterResponse>('/users', userData); 
+    const response = await api.post<RegisterResponse>('/users', userData);
     return response.data;
   } catch (error: unknown) {
-    return handleApiError(error, 'Registration failed'); 
+    return handleApiError(error, 'Registration failed');
   }
 };
 
 export const verifyEmailApi = async (verificationData: VerifyEmailRequest): Promise<VerifyEmailResponse> => {
   try {
-    const response = await api.post<VerifyEmailResponse>('/auth/verify-email', verificationData); 
+    const response = await api.post<VerifyEmailResponse>('/auth/verify-email', verificationData);
     return response.data;
   } catch (error: unknown) {
-    return handleApiError(error, 'Email verification failed'); 
+    return handleApiError(error, 'Email verification failed');
   }
 };
 

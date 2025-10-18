@@ -15,7 +15,7 @@ import {
 } from '../types/authTypes';
 import { UserProfile } from '../types/userTypes';
 
-export interface User extends UserProfile {}
+export interface User extends UserProfile { }
 
 interface AuthContextType {
   isLoggedIn: boolean;
@@ -178,9 +178,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     try {
       const response = await registerApi(userData);
-     
+
       if (response.data.id) {
-       
+
         return true;
       }
       return false;
