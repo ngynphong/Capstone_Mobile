@@ -1,5 +1,14 @@
 // Core exam types based on the web interface
-export type SubjectType = 'All' | 'Math' | 'History' | 'Art' | 'Biology' | 'Chemistry' | 'Physics' | 'English' | 'Music';
+export type SubjectType =
+  | 'All'
+  | 'Math'
+  | 'History'
+  | 'Art'
+  | 'Biology'
+  | 'Chemistry'
+  | 'Physics'
+  | 'English'
+  | 'Music';
 
 export interface Subject {
   id: string;
@@ -92,13 +101,13 @@ export interface ExamStats {
 // Navigation types
 export type ExamStackParamList = {
   ExamLibrary: undefined;
-  ExamDetail: { examId: string };
-  PracticeMode: { examId: string };
-  FlashCard: { session: PracticeSession };
-  Quiz: { session: PracticeSession };
-  FRQ: { session: PracticeSession };
-  FullTest: { examId: string };
-  TestResults: { attempt: ExamAttempt };
+  ExamDetail: {examId: string};
+  PracticeMode: {examId: string};
+  FlashCard: {session: PracticeSession};
+  Quiz: {session: PracticeSession};
+  FRQ: {session: PracticeSession};
+  FullTest: {examId: string};
+  TestResults: {attempt: ExamAttempt};
 };
 
 // Filter and search types

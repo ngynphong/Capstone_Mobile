@@ -1,27 +1,31 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
   FlatList,
   RefreshControl,
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
-import { Search, Filter, BookOpen } from 'lucide-react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import {Search, Filter, BookOpen} from 'lucide-react-native';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 
-import { Exam, Subject, SubjectType, ExamFilters, ExamSortOption, ExamStackParamList } from '../../types/examTypes';
-import { ExamService } from '../../services/examService';
+import {
+  Exam,
+  Subject,
+  SubjectType,
+  ExamFilters,
+  ExamSortOption,
+  ExamStackParamList,
+} from '../../types/examTypes';
+import {ExamService} from '../../services/examService';
 import ExamCard from '../../components/Exam/ExamCard';
 import SubjectFilter from '../../components/Exam/SubjectFilter';
 
 type NavigationProp = NativeStackNavigationProp<ExamStackParamList>;
-
-const { width } = Dimensions.get('window');
 
 const ExamLibraryScreen = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -33,7 +37,10 @@ const ExamLibraryScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubject, setSelectedSubject] = useState<SubjectType>('All');
-  const [sortOption, setSortOption] = useState<ExamSortOption>({ field: 'title', direction: 'asc' });
+  const [sortOption, setSortOption] = useState<ExamSortOption>({
+    field: 'title',
+    direction: 'asc',
+  });
   const [showFilters, setShowFilters] = useState(false);
 
   // Load initial data
@@ -105,12 +112,11 @@ const ExamLibraryScreen = () => {
 
   // Handle exam card press
   const handleExamPress = (exam: Exam) => {
-    navigation.navigate('ExamDetail', { examId: exam.id });
+    navigation.navigate('ExamDetail', {examId: exam.id});
   };
 
-
   // Render exam card
-  const renderExamCard = ({ item }: { item: Exam }) => (
+  const renderExamCard = ({item}: {item: Exam}) => (
     <ExamCard exam={item} onPress={() => handleExamPress(item)} />
   );
 
@@ -141,13 +147,12 @@ const ExamLibraryScreen = () => {
 
   return (
     <View className="flex-1 bg-gray-50">
-      
       {/* Header */}
       <View className="bg-white pt-12 pb-4 px-6 shadow-sm">
         <View className="flex-row justify-between items-center mb-4">
           <View>
             <Text className="text-2xl font-bold text-gray-900">Exam Test</Text>
-          </View>        
+          </View>
         </View>
 
         {/* Search Bar */}
@@ -164,7 +169,7 @@ const ExamLibraryScreen = () => {
             onPress={() => setShowFilters(!showFilters)}
             className="ml-2 p-2"
           >
-            <Filter size={20} color={showFilters ? "#3CBCB2" : "#6B7280"} />
+            <Filter size={20} color={showFilters ? '#3CBCB2' : '#6B7280'} />
           </TouchableOpacity>
         </View>
 
@@ -180,7 +185,7 @@ const ExamLibraryScreen = () => {
       <FlatList
         data={exams}
         renderItem={renderExamCard}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         numColumns={1}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -191,16 +196,18 @@ const ExamLibraryScreen = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            colors={["#3CBCB2"]}
+            colors={['#3CBCB2']}
             tintColor="#3CBCB2"
           />
         }
         ListEmptyComponent={renderEmptyState}
-        ListFooterComponent={loading ? (
-          <View className="py-8">
-            <ActivityIndicator size="small" color="#3CBCB2" />
-          </View>
-        ) : null}
+        ListFooterComponent={
+          loading ? (
+            <View className="py-8">
+              <ActivityIndicator size="small" color="#3CBCB2" />
+            </View>
+          ) : null
+        }
       />
     </View>
   );

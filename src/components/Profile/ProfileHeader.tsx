@@ -1,14 +1,16 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
-import { User } from '../../context/AuthContext';
+import {View, Text, TouchableOpacity, Image} from 'react-native';
+import {User} from '../../context/AuthContext';
 
 interface ProfileHeaderProps {
   user: User;
   onChangeAvatar?: () => void;
 }
 
-const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, onChangeAvatar }) => {
-
+const ProfileHeader: React.FC<ProfileHeaderProps> = ({
+  user,
+  onChangeAvatar,
+}) => {
   const getUserDisplayName = () => {
     if (user?.firstName || user?.lastName) {
       const name = `${user.firstName || ''} ${user.lastName || ''}`.trim();
@@ -38,11 +40,13 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, onChangeAvatar }) =
           <View className="w-32 h-32 bg-white/20 rounded-full items-center justify-center border-4 border-white/30">
             {user?.avatar || user?.imgUrl ? (
               <Image
-                source={{ uri: user.avatar || user.imgUrl }}
+                source={{uri: user.avatar || user.imgUrl}}
                 className="w-28 h-28 rounded-full"
               />
             ) : (
-              <Text className="text-white text-4xl font-bold">{getUserInitials()}</Text>
+              <Text className="text-white text-4xl font-bold">
+                {getUserInitials()}
+              </Text>
             )}
           </View>
 

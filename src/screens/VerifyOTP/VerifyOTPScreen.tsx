@@ -1,24 +1,23 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types/types';
-import { verifyOTPApi } from '../../services/authService';
-import { useAppToast } from '../../utils/toast';
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {RootStackParamList} from '../../types/types';
+import {verifyOTPApi} from '../../services/authService';
+import {useAppToast} from '../../utils/toast';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VerifyOTP'>;
 
-const VerifyOTPScreen: React.FC<Props> = ({ navigation, route }) => {
-  const { email } = route.params;
+const VerifyOTPScreen: React.FC<Props> = ({navigation, route}) => {
+  const {email} = route.params;
 
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -83,11 +82,15 @@ const VerifyOTPScreen: React.FC<Props> = ({ navigation, route }) => {
       const response = await verifyOTPApi({
         email: email,
         otp: otp.trim(),
-        newPassword: newPassword
+        newPassword: newPassword,
       });
 
       // Kiểm tra cả response code và message để xác định thành công
-      if (response.code === '1000' || response.message?.toLowerCase().includes('success') || response.message?.toLowerCase().includes('reset')) {
+      if (
+        response.code === '1000' ||
+        response.message?.toLowerCase().includes('success') ||
+        response.message?.toLowerCase().includes('reset')
+      ) {
         // Hiển thị toast thành công và chuyển về màn hình Login
         toast.success('Your password has been reset successfully!');
         setTimeout(() => {
@@ -97,7 +100,9 @@ const VerifyOTPScreen: React.FC<Props> = ({ navigation, route }) => {
         toast.error(response.message || 'Failed to reset password');
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to reset password');
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to reset password',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -157,10 +162,18 @@ const VerifyOTPScreen: React.FC<Props> = ({ navigation, route }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1 bg-white"
     >
-      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }}>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          padding: 20,
+        }}
+      >
         {/* Header */}
         <View className="items-center mb-8">
-          <Text className="text-3xl font-bold text-backgroundColor mb-2">Verify OTP</Text>
+          <Text className="text-3xl font-bold text-backgroundColor mb-2">
+            Verify OTP
+          </Text>
           <Text className="text-gray-500 text-center">
             Enter the OTP sent to your email and set your new password
           </Text>
@@ -173,7 +186,9 @@ const VerifyOTPScreen: React.FC<Props> = ({ navigation, route }) => {
         <View className="bg-white rounded-lg shadow-lg p-6 mb-6 border border-gray-100">
           {/* OTP Input */}
           <View className="mb-4">
-            <Text className="text-sm font-medium text-gray-700 mb-2">OTP Code</Text>
+            <Text className="text-sm font-medium text-gray-700 mb-2">
+              OTP Code
+            </Text>
             <TextInput
               className={`w-full h-12 border rounded-lg px-4 bg-white text-center text-lg ${otpError ? 'border-red-500' : 'border-gray-300'}`}
               placeholder="Enter OTP code"
@@ -185,12 +200,16 @@ const VerifyOTPScreen: React.FC<Props> = ({ navigation, route }) => {
               autoCorrect={false}
               editable={!isLoading}
             />
-            {otpError && <Text className="text-red-500 text-sm mt-1">{otpError}</Text>}
+            {otpError && (
+              <Text className="text-red-500 text-sm mt-1">{otpError}</Text>
+            )}
           </View>
 
           {/* New Password Input */}
           <View className="mb-4">
-            <Text className="text-sm font-medium text-gray-700 mb-2">New Password</Text>
+            <Text className="text-sm font-medium text-gray-700 mb-2">
+              New Password
+            </Text>
             <View className="relative">
               <TextInput
                 className={`w-full h-12 border rounded-lg px-4 pr-12 bg-white ${passwordError ? 'border-red-500' : 'border-gray-300'}`}
@@ -212,12 +231,16 @@ const VerifyOTPScreen: React.FC<Props> = ({ navigation, route }) => {
                 </Text>
               </TouchableOpacity>
             </View>
-            {passwordError && <Text className="text-red-500 text-sm mt-1">{passwordError}</Text>}
+            {passwordError && (
+              <Text className="text-red-500 text-sm mt-1">{passwordError}</Text>
+            )}
           </View>
 
           {/* Confirm Password Input */}
           <View className="mb-6">
-            <Text className="text-sm font-medium text-gray-700 mb-2">Confirm New Password</Text>
+            <Text className="text-sm font-medium text-gray-700 mb-2">
+              Confirm New Password
+            </Text>
             <View className="relative">
               <TextInput
                 className={`w-full h-12 border rounded-lg px-4 pr-12 bg-white ${confirmPasswordError ? 'border-red-500' : 'border-gray-300'}`}
@@ -239,7 +262,11 @@ const VerifyOTPScreen: React.FC<Props> = ({ navigation, route }) => {
                 </Text>
               </TouchableOpacity>
             </View>
-            {confirmPasswordError && <Text className="text-red-500 text-sm mt-1">{confirmPasswordError}</Text>}
+            {confirmPasswordError && (
+              <Text className="text-red-500 text-sm mt-1">
+                {confirmPasswordError}
+              </Text>
+            )}
           </View>
 
           {/* Verify Button */}
@@ -251,7 +278,9 @@ const VerifyOTPScreen: React.FC<Props> = ({ navigation, route }) => {
             {isLoading ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Text className="text-white font-semibold text-base">Reset Password</Text>
+              <Text className="text-white font-semibold text-base">
+                Reset Password
+              </Text>
             )}
           </TouchableOpacity>
 

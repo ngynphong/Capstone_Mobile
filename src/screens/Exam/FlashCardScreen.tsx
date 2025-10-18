@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
+import {View, Text, TouchableOpacity, Alert} from 'react-native';
+import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, Eye } from 'lucide-react-native';
+  ArrowLeft,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+} from 'lucide-react-native';
 
-import { PracticeSession, ExamStackParamList } from '../../types/examTypes';
+import {ExamStackParamList} from '../../types/examTypes';
 
 type NavigationProp = NativeStackNavigationProp<ExamStackParamList>;
 type RouteProps = RouteProp<ExamStackParamList, 'FlashCard'>;
@@ -17,7 +18,7 @@ type RouteProps = RouteProp<ExamStackParamList, 'FlashCard'>;
 const FlashCardScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { session } = route.params;
+  const {session} = route.params;
 
   const [currentIndex, setCurrentIndex] = useState(session.currentIndex);
   const [showAnswer, setShowAnswer] = useState(false);
@@ -43,9 +44,9 @@ const FlashCardScreen = () => {
         'Hoàn thành!',
         `Bạn đã học xong tất cả ${session.questions.length} câu hỏi!`,
         [
-          { text: 'Làm lại', onPress: () => resetSession() },
-          { text: 'Thoát', onPress: () => navigation.goBack() },
-        ]
+          {text: 'Làm lại', onPress: () => resetSession()},
+          {text: 'Thoát', onPress: () => navigation.goBack()},
+        ],
       );
     }
   };
@@ -116,7 +117,7 @@ const FlashCardScreen = () => {
           <View className="w-full bg-gray-200 rounded-full h-2">
             <View
               className="bg-teal-400 h-2 rounded-full"
-              style={{ width: `${progress}%` }}
+              style={{width: `${progress}%`}}
             />
           </View>
         </View>
@@ -130,13 +131,18 @@ const FlashCardScreen = () => {
             /* Front of card */
             <View className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 w-full">
               <View className="items-center justify-center min-h-[200px]">
-                <TouchableOpacity onPress={flipCard} className="items-center w-full">
+                <TouchableOpacity
+                  onPress={flipCard}
+                  className="items-center w-full"
+                >
                   <Text className="text-2xl font-bold text-gray-900 mb-4 text-center">
                     {currentQuestion.question}
                   </Text>
                   <View className="flex-row items-center justify-center">
                     <Eye size={20} color="#3CBCB2" />
-                    <Text className="text-teal-600 ml-2">Nhấn để lật và xem đáp án</Text>
+                    <Text className="text-teal-600 ml-2">
+                      Nhấn để lật và xem đáp án
+                    </Text>
                   </View>
                 </TouchableOpacity>
               </View>
@@ -160,7 +166,9 @@ const FlashCardScreen = () => {
                   onPress={flipCard}
                   className="mt-4 bg-white px-4 py-2 rounded-lg border border-gray-200"
                 >
-                  <Text className="text-gray-700 font-medium">Lật lại câu hỏi</Text>
+                  <Text className="text-gray-700 font-medium">
+                    Lật lại câu hỏi
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -173,11 +181,18 @@ const FlashCardScreen = () => {
             onPress={handlePrevious}
             disabled={currentIndex === 0}
             className={`flex-row items-center px-6 py-3 rounded-xl ${
-              currentIndex === 0 ? 'bg-gray-100' : 'bg-white border border-gray-200'
+              currentIndex === 0
+                ? 'bg-gray-100'
+                : 'bg-white border border-gray-200'
             }`}
           >
-            <ChevronLeft size={20} color={currentIndex === 0 ? '#9CA3AF' : '#374151'} />
-            <Text className={`ml-2 ${currentIndex === 0 ? 'text-gray-400' : 'text-gray-700'}`}>
+            <ChevronLeft
+              size={20}
+              color={currentIndex === 0 ? '#9CA3AF' : '#374151'}
+            />
+            <Text
+              className={`ml-2 ${currentIndex === 0 ? 'text-gray-400' : 'text-gray-700'}`}
+            >
               Trước
             </Text>
           </TouchableOpacity>
@@ -187,7 +202,9 @@ const FlashCardScreen = () => {
             className="bg-teal-400 px-8 py-3 rounded-xl"
           >
             <Text className="text-white font-semibold">
-              {currentIndex === session.questions.length - 1 ? 'Hoàn thành' : 'Tiếp'}
+              {currentIndex === session.questions.length - 1
+                ? 'Hoàn thành'
+                : 'Tiếp'}
             </Text>
           </TouchableOpacity>
 
@@ -207,7 +224,8 @@ const FlashCardScreen = () => {
               Đã học: {learnedCards.size} / {session.questions.length}
             </Text>
             <Text className="text-sm text-blue-800">
-              {Math.round((learnedCards.size / session.questions.length) * 100)}% hoàn thành
+              {Math.round((learnedCards.size / session.questions.length) * 100)}
+              % hoàn thành
             </Text>
           </View>
         </View>

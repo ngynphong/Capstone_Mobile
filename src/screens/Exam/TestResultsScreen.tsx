@@ -1,17 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
+import {View, Text, TouchableOpacity, ScrollView, Alert} from 'react-native';
+import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-} from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ArrowLeft, RotateCcw, CheckCircle, XCircle, Clock, Award, Target, TrendingUp } from 'lucide-react-native';
+  ArrowLeft,
+  RotateCcw,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Award,
+  Target,
+  TrendingUp,
+} from 'lucide-react-native';
 
-import { ExamAttempt, ExamStackParamList, Question } from '../../types/examTypes';
-import { useScroll } from '../../context/ScrollContext';
+import {ExamAttempt, ExamStackParamList, Question} from '../../types/examTypes';
+import {useScroll} from '../../context/ScrollContext';
 
 type NavigationProp = NativeStackNavigationProp<ExamStackParamList>;
 type RouteProps = RouteProp<ExamStackParamList, 'TestResults'>;
@@ -26,12 +29,12 @@ interface ResultsData {
 const TestResultsScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const { attempt } = route.params;
+  const {attempt} = route.params;
 
   const [resultsData, setResultsData] = useState<ResultsData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const { handleScroll } = useScroll();
+  const {handleScroll} = useScroll();
 
   useEffect(() => {
     loadResultsData();
@@ -61,7 +64,7 @@ const TestResultsScreen = () => {
   const calculateStats = () => {
     if (!resultsData) return null;
 
-    const { attempt } = resultsData;
+    const {attempt} = resultsData;
     const totalQuestions = attempt.totalQuestions;
     const correctAnswers = attempt.correctAnswers;
     const incorrectAnswers = totalQuestions - correctAnswers;
@@ -78,11 +81,23 @@ const TestResultsScreen = () => {
 
   // Get performance level
   const getPerformanceLevel = (percentage: number) => {
-    if (percentage >= 90) return { level: 'Xuất sắc', color: 'text-green-600', bgColor: 'bg-green-100' };
-    if (percentage >= 80) return { level: 'Giỏi', color: 'text-blue-600', bgColor: 'bg-blue-100' };
-    if (percentage >= 70) return { level: 'Khá', color: 'text-yellow-600', bgColor: 'bg-yellow-100' };
-    if (percentage >= 60) return { level: 'Trung bình', color: 'text-orange-600', bgColor: 'bg-orange-100' };
-    return { level: 'Cần cố gắng', color: 'text-red-600', bgColor: 'bg-red-100' };
+    if (percentage >= 90)
+      return {
+        level: 'Xuất sắc',
+        color: 'text-green-600',
+        bgColor: 'bg-green-100',
+      };
+    if (percentage >= 80)
+      return {level: 'Giỏi', color: 'text-blue-600', bgColor: 'bg-blue-100'};
+    if (percentage >= 70)
+      return {level: 'Khá', color: 'text-yellow-600', bgColor: 'bg-yellow-100'};
+    if (percentage >= 60)
+      return {
+        level: 'Trung bình',
+        color: 'text-orange-600',
+        bgColor: 'bg-orange-100',
+      };
+    return {level: 'Cần cố gắng', color: 'text-red-600', bgColor: 'bg-red-100'};
   };
 
   // Format time display
@@ -148,25 +163,42 @@ const TestResultsScreen = () => {
 
         {/* Title */}
         <View className="items-center mb-6">
-          <Text className="text-2xl font-bold text-gray-900 mb-2">Kết quả bài thi</Text>
-          <Text className="text-gray-600">Full Test - Level {resultsData.examLevel}</Text>
+          <Text className="text-2xl font-bold text-gray-900 mb-2">
+            Kết quả bài thi
+          </Text>
+          <Text className="text-gray-600">
+            Full Test - Level {resultsData.examLevel}
+          </Text>
         </View>
       </View>
 
       {/* Main Results */}
-      <ScrollView className="flex-1 px-6" 
-      showsVerticalScrollIndicator={false}
-        onScroll={handleScroll} // scroll behavior 
-        scrollEventThrottle={16} // scroll behavior 
+      <ScrollView
+        className="flex-1 px-6"
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll} // scroll behavior
+        scrollEventThrottle={16} // scroll behavior
       >
         {/* Score Overview */}
         <View className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-gray-100">
           <View className="items-center mb-6">
-            <View className={`w-20 h-20 rounded-full ${performance.bgColor} items-center justify-center mb-4`}>
-              <Award size={32} color={performance.color.includes('green') ? '#10B981' :
-                                     performance.color.includes('blue') ? '#3B82F6' :
-                                     performance.color.includes('yellow') ? '#F59E0B' :
-                                     performance.color.includes('orange') ? '#F97316' : '#EF4444'} />
+            <View
+              className={`w-20 h-20 rounded-full ${performance.bgColor} items-center justify-center mb-4`}
+            >
+              <Award
+                size={32}
+                color={
+                  performance.color.includes('green')
+                    ? '#10B981'
+                    : performance.color.includes('blue')
+                      ? '#3B82F6'
+                      : performance.color.includes('yellow')
+                        ? '#F59E0B'
+                        : performance.color.includes('orange')
+                          ? '#F97316'
+                          : '#EF4444'
+                }
+              />
             </View>
             <Text className={`text-3xl font-bold ${performance.color} mb-2`}>
               {stats.scorePercentage}%
@@ -183,7 +215,9 @@ const TestResultsScreen = () => {
                 <CheckCircle size={20} color="#10B981" />
                 <Text className="text-green-600 font-semibold ml-1">Đúng</Text>
               </View>
-              <Text className="text-2xl font-bold text-gray-900">{stats.correctAnswers}</Text>
+              <Text className="text-2xl font-bold text-gray-900">
+                {stats.correctAnswers}
+              </Text>
             </View>
 
             <View className="flex-1 items-center">
@@ -191,22 +225,30 @@ const TestResultsScreen = () => {
                 <XCircle size={20} color="#EF4444" />
                 <Text className="text-red-600 font-semibold ml-1">Sai</Text>
               </View>
-              <Text className="text-2xl font-bold text-gray-900">{stats.incorrectAnswers}</Text>
+              <Text className="text-2xl font-bold text-gray-900">
+                {stats.incorrectAnswers}
+              </Text>
             </View>
 
             <View className="flex-1 items-center">
               <View className="flex-row items-center mb-2">
                 <Clock size={20} color="#6B7280" />
-                <Text className="text-gray-600 font-semibold ml-1">Thời gian</Text>
+                <Text className="text-gray-600 font-semibold ml-1">
+                  Thời gian
+                </Text>
               </View>
-              <Text className="text-lg font-bold text-gray-900">{formatTime(stats.timeSpent)}</Text>
+              <Text className="text-lg font-bold text-gray-900">
+                {formatTime(stats.timeSpent)}
+              </Text>
             </View>
           </View>
         </View>
 
         {/* Performance Analysis */}
         <View className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-gray-100">
-          <Text className="text-lg font-semibold text-gray-900 mb-4">Phân tích kết quả</Text>
+          <Text className="text-lg font-semibold text-gray-900 mb-4">
+            Phân tích kết quả
+          </Text>
 
           <View className="flex-col gap-1">
             <View className="flex-row items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -225,7 +267,8 @@ const TestResultsScreen = () => {
                 <Text className="text-gray-700 ml-2">Tốc độ làm bài</Text>
               </View>
               <Text className="text-gray-700 font-semibold">
-                {Math.round(stats.totalQuestions / (stats.timeSpent / 60))} câu/phút
+                {Math.round(stats.totalQuestions / (stats.timeSpent / 60))}{' '}
+                câu/phút
               </Text>
             </View>
 
@@ -243,22 +286,30 @@ const TestResultsScreen = () => {
 
         {/* Detailed Breakdown */}
         <View className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-gray-100">
-          <Text className="text-lg font-semibold text-gray-900 mb-4">Chi tiết câu hỏi</Text>
+          <Text className="text-lg font-semibold text-gray-900 mb-4">
+            Chi tiết câu hỏi
+          </Text>
 
           <View className="flex-col gap-1">
             {/* MCQ Section */}
             <View className="p-4 border border-gray-200 rounded-lg">
-              <Text className="font-medium text-gray-900 mb-2">Trắc nghiệm (MCQ)</Text>
+              <Text className="font-medium text-gray-900 mb-2">
+                Trắc nghiệm (MCQ)
+              </Text>
               <View className="flex-row items-center justify-between">
                 <Text className="text-sm text-gray-600">Đúng: 8/10</Text>
                 <Text className="text-sm text-gray-600">Sai: 2/10</Text>
-                <Text className="text-sm font-semibold text-green-600">80%</Text>
+                <Text className="text-sm font-semibold text-green-600">
+                  80%
+                </Text>
               </View>
             </View>
 
             {/* FRQ Section */}
             <View className="p-4 border border-gray-200 rounded-lg">
-              <Text className="font-medium text-gray-900 mb-2">Tự luận (FRQ)</Text>
+              <Text className="font-medium text-gray-900 mb-2">
+                Tự luận (FRQ)
+              </Text>
               <View className="flex-row items-center justify-between">
                 <Text className="text-sm text-gray-600">Đúng: 3/5</Text>
                 <Text className="text-sm text-gray-600">Sai: 2/5</Text>
@@ -270,7 +321,9 @@ const TestResultsScreen = () => {
 
         {/* Recommendations */}
         <View className="bg-blue-50 rounded-2xl p-6 mb-8">
-          <Text className="text-lg font-semibold text-blue-800 mb-4">💡 Khuyến nghị</Text>
+          <Text className="text-lg font-semibold text-blue-800 mb-4">
+            💡 Khuyến nghị
+          </Text>
 
           <View className="space-y-2">
             <Text className="text-sm text-blue-700">
@@ -294,14 +347,20 @@ const TestResultsScreen = () => {
             onPress={() => navigation.navigate('ExamLibrary')}
             className="bg-gray-100 px-6 py-3 rounded-xl flex-1 mr-2"
           >
-            <Text className="text-gray-700 font-semibold text-center">Về thư viện</Text>
+            <Text className="text-gray-700 font-semibold text-center">
+              Về thư viện
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => navigation.navigate('FullTest', { examId: attempt.examId })}
+            onPress={() =>
+              navigation.navigate('FullTest', {examId: attempt.examId})
+            }
             className="bg-teal-400 px-6 py-3 rounded-xl flex-1 ml-2"
           >
-            <Text className="text-white font-semibold text-center">Làm lại</Text>
+            <Text className="text-white font-semibold text-center">
+              Làm lại
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

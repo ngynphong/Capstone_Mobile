@@ -1,23 +1,22 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types/types';
-import { forgotPasswordApi } from '../../services/authService';
-import { useAppToast } from '../../utils/toast';
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {RootStackParamList} from '../../types/types';
+import {forgotPasswordApi} from '../../services/authService';
+import {useAppToast} from '../../utils/toast';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
 
-const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
+const ForgotPasswordScreen: React.FC<Props> = ({navigation}) => {
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -44,20 +43,26 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
     setIsLoading(true);
 
     try {
-      const response = await forgotPasswordApi({ email: email.trim() });
+      const response = await forgotPasswordApi({email: email.trim()});
 
       // Kiểm tra cả response code và message để xác định thành công
-      if (response.code === '1000' || response.message?.toLowerCase().includes('otp') || response.message?.toLowerCase().includes('sent')) {
+      if (
+        response.code === '1000' ||
+        response.message?.toLowerCase().includes('otp') ||
+        response.message?.toLowerCase().includes('sent')
+      ) {
         // Hiển thị toast thành công và chuyển sang màn hình VerifyOTP
         toast.success('OTP has been sent to your email address');
         setTimeout(() => {
-          navigation.navigate('VerifyOTP', { email: email.trim() });
+          navigation.navigate('VerifyOTP', {email: email.trim()});
         }, 1500);
       } else {
         toast.error(response.message || 'Failed to send OTP');
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to send OTP');
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to send OTP',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -81,12 +86,21 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1 bg-white"
     >
-      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }}>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          padding: 20,
+        }}
+      >
         {/* Header */}
         <View className="items-center mb-8">
-          <Text className="text-3xl font-bold text-backgroundColor mb-2">Forgot Password</Text>
+          <Text className="text-3xl font-bold text-backgroundColor mb-2">
+            Forgot Password
+          </Text>
           <Text className="text-gray-500 text-center">
-            Enter your email address and we'll send you an OTP to reset your password
+            Enter your email address and we'll send you an OTP to reset your
+            password
           </Text>
         </View>
 
@@ -94,7 +108,9 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
         <View className="bg-white rounded-lg shadow-lg p-6 mb-6 border border-gray-100">
           {/* Email Input */}
           <View className="mb-6">
-            <Text className="text-sm font-medium text-gray-700 mb-2">Email Address</Text>
+            <Text className="text-sm font-medium text-gray-700 mb-2">
+              Email Address
+            </Text>
             <TextInput
               className={`w-full h-12 border rounded-lg px-4 bg-white ${emailError ? 'border-red-500' : 'border-gray-300'}`}
               placeholder="Enter your email address"
@@ -105,7 +121,9 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
               autoCorrect={false}
               editable={!isLoading}
             />
-            {emailError && <Text className="text-red-500 text-sm mt-1">{emailError}</Text>}
+            {emailError && (
+              <Text className="text-red-500 text-sm mt-1">{emailError}</Text>
+            )}
           </View>
 
           {/* Send OTP Button */}
@@ -117,7 +135,9 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
             {isLoading ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Text className="text-white font-semibold text-base">Send OTP</Text>
+              <Text className="text-white font-semibold text-base">
+                Send OTP
+              </Text>
             )}
           </TouchableOpacity>
 
@@ -127,7 +147,9 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
             onPress={() => navigation.goBack()}
             disabled={isLoading}
           >
-            <Text className="text-brightColor font-semibold">Back to Login</Text>
+            <Text className="text-brightColor font-semibold">
+              Back to Login
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

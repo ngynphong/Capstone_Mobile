@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, useWindowDimensions, Animated } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BookOpen, Target, Trophy, Users, Zap, Award } from 'lucide-react-native';
+import {View, Text, useWindowDimensions} from 'react-native';
+import {LinearGradient} from 'expo-linear-gradient';
+import {BookOpen, Target, Trophy, Users} from 'lucide-react-native';
 
 type SlideProps = {
   title: string;
@@ -9,8 +9,8 @@ type SlideProps = {
   index: number;
 };
 
-const Slide: React.FC<SlideProps> = ({ title, description, index }) => {
-  const { width, height } = useWindowDimensions();
+const Slide: React.FC<SlideProps> = ({title, description, index}) => {
+  const {width} = useWindowDimensions();
 
   const getIcon = (index: number) => {
     const icons = [BookOpen, Target, Trophy, Users];
@@ -31,11 +31,11 @@ const Slide: React.FC<SlideProps> = ({ title, description, index }) => {
   const IconComponent = getIcon(index);
 
   return (
-    <View style={{ width: width || '100%' }} className="flex-1">
+    <View style={{width: width || '100%'}} className="flex-1">
       <LinearGradient
         colors={getGradient(index)}
         className="flex-1 justify-center items-center p-6"
-        style={{ width: '100%' }}
+        style={{width: '100%'}}
       >
         {/* Background Pattern */}
         <View className="absolute inset-0 opacity-10">
