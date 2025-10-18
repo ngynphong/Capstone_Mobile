@@ -1,24 +1,17 @@
-import React, {useState} from 'react';
-import {View, Text, ScrollView, Alert} from 'react-native';
-import {useAuth} from '../../context/AuthContext';
-import {useScroll} from '../../context/ScrollContext';
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {ProfileStackParamList} from '../../types/types';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, Alert } from 'react-native';
+import { useAuth } from '../../context/AuthContext';
+import { useScroll } from '../../context/ScrollContext';
 import ProfileHeader from '../../components/Profile/ProfileHeader';
 import MenuSection from '../../components/Profile/MenuSection';
 import EditProfileModal from '../../components/Profile/EditProfileModal';
 import ChangePasswordModal from '../../components/Profile/ChangePasswordModal';
 
-type NavigationProp = NativeStackNavigationProp<ProfileStackParamList>;
-
 const ProfileScreen = () => {
-  const navigation = useNavigation<NavigationProp>();
-  const {user, logout, refreshUser} = useAuth();
-  const {handleScroll} = useScroll();
+  const { user, logout, refreshUser } = useAuth();
+  const { handleScroll } = useScroll();
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const [isChangePasswordModalVisible, setIsChangePasswordModalVisible] =
-    useState(false);
+  const [isChangePasswordModalVisible, setIsChangePasswordModalVisible] = useState(false);
 
   const handleProfileUpdated = async () => {
     try {
@@ -29,18 +22,19 @@ const ProfileScreen = () => {
   };
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      {text: 'Cancel', style: 'cancel'},
-      {text: 'Logout', style: 'destructive', onPress: logout},
-    ]);
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Logout', style: 'destructive', onPress: logout },
+      ]
+    );
   };
 
   const handleChangeAvatar = () => {
     // TODO: Implement avatar change functionality
-    Alert.alert(
-      'Change Avatar',
-      'Avatar change functionality will be implemented soon!',
-    );
+    Alert.alert('Change Avatar', 'Avatar change functionality will be implemented soon!');
   };
 
   const handleSettings = () => {
@@ -67,7 +61,7 @@ const ProfileScreen = () => {
       title: 'Exams',
       subtitle: 'Do Exams and view results',
       icon: '📝',
-      onPress: () => navigation.navigate('ExamResults'),
+      onPress: () => {},
     },
     {
       id: 'settings',
@@ -85,6 +79,7 @@ const ProfileScreen = () => {
       variant: 'danger' as const,
       showArrow: false,
     },
+    
   ];
 
   if (!user) {
@@ -99,13 +94,16 @@ const ProfileScreen = () => {
     <View className="flex-1 bg-gray-50 mb-10">
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{flexGrow: 1}}
-        showsVerticalScrollIndicator={false}
-        onScroll={handleScroll} // scroll behavior
-        scrollEventThrottle={16} // scroll behavior
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}        
+        onScroll={handleScroll} // scroll behavior 
+        scrollEventThrottle={16} // scroll behavior 
       >
         {/* Header with gradient background */}
-        <ProfileHeader user={user} onChangeAvatar={handleChangeAvatar} />
+        <ProfileHeader
+          user={user}
+          onChangeAvatar={handleChangeAvatar}
+        />
 
         {/* Menu Items */}
         <MenuSection items={menuItems} />

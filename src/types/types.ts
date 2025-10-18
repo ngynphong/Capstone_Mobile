@@ -1,12 +1,9 @@
-import {ExamStackParamList, ExamAttempt} from './examTypes';
-
 export type RootStackParamList = {
   Onboarding: undefined;
   Login: undefined;
   SignUp: undefined;
   ForgotPassword: undefined;
-  VerifyOTP: {email: string};
-  ExamStack: undefined;
+  VerifyOTP: { email: string };
 };
 
 export type TabParamList = {
@@ -15,11 +12,3 @@ export type TabParamList = {
   Profile: undefined;
   Exams: undefined;
 };
-
-export type ProfileStackParamList = {
-  ProfileMain: undefined;
-  ExamResults: undefined;
-  ExamResultDetail: {attempt: ExamAttempt};
-};
-
-export type {ExamStackParamList};

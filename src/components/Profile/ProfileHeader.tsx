@@ -1,22 +1,23 @@
 import React from 'react';
-import {View, Text, TouchableOpacity, Image} from 'react-native';
-import {User} from '../../context/AuthContext';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { User } from '../../context/AuthContext';
 
 interface ProfileHeaderProps {
   user: User;
   onChangeAvatar?: () => void;
 }
 
-const ProfileHeader: React.FC<ProfileHeaderProps> = ({
-  user,
-  onChangeAvatar,
-}) => {
+const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user, onChangeAvatar }) => {
+  console.log('🎨 ProfileHeader rendering with user:', user);
+
   const getUserDisplayName = () => {
     if (user?.firstName || user?.lastName) {
       const name = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+      console.log('👤 Display name:', name);
       return name;
     }
     const emailName = user?.email || 'User';
+    console.log('👤 Fallback to email:', emailName);
     return emailName;
   };
 
@@ -24,6 +25,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     const first = user?.firstName?.[0] || '';
     const last = user?.lastName?.[0] || '';
     const initials = (first + last).toUpperCase() || 'U';
+    console.log('🔤 User initials:', initials);
     return initials;
   };
 
@@ -40,13 +42,11 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           <View className="w-32 h-32 bg-white/20 rounded-full items-center justify-center border-4 border-white/30">
             {user?.avatar || user?.imgUrl ? (
               <Image
-                source={{uri: user.avatar || user.imgUrl}}
+                source={{ uri: user.avatar || user.imgUrl }}
                 className="w-28 h-28 rounded-full"
               />
             ) : (
-              <Text className="text-white text-4xl font-bold">
-                {getUserInitials()}
-              </Text>
+              <Text className="text-white text-4xl font-bold">{getUserInitials()}</Text>
             )}
           </View>
 

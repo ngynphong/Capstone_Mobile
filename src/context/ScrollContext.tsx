@@ -1,11 +1,5 @@
-import React, {
-  createContext,
-  useContext,
-  useRef,
-  useState,
-  ReactNode,
-} from 'react';
-import {Animated} from 'react-native';
+import React, { createContext, useContext, useRef, useState, ReactNode } from 'react';
+import { Animated } from 'react-native';
 
 interface ScrollContextType {
   isTabBarVisible: boolean;
@@ -19,7 +13,7 @@ interface ScrollProviderProps {
   children: ReactNode;
 }
 
-export const ScrollProvider: React.FC<ScrollProviderProps> = ({children}) => {
+export const ScrollProvider: React.FC<ScrollProviderProps> = ({ children }) => {
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
   const tabBarTranslateY = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
@@ -64,7 +58,9 @@ export const ScrollProvider: React.FC<ScrollProviderProps> = ({children}) => {
   };
 
   return (
-    <ScrollContext.Provider value={value}>{children}</ScrollContext.Provider>
+    <ScrollContext.Provider value={value}>
+      {children}
+    </ScrollContext.Provider>
   );
 };
 

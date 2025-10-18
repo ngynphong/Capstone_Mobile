@@ -1,19 +1,19 @@
 import React from 'react';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {View, Text, TouchableOpacity, Animated, Dimensions} from 'react-native';
-import {BlurView} from 'expo-blur';
-import {Home, BookOpen, User, FileText} from 'lucide-react-native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { View, Text, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { Home, BookOpen, User, FileText } from 'lucide-react-native';
 import HomeScreen from '../screens/Home/HomeScreen';
 
+import ProfileScreen from '../screens/Profile/ProfileScreen';
 import ExamScreen from '../screens/Exam/ExamScreen';
+import { TabParamList } from '../types/types';
+import { useScroll } from '../context/ScrollContext';
 import MaterialsScreen from '../screens/Materials/MaterialsScreen';
-import ProfileStack from '../navigation/ProfileStack';
-import {TabParamList} from '../types/types';
-import {useScroll} from '../context/ScrollContext';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
-const {width} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const TAB_BAR_WIDTH = width * 0.9;
 const TAB_WIDTH = TAB_BAR_WIDTH / 4;
 
@@ -23,15 +23,9 @@ interface CustomTabBarProps {
   navigation: any;
 }
 
-const CustomTabBar: React.FC<CustomTabBarProps> = ({
-  state,
-  descriptors,
-  navigation,
-}) => {
-  const animatedValues = React.useRef(
-    state.routes.map(() => new Animated.Value(0)),
-  ).current;
-  const {tabBarTranslateY} = useScroll();
+const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigation }) => {
+  const animatedValues = React.useRef(state.routes.map(() => new Animated.Value(0))).current;
+  const { tabBarTranslateY } = useScroll();
 
   React.useEffect(() => {
     // Animate to active state
@@ -74,8 +68,8 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({
       className="absolute bottom-6 left-1/2"
       style={{
         transform: [
-          {translateX: -TAB_BAR_WIDTH / 2},
-          {translateY: tabBarTranslateY},
+          { translateX: -TAB_BAR_WIDTH / 2 },
+          { translateY: tabBarTranslateY }
         ],
       }}
     >
@@ -110,12 +104,12 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({
                 key={route.key}
                 onPress={() => navigation.navigate(route.name)}
                 className="items-center justify-center "
-                style={{width: TAB_WIDTH}}
+                style={{ width: TAB_WIDTH }}
               >
                 <Animated.View
                   className="items-center justify-center"
                   style={{
-                    transform: [{scale: scaleValue}],
+                    transform: [{ scale: scaleValue }],
                     opacity: opacityValue,
                   }}
                 >
@@ -163,15 +157,15 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({
 const TabNavigator = () => {
   return (
     <Tab.Navigator
-      tabBar={props => <CustomTabBar {...props} />}
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
-        headerShown: false,
+        headerShown: false,       
       }}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Materials" component={MaterialsScreen} />
       <Tab.Screen name="Exams" component={ExamScreen} />
-      <Tab.Screen name="Profile" component={ProfileStack} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 };

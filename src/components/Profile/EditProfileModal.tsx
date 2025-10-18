@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,10 @@ import {
   TextInput,
   Modal,
 } from 'react-native';
-import {User} from '../../context/AuthContext';
-import {updateUserProfile} from '../../services/userService';
-import {UpdateProfileRequest} from '../../types/userTypes';
-import {useAppToast} from '../../utils/toast';
+import { User } from '../../context/AuthContext';
+import { updateUserProfile } from '../../services/userService';
+import { UpdateProfileRequest } from '../../types/userTypes';
+import { useAppToast } from '../../utils/toast';
 
 interface EditProfileModalProps {
   visible: boolean;
@@ -59,9 +59,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
       onClose();
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to update profile',
-      );
+      toast.error(error instanceof Error ? error.message : 'Failed to update profile');
     } finally {
       setIsLoading(false);
     }
@@ -92,15 +90,13 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             <Text className="text-white text-lg">Cancel</Text>
           </TouchableOpacity>
           <Text className="text-white text-xl font-bold">Edit Profile</Text>
-          <View style={{width: 60}} />
+          <View style={{ width: 60 }} />
         </View>
 
         {/* Form */}
         <ScrollView className="flex-1 px-6 py-6">
           <View className="mb-6">
-            <Text className="text-gray-700 text-lg font-medium mb-3">
-              First Name
-            </Text>
+            <Text className="text-gray-700 text-lg font-medium mb-3">First Name</Text>
             <TextInput
               className="border-2 border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50"
               value={firstName}
@@ -111,9 +107,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           </View>
 
           <View className="mb-6">
-            <Text className="text-gray-700 text-lg font-medium mb-3">
-              Last Name
-            </Text>
+            <Text className="text-gray-700 text-lg font-medium mb-3">Last Name</Text>
             <TextInput
               className="border-2 border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50"
               value={lastName}
@@ -124,9 +118,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           </View>
 
           <View className="mb-8">
-            <Text className="text-gray-700 text-lg font-medium mb-3">
-              Date of Birth
-            </Text>
+            <Text className="text-gray-700 text-lg font-medium mb-3">Date of Birth</Text>
             <TextInput
               className="border-2 border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50"
               value={dob}
