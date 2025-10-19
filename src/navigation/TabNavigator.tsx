@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Home, BookOpen, User, FileText, Users } from 'lucide-react-native';
+import { Home, BookOpen, User, FileText, Users, Route } from 'lucide-react-native';
 import HomeScreen from '../screens/Home/HomeScreen';
 
 import ExamScreen from '../screens/Exam/ExamScreen';
@@ -12,12 +12,13 @@ import MaterialsScreen from '../screens/Materials/MaterialsScreen';
 import ProfileStack from './ProfileStack';
 import CommunityStack from './CommunityStack';
 
+import RoadmapScreen from '../screens/Roadmap/RoadmapScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
 const { width } = Dimensions.get('window');
 const TAB_BAR_WIDTH = width * 0.9;
-const TAB_WIDTH = TAB_BAR_WIDTH / 5;
+const TAB_WIDTH = TAB_BAR_WIDTH / 6;
 
 interface CustomTabBarProps {
   state: any;
@@ -56,6 +57,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
     Materials: BookOpen,
     Exams: FileText,
     Community: Users,
+    Roadmap: Route,
     Profile: User,
   };
 
@@ -64,6 +66,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
     Materials: 'Materials',
     Exams: 'Exams',
     Community: 'Community',
+    Roadmap: 'Roadmap',
     Profile: 'Profile',
   };
 
@@ -167,6 +170,7 @@ const TabNavigator = () => {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Materials" component={MaterialsScreen} />
+      <Tab.Screen name="Roadmap" component={RoadmapScreen} />
       <Tab.Screen name="Exams" component={ExamScreen} />
       <Tab.Screen name="Community" component={CommunityStack} />
       <Tab.Screen name="Profile" component={ProfileStack} />

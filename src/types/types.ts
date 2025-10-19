@@ -15,6 +15,7 @@ export type TabParamList = {
   Profile: undefined;
   Exams: undefined;
   Community: undefined;
+  Roadmap: undefined;
 };
 
 export type ProfileStackParamList = {
