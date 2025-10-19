@@ -14,6 +14,7 @@ export type TabParamList = {
   Materials: undefined;
   Profile: undefined;
   Exams: undefined;
+  Community: undefined;
   Roadmap: undefined;
 };
 
@@ -21,6 +22,8 @@ export type ProfileStackParamList = {
   ProfileMain: undefined;
   ExamResults: undefined;
   ExamResultDetail: { attempt: ExamAttempt };
+  Store: undefined;
 };
+
 
 export type { ExamStackParamList };

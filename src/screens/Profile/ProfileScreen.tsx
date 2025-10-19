@@ -56,6 +56,13 @@ const ProfileScreen = () => {
       onPress: () => setIsEditModalVisible(true),
     },
     {
+      id: 'my-wallet',
+      title: 'My Wallet',
+      subtitle: 'Manage tokens and subscription',
+      icon: '💳',
+      onPress: () => navigation.navigate('Store'),
+    },
+    {
       id: 'change-password',
       title: 'Change Password',
       subtitle: 'Update your account password',
