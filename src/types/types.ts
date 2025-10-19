@@ -21,6 +21,7 @@ export type ProfileStackParamList = {
   ProfileMain: undefined;
   ExamResults: undefined;
   ExamResultDetail: { attempt: ExamAttempt };
+  Store: undefined;
 };
 
 

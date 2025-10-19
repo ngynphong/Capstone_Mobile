@@ -10,6 +10,13 @@ export interface UserProfile {
     roles: string[];
     avatar?: string; // Optional avatar URL
     imgUrl?: string; // Alternative avatar URL field
+    tokenBalance?: number; // Current token balance for store functionality
+    currentSubscription?: {
+        id: string;
+        name: string;
+        type: 'free' | 'premium';
+        expiresAt?: string;
+    };
 }
 
 // Request for PUT /users/me
