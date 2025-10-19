@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Home, BookOpen, User, FileText } from 'lucide-react-native';
+import { Home, BookOpen, User, FileText, Route } from 'lucide-react-native';
 import HomeScreen from '../screens/Home/HomeScreen';
 
 import ProfileScreen from '../screens/Profile/ProfileScreen';
@@ -11,6 +11,7 @@ import { TabParamList } from '../types/types';
 import { useScroll } from '../context/ScrollContext';
 import MaterialsScreen from '../screens/Materials/MaterialsScreen';
 import ProfileStack from './ProfileStack';
+import RoadmapScreen from '../screens/Roadmap/RoadmapScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
@@ -54,6 +55,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
     Home: Home,
     Materials: BookOpen,
     Exams: FileText,
+    Roadmap: Route,
     Profile: User,
   };
 
@@ -61,6 +63,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
     Home: 'Home',
     Materials: 'Materials',
     Exams: 'Exams',
+    Roadmap: 'Roadmap',
     Profile: 'Profile',
   };
 
@@ -165,6 +168,7 @@ const TabNavigator = () => {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Materials" component={MaterialsScreen} />
+      <Tab.Screen name="Roadmap" component={RoadmapScreen} />
       <Tab.Screen name="Exams" component={ExamScreen} />
       <Tab.Screen name="Profile" component={ProfileStack} />
     </Tab.Navigator>

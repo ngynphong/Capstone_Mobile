@@ -14,6 +14,7 @@ export type TabParamList = {
   Materials: undefined;
   Profile: undefined;
   Exams: undefined;
+  Roadmap: undefined;
 };
 
 export type ProfileStackParamList = {
