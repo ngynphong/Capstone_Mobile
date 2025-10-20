@@ -65,7 +65,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
     Home: 'Home',
     Materials: 'Materials',
     Exams: 'Exams',
-    Community: 'Community',
+    Community: 'Groups',
     Roadmap: 'Roadmap',
     Profile: 'Profile',
   };
@@ -91,7 +91,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
           borderRadius: 24, // rounded-3xl equivalent
         }}
       >
-        <View className="flex-row items-center justify-around bg-white rounded-3xl h-full px-2">
+        <View className="flex-row items-center justify-around bg-white rounded-3xl h-full px-1">
           {state.routes.map((route: any, index: number) => {
             const isActive = state.index === index;
             const IconComponent = iconMap[route.name as keyof typeof iconMap];
