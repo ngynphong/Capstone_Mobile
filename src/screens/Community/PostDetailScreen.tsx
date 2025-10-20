@@ -106,8 +106,8 @@ Feel free to share your solutions or ask questions in the comments!`,
       className="flex-1 bg-gray-100"
     >
       {/* Header */}
-      <View className="bg-white px-4 py-12 border-b border-gray-200">
-        <View className="flex-row items-center gap-3">
+      <View className="bg-white px-4 py-10 border-b border-gray-200">
+        <View className="flex-row items-center mt-3 gap-3">
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"

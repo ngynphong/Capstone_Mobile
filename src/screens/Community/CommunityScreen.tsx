@@ -164,6 +164,7 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 4 }}
+          className='py-2'
         >
           {forumCategories.map((category) => (
             <TouchableOpacity

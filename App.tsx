@@ -11,6 +11,7 @@ import SignUpScreen from './src/screens/SignUp/SignUpScreen';
 import ForgotPasswordScreen from './src/screens/ForgotPassword/ForgotPasswordScreen';
 import VerifyOTPScreen from './src/screens/VerifyOTP/VerifyOTPScreen';
 import TabNavigator from './src/navigation/TabNavigator';
+import LoadingScreen from './src/components/LoadingScreen';
 import { RootStackParamList } from './src/types/types';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { ScrollProvider } from './src/context/ScrollContext';
@@ -33,7 +34,7 @@ const AppContent: React.FC = () => {
 
   // Show loading screen while checking auth status or first launch
   if (isFirstLaunch === null || isLoading) {
-    return null; // You can replace this with a proper loading component
+    return <LoadingScreen />;
   }
 
   return (

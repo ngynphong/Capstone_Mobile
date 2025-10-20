@@ -154,7 +154,7 @@ const TestResultsScreen = () => {
       </View>
 
       {/* Main Results */}
-      <ScrollView className="flex-1 px-6" 
+      <ScrollView className="flex-1 px-6 mt-2" 
       showsVerticalScrollIndicator={false}
         onScroll={handleScroll} // scroll behavior 
         scrollEventThrottle={16} // scroll behavior 

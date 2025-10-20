@@ -172,7 +172,7 @@ const FlashCardScreen = () => {
           <TouchableOpacity
             onPress={handlePrevious}
             disabled={currentIndex === 0}
-            className={`flex-row items-center px-6 py-3 rounded-xl ${
+            className={`flex-row items-center px-4 py-3 rounded-xl ${
               currentIndex === 0 ? 'bg-gray-100' : 'bg-white border border-gray-200'
             }`}
           >
@@ -184,7 +184,7 @@ const FlashCardScreen = () => {
 
           <TouchableOpacity
             onPress={markAsLearned}
-            className="bg-teal-400 px-8 py-3 rounded-xl"
+            className="bg-teal-400 px-6 py-3 rounded-xl"
           >
             <Text className="text-white font-semibold">
               {currentIndex === session.questions.length - 1 ? 'Hoàn thành' : 'Tiếp'}
@@ -193,7 +193,7 @@ const FlashCardScreen = () => {
 
           <TouchableOpacity
             onPress={handleNext}
-            className="flex-row items-center px-6 py-3 rounded-xl bg-white border border-gray-200"
+            className="flex-row items-center px-4 py-3 rounded-xl bg-white border border-gray-200"
           >
             <Text className="text-gray-700 mr-2">Bỏ qua</Text>
             <ChevronRight size={20} color="#374151" />
