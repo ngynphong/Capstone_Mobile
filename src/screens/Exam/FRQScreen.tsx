@@ -274,7 +274,7 @@ const FRQScreen = () => {
                             </Text>
                         </TouchableOpacity>
 
-                        <View className="flex-row space-x-3">
+                        <View className="flex-row gap-2">
                             <TouchableOpacity
                                 onPress={saveCurrentAnswer}
                                 className="flex-row items-center bg-gray-100 px-4 py-3 rounded-xl"

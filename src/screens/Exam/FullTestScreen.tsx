@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ArrowLeft, Clock, FileText, Edit3, CheckCircle, AlertTriangle } from 'lucide-react-native';
+import { ArrowLeft, CheckCircle, AlertTriangle } from 'lucide-react-native';
 
 import { Exam, Question, ExamStackParamList } from '../../types/examTypes';
 import { ExamService } from '../../services/examService';
@@ -420,7 +420,7 @@ const FullTestScreen = () => {
           <TouchableOpacity
             onPress={() => navigateToQuestion(Math.max(0, currentQuestionIndex - 1))}
             disabled={currentQuestionIndex === 0}
-            className={`px-6 py-3 rounded-xl ${currentQuestionIndex === 0 ? 'bg-gray-100' : 'bg-white border border-gray-200'
+            className={`px-4 py-3 rounded-xl ${currentQuestionIndex === 0 ? 'bg-gray-100' : 'bg-white border border-gray-200'
               }`}
           >
             <Text className={`font-medium ${currentQuestionIndex === 0 ? 'text-gray-400' : 'text-gray-700'}`}>
@@ -430,7 +430,7 @@ const FullTestScreen = () => {
 
           <TouchableOpacity
             onPress={handleNextSection}
-            className="bg-teal-400 px-8 py-3 rounded-xl"
+            className="bg-teal-400 px-5 py-3 rounded-xl"
           >
             <Text className="text-white font-semibold">
               {currentSection === 'MCQ' ? 'Chuyển phần →' : 'Nộp bài'}
@@ -440,7 +440,7 @@ const FullTestScreen = () => {
           <TouchableOpacity
             onPress={() => navigateToQuestion(Math.min(currentQuestions.length - 1, currentQuestionIndex + 1))}
             disabled={currentQuestionIndex === currentQuestions.length - 1}
-            className={`px-6 py-3 rounded-xl ${currentQuestionIndex === currentQuestions.length - 1 ? 'bg-gray-100' : 'bg-white border border-gray-200'
+            className={`px-4 py-3 rounded-xl ${currentQuestionIndex === currentQuestions.length - 1 ? 'bg-gray-100' : 'bg-white border border-gray-200'
               }`}
           >
             <Text className={`font-medium ${currentQuestionIndex === currentQuestions.length - 1 ? 'text-gray-400' : 'text-gray-700'
