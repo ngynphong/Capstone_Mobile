@@ -7,6 +7,8 @@ export type RootStackParamList = {
   ForgotPassword: undefined;
   VerifyOTP: { email: string };
   ExamStack: undefined;
+  MainTabs: undefined;
+  ChatBot: undefined;
 };
 
 export type TabParamList = {

@@ -11,6 +11,7 @@ import SignUpScreen from './src/screens/SignUp/SignUpScreen';
 import ForgotPasswordScreen from './src/screens/ForgotPassword/ForgotPasswordScreen';
 import VerifyOTPScreen from './src/screens/VerifyOTP/VerifyOTPScreen';
 import TabNavigator from './src/navigation/TabNavigator';
+import ChatBotScreen from './src/screens/ChatBotScreen';
 import LoadingScreen from './src/components/LoadingScreen';
 import { RootStackParamList } from './src/types/types';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
@@ -39,9 +40,12 @@ const AppContent: React.FC = () => {
 
   return (
     <>
-      <NavigationContainer key={isLoggedIn ? 'loggedIn' : 'loggedOut'}> 
+      <NavigationContainer key={isLoggedIn ? 'loggedIn' : 'loggedOut'}>
         {isLoggedIn ? (
-          <TabNavigator />
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="MainTabs" component={TabNavigator} />
+            <Stack.Screen name="ChatBot" component={ChatBotScreen} />
+          </Stack.Navigator>
         ) : (
           <Stack.Navigator screenOptions={{ headerShown: false }}>
             {isFirstLaunch && (
