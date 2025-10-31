@@ -17,9 +17,15 @@ export interface Exam {
   questions: number;
   duration: number; // in minutes
   attempts?: number;
+  totalAttemptsCount?: number;
   difficulty: 'Easy' | 'Medium' | 'Hard';
   description?: string;
   tags?: string[];
+  teacherId: string;
+  teacherName: string;
+  teacherAvatar: string;
+  rating: number;
+  tokenCost: number;
 }
 
 export interface Question {

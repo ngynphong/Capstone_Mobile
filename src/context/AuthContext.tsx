@@ -27,6 +27,7 @@ interface AuthContextType {
   logout: () => void;
   setIsLoggedIn: (isLoggedIn: boolean) => void;
   refreshUser: () => Promise<void>;
+  spendTokens: (amount: number) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -258,6 +259,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await fetchUserProfile();
   };
 
+  const spendTokens = async (amount: number): Promise<boolean> => {
+    if (!user) {
+      console.log('No user logged in');
+      return false;
+    }
+
+    if (!user.tokenBalance || user.tokenBalance < amount) {
+      console.log('Insufficient tokens');
+      return false;
+    }
+
+    // Update user state with new token balance
+    const newBalance = user.tokenBalance - amount;
+    setUser({
+      ...user,
+      tokenBalance: newBalance,
+    });
+
+    console.log(`Spent ${amount} tokens. New balance: ${newBalance}`);
+    return true;
+  };
+
   return (
     <AuthContext.Provider value={{
       isLoggedIn,
@@ -268,7 +291,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       verifyEmail,
       logout,
       setIsLoggedIn,
-      refreshUser
+      refreshUser,
+      spendTokens
     }}>
       {children}
     </AuthContext.Provider>
