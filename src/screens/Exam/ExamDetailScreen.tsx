@@ -6,15 +6,17 @@ import {
     ScrollView,
     ActivityIndicator,
     Alert,
+    Image,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, CommonActions } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ArrowLeft, Clock, Users, BookOpen, TrendingUp, Play, FileText } from 'lucide-react-native';
+import { ArrowLeft, Clock, Users, BookOpen, TrendingUp, Play, FileText, Star, Coins } from 'lucide-react-native';
 
 import { Exam, ExamStackParamList } from '../../types/examTypes';
 import { ExamService } from '../../services/examService';
 import { useScroll } from '../../context/ScrollContext';
 import { useAppToast } from '../../utils/toast';
+import { useAuth } from '../../context/AuthContext';
 
 type NavigationProp = NativeStackNavigationProp<ExamStackParamList>;
 type RouteProps = RouteProp<ExamStackParamList, 'ExamDetail'>;
@@ -29,6 +31,7 @@ const ExamDetailScreen = () => {
 
     const { handleScroll } = useScroll();
     const toast = useAppToast();
+    const { user, spendTokens } = useAuth();
 
     useEffect(() => {
         loadExamDetails();
@@ -60,10 +63,34 @@ const ExamDetailScreen = () => {
     };
 
     const handleFullTest = () => {
-        if (exam) {
+        if (exam && user) {
+            // Check token balance
+            if (!user.tokenBalance || user.tokenBalance < exam.tokenCost) {
+                Alert.alert(
+                    'Không đủ Token',
+                    `Bạn cần ${exam.tokenCost} token để làm bài thi này. Số token hiện tại: ${user.tokenBalance || 0}. Bạn có muốn đi đến Store để mua token không?`,
+                    [
+                        { text: 'Hủy', style: 'cancel' },
+                        {
+                            text: 'Đi đến Store',
+                            onPress: () => {
+                                // Navigate to Profile tab, then to Store
+                                navigation.getParent()?.dispatch(
+                                    CommonActions.navigate('Profile', {
+                                        screen: 'Store',
+                                    })
+                                );
+                            },
+                        },
+                    ]
+                );
+                return;
+            }
+
+            // Show confirmation with token cost
             Alert.alert(
                 'Full Test Warning',
-                'This is a full test including both Multiple Choice and Free Response sections. The timer will start immediately.',
+                `Bài thi này tốn ${exam.tokenCost} token. Bạn có muốn bắt đầu không?\n\nThis is a full test including both Multiple Choice and Free Response sections. The timer will start immediately.`,
                 [
                     { text: 'Cancel', style: 'cancel' },
                     { text: 'Start Full Test', style: 'destructive', onPress: () => startFullTest() },
@@ -72,8 +99,16 @@ const ExamDetailScreen = () => {
         }
     };
 
-    const startFullTest = () => {
-        if (exam) {
+    const startFullTest = async () => {
+        if (exam && user) {
+            // Deduct tokens
+            const success = await spendTokens(exam.tokenCost);
+            if (!success) {
+                toast.error('Failed to deduct tokens. Please try again.');
+                return;
+            }
+
+            // Navigate to FullTest
             navigation.navigate('FullTest', { examId: exam.id });
         }
     };
@@ -118,7 +153,10 @@ const ExamDetailScreen = () => {
     }
 
     return (
-        <View className="flex-1 bg-gray-50">
+        <ScrollView showsVerticalScrollIndicator={false}
+            onScroll={handleScroll} // scroll behavior 
+            scrollEventThrottle={16}
+            className="flex-1 bg-gray-50">
             {/* Header */}
             <View className="bg-white pt-12 pb-6 px-6 shadow-sm">
                 <View className="flex-row items-center mb-4">
@@ -151,6 +189,31 @@ const ExamDetailScreen = () => {
                             />
                             <Text className={`text-sm font-medium px-3 py-1 rounded-full ${getDifficultyColor(exam.difficulty)}`}>
                                 {exam.difficulty}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* Teacher Info */}
+                    <View className="flex-row items-center mb-4">
+                        <Image
+                            source={{ uri: exam.teacherAvatar }}
+                            className="w-12 h-12 rounded-full mr-3"
+                        />
+                        <View className="flex-1">
+                            <Text className="text-base font-semibold text-gray-900">
+                                {exam.teacherName}
+                            </Text>
+                            <View className="flex-row items-center mt-1">
+                                <Star size={14} color="#F59E0B" fill="#F59E0B" />
+                                <Text className="text-sm font-medium text-gray-700 ml-1">
+                                    {exam.rating.toFixed(1)}
+                                </Text>
+                            </View>
+                        </View>
+                        <View className="flex-row items-center bg-yellow-50 px-3 py-2 rounded-lg">
+                            <Coins size={20} color="#F59E0B" />
+                            <Text className="text-base font-bold text-gray-900 ml-2">
+                                {exam.tokenCost}
                             </Text>
                         </View>
                     </View>
@@ -196,11 +259,7 @@ const ExamDetailScreen = () => {
             </View>
 
             {/* Main Content */}
-            <ScrollView className="flex-1 px-6"
-                showsVerticalScrollIndicator={false}
-                onScroll={handleScroll} // scroll behavior 
-                scrollEventThrottle={16}
-            >
+            <View className="flex-1 px-6">
                 <Text className="text-lg font-semibold text-gray-900 mb-4">
                     Chọn hình thức luyện tập phù hợp với bạn
                 </Text>
@@ -285,8 +344,8 @@ const ExamDetailScreen = () => {
                         • Theo dõi tiến độ học tập của bạn
                     </Text>
                 </View>
-            </ScrollView>
-        </View>
+            </View>
+        </ScrollView>
     );
 };
 

@@ -18,6 +18,7 @@ import { Exam, Subject, SubjectType, ExamFilters, ExamSortOption, ExamStackParam
 import { ExamService } from '../../services/examService';
 import ExamCard from '../../components/Exam/ExamCard';
 import SubjectFilter from '../../components/Exam/SubjectFilter';
+import CombinedTestBuilder from '../../components/Exam/CombinedTestBuilder';
 import { useScroll } from '../../context/ScrollContext';
 
 type NavigationProp = NativeStackNavigationProp<ExamStackParamList>;
@@ -36,6 +37,7 @@ const ExamLibraryScreen = () => {
   const [selectedSubject, setSelectedSubject] = useState<SubjectType>('All');
   const [sortOption, setSortOption] = useState<ExamSortOption>({ field: 'title', direction: 'asc' });
   const [showFilters, setShowFilters] = useState(false);
+  const [mode, setMode] = useState<'single' | 'combined'>('single');
 
   // Load initial data
   const loadData = useCallback(async (showRefreshIndicator = false) => {
@@ -175,36 +177,68 @@ const ExamLibraryScreen = () => {
           selectedSubject={selectedSubject}
           onSubjectSelect={handleSubjectFilter}
         />
+
+        {/* Mode Selection Tabs */}
+        <View className="flex-row bg-gray-100 rounded-xl p-1 mt-4">
+          <TouchableOpacity
+            onPress={() => setMode('single')}
+            className={`flex-1 py-2 rounded-lg ${mode === 'single' ? 'bg-teal-400' : ''}`}
+          >
+            <Text className={`font-semibold text-center ${mode === 'single' ? 'text-white' : 'text-gray-600'}`}>
+              Thi Lẻ
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setMode('combined')}
+            className={`flex-1 py-2 rounded-lg ${mode === 'combined' ? 'bg-teal-400' : ''}`}
+          >
+            <Text className={`font-semibold text-center ${mode === 'combined' ? 'text-white' : 'text-gray-600'}`}>
+              Thi Tổ hợp
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Exams List */}
-      <FlatList
-        data={exams}
-        renderItem={renderExamCard}
-        keyExtractor={(item) => item.id}
-        numColumns={1}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          padding: 16,
-          paddingBottom: 100, // Space for tab bar
-        }}
-        onScroll={handleScroll} // scroll behavior 
-        scrollEventThrottle={16} // scroll behavior 
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={["#3CBCB2"]}
-            tintColor="#3CBCB2"
-          />
-        }
-        ListEmptyComponent={renderEmptyState}
-        ListFooterComponent={loading ? (
-          <View className="py-8">
-            <ActivityIndicator size="small" color="#3CBCB2" />
-          </View>
-        ) : null}
-      />
+      {/* Exams List - Conditional Rendering */}
+      {mode === 'single' ? (
+        <FlatList
+          data={exams}
+          renderItem={renderExamCard}
+          keyExtractor={(item) => item.id}
+          numColumns={1}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            padding: 16,
+            paddingBottom: 100, // Space for tab bar
+          }}
+          onScroll={handleScroll} // scroll behavior 
+          scrollEventThrottle={16} // scroll behavior 
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={["#3CBCB2"]}
+              tintColor="#3CBCB2"
+            />
+          }
+          ListEmptyComponent={renderEmptyState}
+          ListFooterComponent={loading ? (
+            <View className="py-8">
+              <ActivityIndicator size="small" color="#3CBCB2" />
+            </View>
+          ) : null}
+        />
+      ) : (
+        <CombinedTestBuilder
+          onStartTest={(examIds) => {
+            // TODO: Implement combined test logic
+            // For now, just navigate to first exam
+            if (examIds.length > 0) {
+              navigation.navigate('ExamDetail', { examId: examIds[0] });
+            }
+          }}
+        />
+      )}
     </View>
   );
 };

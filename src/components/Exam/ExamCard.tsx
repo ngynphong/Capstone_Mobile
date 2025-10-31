@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { Clock, Users, BookOpen, TrendingUp } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { Clock, Users, BookOpen, TrendingUp, Star, Coins } from 'lucide-react-native';
 import { Exam } from '../../types/examTypes';
 
 interface ExamCardProps {
@@ -66,6 +66,23 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onPress }) => {
         </View>
       </View>
 
+      {/* Teacher Info */}
+      <View className="flex-row items-center mb-3">
+        <Image
+          source={{ uri: exam.teacherAvatar }}
+          className="w-8 h-8 rounded-full mr-2"
+        />
+        <Text className="text-sm text-gray-600 flex-1">
+          {exam.teacherName}
+        </Text>
+        <View className="flex-row items-center">
+          <Star size={14} color="#F59E0B" fill="#F59E0B" />
+          <Text className="text-sm font-medium text-gray-900 ml-1">
+            {exam.rating.toFixed(1)}
+          </Text>
+        </View>
+      </View>
+
       {/* Stats */}
       <View className="flex-row items-center mb-4 gap-2">
         <View className="flex-row items-center">
@@ -103,12 +120,15 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onPress }) => {
         <View className="flex-row items-center">
           <TrendingUp size={16} color="#3CBCB2" />
           <Text className="text-sm text-gray-600 ml-1">
-            {exam.attempts || 0} people attempt
+            {exam.attempts || 0} attempts
           </Text>
         </View>
-        <TouchableOpacity className="bg-gray-100 px-4 py-2 rounded-lg">
-          <Text className="text-sm font-medium text-gray-700">Details</Text>
-        </TouchableOpacity>
+        <View className="flex-row items-center">
+          <Coins size={16} color="#F59E0B" />
+          <Text className="text-sm font-medium text-gray-900 ml-1">
+            {exam.tokenCost} Tokens
+          </Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
