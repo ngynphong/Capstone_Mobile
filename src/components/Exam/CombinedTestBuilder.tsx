@@ -3,16 +3,16 @@ import {
     View,
     Text,
     TouchableOpacity,
-    Modal,
     FlatList,
     Alert,
     ActivityIndicator,
 } from 'react-native';
-import { X, Check, Coins, BookOpen } from 'lucide-react-native';
-import { Subject, SubjectType, Exam } from '../../types/examTypes';
+import { Check, BookOpen } from 'lucide-react-native';
+import { Exam } from '../../types/examTypes';
 import { ExamService } from '../../services/examService';
+import { SubjectService } from '../../services/subjectService';
+import { Subject } from '../../types/subjectTypes';
 import ExamCard from './ExamCard';
-import { useAuth } from '../../context/AuthContext';
 import { useAppToast } from '../../utils/toast';
 import { useScroll } from '../../context/ScrollContext';
 
@@ -21,22 +21,14 @@ interface CombinedTestBuilderProps {
 }
 
 const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest }) => {
-    const { user, spendTokens } = useAuth();
     const toast = useAppToast();
 
-    const [mode, setMode] = useState<'custom' | 'auto'>('custom');
-    const [subjects, setSubjects] = useState<Subject[]>([]);
+    const [mode, setMode] = useState<'manual' | 'auto'>('manual');
     const [allExams, setAllExams] = useState<Exam[]>([]);
+    const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(true);
-
-    // Custom mode state
     const [selectedExams, setSelectedExams] = useState<Exam[]>([]);
-    const [showExamModal, setShowExamModal] = useState(false);
-    const [selectedSubjectForModal, setSelectedSubjectForModal] = useState<Subject | null>(null);
-    const [modalExams, setModalExams] = useState<Exam[]>([]);
-
-    // Auto mode state
-    const [selectedSubjects, setSelectedSubjects] = useState<SubjectType[]>([]);
+    const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
 
     const { handleScroll } = useScroll();
 
@@ -47,15 +39,12 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest }
     const loadData = async () => {
         try {
             setLoading(true);
-            const [subjectsData, examsData] = await Promise.all([
-                ExamService.getSubjects(),
-                ExamService.getExams(),
+            const [examsResponse, subjectsResponse] = await Promise.all([
+                ExamService.getAllExams(),
+                SubjectService.getAllSubjects()
             ]);
-
-            // Filter out 'All' subject
-            const filteredSubjects = subjectsData.filter(s => s.name !== 'All');
-            setSubjects(filteredSubjects);
-            setAllExams(examsData);
+            setAllExams(examsResponse.data);
+            setSubjects(subjectsResponse.data?.items || []);
         } catch (error) {
             console.error('Error loading data:', error);
             toast.error('Failed to load data');
@@ -64,7 +53,7 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest }
         }
     };
 
-    const handleSelectExamFromModal = (exam: Exam) => {
+    const handleSelectExam = (exam: Exam) => {
         if (selectedExams.find(e => e.id === exam.id)) {
             // Already selected, remove it
             setSelectedExams(selectedExams.filter(e => e.id !== exam.id));
@@ -74,115 +63,80 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest }
         }
     };
 
-    const openExamModal = async (subject: Subject) => {
-        setSelectedSubjectForModal(subject);
-        const filteredExams = allExams.filter(exam => exam.subject.name === subject.name);
-        setModalExams(filteredExams);
-        setShowExamModal(true);
-    };
-
-    const calculateTotalTokens = () => {
-        return selectedExams.reduce((sum, exam) => sum + exam.tokenCost, 0);
-    };
-
-    const handleStartCustomTest = async () => {
-        if (selectedExams.length === 0) {
-            toast.error('Vui lòng chọn ít nhất một bài thi');
-            return;
-        }
-
-        if (user) {
-            const totalCost = calculateTotalTokens();
-            if (!user.tokenBalance || user.tokenBalance < totalCost) {
-                Alert.alert(
-                    'Không đủ Token',
-                    `Bạn cần ${totalCost} token để làm bài thi tổ hợp này. Số token hiện tại: ${user.tokenBalance || 0}`,
-                    [{ text: 'OK' }]
-                );
-                return;
-            }
-
-            Alert.alert(
-                'Bắt đầu Thi Tổ hợp',
-                `Bạn sẽ bắt đầu làm ${selectedExams.length} bài thi với tổng chi phí ${totalCost} token.`,
-                [
-                    { text: 'Hủy', style: 'cancel' },
-                    {
-                        text: 'Bắt đầu',
-                        onPress: async () => {
-                            const success = await spendTokens(totalCost);
-                            if (success) {
-                                onStartTest(selectedExams.map(e => e.id));
-                            } else {
-                                toast.error('Failed to deduct tokens');
-                            }
-                        },
-                    },
-                ]
-            );
-        }
-    };
-
-    const handleToggleSubject = (subjectName: SubjectType) => {
-        if (selectedSubjects.includes(subjectName)) {
-            setSelectedSubjects(selectedSubjects.filter(s => s !== subjectName));
+    const handleSelectSubject = (subjectId: string) => {
+        if (selectedSubjects.includes(subjectId)) {
+            setSelectedSubjects(selectedSubjects.filter(id => id !== subjectId));
         } else {
-            setSelectedSubjects([...selectedSubjects, subjectName]);
+            setSelectedSubjects([...selectedSubjects, subjectId]);
         }
     };
 
-    const handleStartAutoTest = async () => {
+    const handleStartAutoTest = () => {
         if (selectedSubjects.length === 0) {
             toast.error('Vui lòng chọn ít nhất một môn học');
             return;
         }
 
-        // Random select one exam from each selected subject
-        const examsToTake: Exam[] = [];
-        selectedSubjects.forEach(subjectName => {
-            const examsInSubject = allExams.filter(exam => exam.subject.name === subjectName);
-            if (examsInSubject.length > 0) {
-                const randomExam = examsInSubject[Math.floor(Math.random() * examsInSubject.length)];
-                examsToTake.push(randomExam);
-            }
-        });
+        // Filter exams by selected subjects
+        const availableExams = allExams.filter(exam =>
+            exam.subjectNames.some(subjectName =>
+                selectedSubjects.some(subjectId =>
+                    subjects.find(s => s.id === subjectId)?.name === subjectName
+                )
+            )
+        );
 
-        if (examsToTake.length === 0) {
-            toast.error('Không tìm thấy bài thi cho các môn đã chọn');
+        if (availableExams.length === 0) {
+            toast.error('Không có bài thi nào cho các môn đã chọn');
             return;
         }
 
-        const totalCost = examsToTake.reduce((sum, exam) => sum + exam.tokenCost, 0);
-
-        if (user) {
-            if (!user.tokenBalance || user.tokenBalance < totalCost) {
-                Alert.alert(
-                    'Không đủ Token',
-                    `Bạn cần ${totalCost} token. Số token hiện tại: ${user.tokenBalance || 0}`,
-                    [{ text: 'OK' }]
-                );
-                return;
-            }
-
-            Alert.alert(
-                'Bắt đầu Thi Tổ hợp',
-                `Bạn sẽ làm ${examsToTake.length} bài thi từ các môn đã chọn với tổng chi phí ${totalCost} token.`,
-                [
-                    { text: 'Hủy', style: 'cancel' },
-                    {
-                        text: 'Bắt đầu',
-                        onPress: async () => {
-                            const success = await spendTokens(totalCost);
-                            if (success) {
-                                onStartTest(examsToTake.map(e => e.id));
-                            } else {
-                                toast.error('Failed to deduct tokens');
-                            }
-                        },
-                    },
-                ]
+        // Randomly select exams (up to 3 exams per subject)
+        const selectedExams: Exam[] = [];
+        selectedSubjects.forEach(subjectId => {
+            const subjectExams = availableExams.filter(exam =>
+                exam.subjectNames.includes(subjects.find(s => s.id === subjectId)?.name || '')
             );
+            // Take up to 2 random exams per subject
+            const shuffled = subjectExams.sort(() => 0.5 - Math.random());
+            selectedExams.push(...shuffled.slice(0, Math.min(2, subjectExams.length)));
+        });
+
+        if (selectedExams.length === 0) {
+            toast.error('Không thể tạo bài thi từ các môn đã chọn');
+            return;
         }
+
+        Alert.alert(
+            'Bắt đầu Thi Tổ hợp',
+            `Hệ thống đã chọn ${selectedExams.length} bài thi từ ${selectedSubjects.length} môn học bạn đã chọn.`,
+            [
+                { text: 'Hủy', style: 'cancel' },
+                {
+                    text: 'Bắt đầu',
+                    onPress: () => onStartTest(selectedExams.map(e => e.id)),
+                },
+            ]
+        );
+    };
+
+    const handleStartTest = () => {
+        if (selectedExams.length === 0) {
+            toast.error('Vui lòng chọn ít nhất một bài thi');
+            return;
+        }
+
+        Alert.alert(
+            'Bắt đầu Thi Tổ hợp',
+            `Bạn sẽ bắt đầu làm ${selectedExams.length} bài thi.`,
+            [
+                { text: 'Hủy', style: 'cancel' },
+                {
+                    text: 'Bắt đầu',
+                    onPress: () => onStartTest(selectedExams.map(e => e.id)),
+                },
+            ]
+        );
     };
 
     if (loading) {
@@ -196,217 +150,62 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest }
 
     return (
         <View className="flex-1 bg-gray-50">
-            {/* Mode Selection Tabs */}
-            <View className="bg-white px-6 pt-4 pb-4 border-b border-gray-200">
+            {/* Header */}
+            <View className="bg-white px-6 py-4 border-b border-gray-200">
+                <Text className="text-lg font-semibold text-gray-900">
+                    Tạo bộ đề tổ hợp
+                </Text>
+                {mode === 'manual' && selectedExams.length > 0 && (
+                    <Text className="text-sm text-gray-600 mt-1">
+                        Đã chọn: {selectedExams.length} bài thi
+                    </Text>
+                )}
+                {mode === 'auto' && selectedSubjects.length > 0 && (
+                    <Text className="text-sm text-gray-600 mt-1">
+                        Đã chọn: {selectedSubjects.length} môn học
+                    </Text>
+                )}
+            </View>
+
+            {/* Mode Selection */}
+            <View className="bg-white px-6 py-4 border-b border-gray-200">
                 <View className="flex-row bg-gray-100 rounded-xl p-1">
                     <TouchableOpacity
-                        onPress={() => setMode('custom')}
-                        className={`flex-1 py-2 rounded-lg ${mode === 'custom' ? 'bg-teal-400' : ''}`}
+                        onPress={() => setMode('manual')}
+                        className={`flex-1 py-2 rounded-lg ${mode === 'manual' ? 'bg-teal-400' : ''}`}
                     >
-                        <Text className={`font-semibold text-center ${mode === 'custom' ? 'text-white' : 'text-gray-600'}`}>
-                            Tự Chọn
+                        <Text className={`font-semibold text-center text-sm ${mode === 'manual' ? 'text-white' : 'text-gray-600'}`}>
+                            Tự chọn
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => setMode('auto')}
                         className={`flex-1 py-2 rounded-lg ${mode === 'auto' ? 'bg-teal-400' : ''}`}
                     >
-                        <Text className={`font-semibold text-center ${mode === 'auto' ? 'text-white' : 'text-gray-600'}`}>
-                            Nền Tảng Chọn
+                        <Text className={`font-semibold text-center text-sm ${mode === 'auto' ? 'text-white' : 'text-gray-600'}`}>
+                            Hệ thống tự tạo
                         </Text>
                     </TouchableOpacity>
                 </View>
             </View>
 
-            {/* Custom Mode UI */}
-            {mode === 'custom' && (
-                <View className="flex-1">
-                    {/* Selected Exams Summary */}
-                    {selectedExams.length > 0 && (
-                        <View className="bg-teal-50 border-b border-teal-200 px-6 py-4">
-                            <View className="flex-row items-center justify-between mb-2">
-                                <Text className="text-base font-semibold text-gray-900">
-                                    Đã chọn {selectedExams.length} bài thi
-                                </Text>
-                                <View className="flex-row items-center">
-                                    <Coins size={20} color="#F59E0B" />
-                                    <Text className="text-lg font-bold text-gray-900 ml-2">
-                                        {calculateTotalTokens()}
-                                    </Text>
-                                </View>
-                            </View>
-                            <TouchableOpacity
-                                onPress={() => setSelectedExams([])}
-                                className="bg-red-500 px-4 py-2 rounded-lg self-start"
-                            >
-                                <Text className="text-white font-medium">Xóa tất cả</Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
-
-                    {/* Subject List */}
+            {/* Content based on mode */}
+            {mode === 'manual' ? (
+                /* Manual Exam Selection */
+                <>
                     <FlatList
-                        data={subjects}
+                        data={allExams}
                         keyExtractor={(item) => item.id}
                         contentContainerStyle={{ padding: 16 }}
-                        onScroll={handleScroll} // scroll behavior 
-                        scrollEventThrottle={16} // scroll behavior 
-                        renderItem={({ item }) => {
-                            const examCount = allExams.filter(e => e.subject.name === item.name).length;
-                            return (
-                                <TouchableOpacity
-                                    onPress={() => openExamModal(item)}
-                                    className="bg-white rounded-xl p-4 mb-4 flex-row items-center justify-between border border-gray-200"
-                                >
-                                    <View className="flex-row items-center flex-1">
-                                        <View
-                                            className="w-12 h-12 rounded-lg items-center justify-center mr-3"
-                                            style={{ backgroundColor: item.color || '#3CBCB2' + '20' }}
-                                        >
-                                            <BookOpen size={24} color={item.color || '#3CBCB2'} />
-                                        </View>
-                                        <View className="flex-1">
-                                            <Text className="text-base font-semibold text-gray-900">
-                                                {item.name}
-                                            </Text>
-                                            <Text className="text-sm text-gray-500">
-                                                {examCount} bài thi có sẵn
-                                            </Text>
-                                        </View>
-                                    </View>
-                                    <View className="bg-teal-50 px-3 py-2 rounded-lg">
-                                        <Text className="text-teal-600 font-medium">Chọn bài thi</Text>
-                                    </View>
-                                </TouchableOpacity>
-                            );
-                        }}
-                        ListEmptyComponent={
-                            <View className="items-center py-8">
-                                <Text className="text-gray-500">Không có môn học nào</Text>
-                            </View>
-                        }
-                    />
-
-                    {/* Start Button */}
-                    {selectedExams.length > 0 && (
-                        <View className="bg-white border-t border-gray-200 px-6 py-4">
-                            <TouchableOpacity
-                                onPress={handleStartCustomTest}
-                                className="bg-teal-400 py-4 rounded-xl"
-                            >
-                                <Text className="text-white font-bold text-center text-lg">
-                                    Bắt đầu Thi Tổ hợp
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
-                </View>
-            )}
-
-            {/* Auto Mode UI */}
-            {mode === 'auto' && (
-                <View className="flex-1">
-                    <View className="bg-blue-50 border-b border-blue-200 px-6 py-4">
-                        <Text className="text-sm text-blue-800">
-                            ℹ️ Chọn các môn học, hệ thống sẽ tự động chọn ngẫu nhiên 1 bài thi cho mỗi môn
-                        </Text>
-                    </View>
-
-                    {/* Subject List */}
-                    <FlatList
-                        data={subjects}
-                        keyExtractor={(item) => item.id}
-                        contentContainerStyle={{ padding: 16 }}
-                        onScroll={handleScroll} // scroll behavior 
-                        scrollEventThrottle={16} // scroll behavior 
-                        renderItem={({ item }) => {
-                            const isSelected = selectedSubjects.includes(item.name);
-                            return (
-                                <TouchableOpacity
-                                    onPress={() => handleToggleSubject(item.name)}
-                                    className="bg-white rounded-xl p-4 mb-4 flex-row items-center justify-between border-2"
-                                    style={{
-                                        borderColor: isSelected ? '#3CBCB2' : '#E5E7EB',
-                                        backgroundColor: isSelected ? '#F0FDFA' : 'white',
-                                    }}
-                                >
-                                    <View className="flex-row items-center flex-1">
-                                        <View
-                                            className="w-12 h-12 rounded-lg items-center justify-center mr-3"
-                                            style={{ backgroundColor: item.color || '#3CBCB2' + '20' }}
-                                        >
-                                            <BookOpen size={24} color={item.color || '#3CBCB2'} />
-                                        </View>
-                                        <Text className="text-base font-semibold text-gray-900">
-                                            {item.name}
-                                        </Text>
-                                    </View>
-                                    {isSelected && (
-                                        <View className="w-6 h-6 bg-teal-400 rounded-full items-center justify-center">
-                                            <Check size={16} color="white" />
-                                        </View>
-                                    )}
-                                </TouchableOpacity>
-                            );
-                        }}
-                        ListEmptyComponent={
-                            <View className="items-center py-8">
-                                <Text className="text-gray-500">Không có môn học nào</Text>
-                            </View>
-                        }
-                    />
-
-                    {/* Start Button */}
-                    {selectedSubjects.length > 0 && (
-                        <View className="bg-white border-t border-gray-200 px-6 py-4">
-                            <TouchableOpacity
-                                onPress={handleStartAutoTest}
-                                className="bg-teal-400 py-4 rounded-xl"
-                            >
-                                <Text className="text-white font-bold text-center text-lg">
-                                    Bắt đầu Thi
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
-                </View>
-            )}
-
-            {/* Exam Selection Modal */}
-            <Modal
-                visible={showExamModal}
-                animationType="slide"
-                transparent={false}
-                onRequestClose={() => setShowExamModal(false)}
-            >
-                <View className="flex-1 bg-gray-50">
-                    {/* Modal Header */}
-                    <View className="bg-white pt-12 pb-4 px-6 shadow-sm">
-                        <View className="flex-row items-center justify-between">
-                            <Text className="text-xl font-bold text-gray-900">
-                                Chọn bài thi - {selectedSubjectForModal?.name}
-                            </Text>
-                            <TouchableOpacity
-                                onPress={() => setShowExamModal(false)}
-                                className="p-2"
-                            >
-                                <X size={24} color="#374151" />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                    {/* Modal Content */}
-                    <FlatList
-                        data={modalExams}
-                        keyExtractor={(item) => item.id}
-                        contentContainerStyle={{ padding: 16 }}
+                        onScroll={handleScroll}
+                        scrollEventThrottle={16}
                         renderItem={({ item }) => {
                             const isSelected = selectedExams.find(e => e.id === item.id);
                             return (
                                 <View className="mb-4">
                                     <ExamCard
                                         exam={item}
-                                        onPress={() => handleSelectExamFromModal(item)}
+                                        onPress={() => handleSelectExam(item)}
                                     />
                                     {isSelected && (
                                         <View className="absolute top-2 right-2 bg-teal-400 w-8 h-8 rounded-full items-center justify-center">
@@ -418,36 +217,85 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest }
                         }}
                         ListEmptyComponent={
                             <View className="items-center py-8">
-                                <Text className="text-gray-500">Không có bài thi nào cho môn này</Text>
+                                <Text className="text-gray-500">Không có bài thi nào</Text>
                             </View>
                         }
                     />
 
-                    {/* Modal Footer */}
-                    <View className="bg-white border-t border-gray-200 px-6 py-4">
-                        <View className="flex-row items-center justify-between mb-4">
-                            <Text className="text-base font-semibold text-gray-900">
-                                Đã chọn: {selectedExams.filter(e => e.subject.name === selectedSubjectForModal?.name).length}
-                            </Text>
-                            <View className="flex-row items-center">
-                                <Coins size={20} color="#F59E0B" />
-                                <Text className="text-lg font-bold text-gray-900 ml-2">
-                                    {selectedExams.filter(e => e.subject.name === selectedSubjectForModal?.name).reduce((sum, e) => sum + e.tokenCost, 0)}
+                    {/* Start Button */}
+                    {selectedExams.length > 0 && (
+                        <View className="bg-white border-t border-gray-200 px-6 py-4">
+                            <TouchableOpacity
+                                onPress={handleStartTest}
+                                className="bg-teal-400 py-4 rounded-xl"
+                            >
+                                <Text className="text-white font-bold text-center text-lg">
+                                    Bắt đầu Thi Tổ hợp ({selectedExams.length} bài)
                                 </Text>
-                            </View>
+                            </TouchableOpacity>
                         </View>
-                        <TouchableOpacity
-                            onPress={() => setShowExamModal(false)}
-                            className="bg-teal-400 py-3 rounded-xl"
-                        >
-                            <Text className="text-white font-bold text-center">Hoàn tất</Text>
-                        </TouchableOpacity>
+                    )}
+                </>
+            ) : (
+                /* Auto Subject Selection */
+                <>
+                    <View className="px-6 py-4">
+                        <Text className="text-base font-medium text-gray-900 mb-4">
+                            Chọn môn học để hệ thống tự tạo bài thi
+                        </Text>
+
+                        <View className="flex-row flex-wrap">
+                            {subjects.map((subject) => {
+                                const isSelected = selectedSubjects.includes(subject.id);
+                                return (
+                                    <TouchableOpacity
+                                        key={subject.id}
+                                        onPress={() => handleSelectSubject(subject.id)}
+                                        className={`mr-3 mb-3 px-4 py-3 rounded-xl border ${
+                                            isSelected
+                                                ? 'bg-teal-400 border-teal-400'
+                                                : 'bg-white border-gray-300'
+                                        }`}
+                                    >
+                                        <View className="flex-row items-center">
+                                            {isSelected && (
+                                                <Check size={16} color="white" className="mr-2" />
+                                            )}
+                                            <Text className={`font-medium ${
+                                                isSelected ? 'text-white' : 'text-gray-700'
+                                            }`}>
+                                                {subject.name}
+                                            </Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+
+                        {subjects.length === 0 && (
+                            <View className="items-center py-8">
+                                <Text className="text-gray-500">Không có môn học nào</Text>
+                            </View>
+                        )}
                     </View>
-                </View>
-            </Modal>
+
+                    {/* Start Button */}
+                    {selectedSubjects.length > 0 && (
+                        <View className="bg-white border-t border-gray-200 px-6 py-4">
+                            <TouchableOpacity
+                                onPress={handleStartAutoTest}
+                                className="bg-teal-400 py-4 rounded-xl"
+                            >
+                                <Text className="text-white font-bold text-center text-lg">
+                                    Bắt đầu Thi Tổ hợp ({selectedSubjects.length} môn)
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                </>
+            )}
         </View>
     );
 };
 
 export default CombinedTestBuilder;
-

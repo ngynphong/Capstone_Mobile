@@ -5,43 +5,55 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, Eye } from 'lucide-react-native';
 
-import { PracticeSession, ExamStackParamList } from '../../types/examTypes';
-
-type NavigationProp = NativeStackNavigationProp<ExamStackParamList>;
-type RouteProps = RouteProp<ExamStackParamList, 'FlashCard'>;
-
 const FlashCardScreen = () => {
-  const navigation = useNavigation<NavigationProp>();
-  const route = useRoute<RouteProps>();
-  const { session } = route.params;
+  const navigation = useNavigation<any>();
+  const route = useRoute();
+  const { examId } = route.params as { examId: string };
 
-  const [currentIndex, setCurrentIndex] = useState(session.currentIndex);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [learnedCards, setLearnedCards] = useState<Set<number>>(new Set());
 
-  const currentQuestion = session.questions[currentIndex];
-  const progress = ((currentIndex + 1) / session.questions.length) * 100;
+  // Mock questions for now - in real app, these would come from API
+  const questions = [
+    {
+      id: '1',
+      question: 'What is the capital of France?',
+      correctAnswer: 'Paris'
+    },
+    {
+      id: '2',
+      question: 'What is 2 + 2?',
+      correctAnswer: '4'
+    },
+    {
+      id: '3',
+      question: 'What is the largest planet in our solar system?',
+      correctAnswer: 'Jupiter'
+    },
+  ];
+
+  const currentQuestion = questions[currentIndex];
+  const progress = ((currentIndex + 1) / questions.length) * 100;
 
   // Simple card flip without animation
   const flipCard = () => {
-    console.log('Flip card triggered, current showAnswer:', showAnswer);
     setShowAnswer(!showAnswer);
   };
 
   // Handle next card
   const handleNext = () => {
-    if (currentIndex < session.questions.length - 1) {
+    if (currentIndex < questions.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setShowAnswer(false);
     } else {
       // Completed all cards
       Alert.alert(
         'Hoàn thành!',
-        `Bạn đã học xong tất cả ${session.questions.length} câu hỏi!`,
+        `Bạn đã học xong tất cả ${questions.length} câu hỏi!`,
         [
           { text: 'Làm lại', onPress: () => resetSession() },
           { text: 'Thoát', onPress: () => navigation.goBack() },
@@ -70,8 +82,6 @@ const FlashCardScreen = () => {
     setLearnedCards(prev => new Set([...prev, currentIndex]));
     handleNext();
   };
-
-  // Simple state-based card display
 
   if (!currentQuestion) {
     return (
@@ -110,7 +120,7 @@ const FlashCardScreen = () => {
               Bài học: {currentIndex + 1} • Loại: MCQ • Chế độ: Flashcard
             </Text>
             <Text className="text-sm text-gray-600">
-              Câu {currentIndex + 1} / {session.questions.length}
+              Câu {currentIndex + 1} / {questions.length}
             </Text>
           </View>
           <View className="w-full bg-gray-200 rounded-full h-2">
@@ -151,11 +161,6 @@ const FlashCardScreen = () => {
                 <Text className="text-lg text-gray-800 mb-4 text-center">
                   {currentQuestion.correctAnswer}
                 </Text>
-                {currentQuestion.explanation && (
-                  <Text className="text-sm text-gray-600 text-center italic">
-                    {currentQuestion.explanation}
-                  </Text>
-                )}
                 <TouchableOpacity
                   onPress={flipCard}
                   className="mt-4 bg-white px-4 py-2 rounded-lg border border-gray-200"
@@ -187,7 +192,7 @@ const FlashCardScreen = () => {
             className="bg-teal-400 px-6 py-3 rounded-xl"
           >
             <Text className="text-white font-semibold">
-              {currentIndex === session.questions.length - 1 ? 'Hoàn thành' : 'Tiếp'}
+              {currentIndex === questions.length - 1 ? 'Hoàn thành' : 'Tiếp'}
             </Text>
           </TouchableOpacity>
 
@@ -204,10 +209,10 @@ const FlashCardScreen = () => {
         <View className="bg-blue-50 rounded-xl p-4">
           <View className="flex-row justify-between items-center">
             <Text className="text-sm text-blue-800">
-              Đã học: {learnedCards.size} / {session.questions.length}
+              Đã học: {learnedCards.size} / {questions.length}
             </Text>
             <Text className="text-sm text-blue-800">
-              {Math.round((learnedCards.size / session.questions.length) * 100)}% hoàn thành
+              {Math.round((learnedCards.size / questions.length) * 100)}% hoàn thành
             </Text>
           </View>
         </View>

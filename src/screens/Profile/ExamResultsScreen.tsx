@@ -1,52 +1,53 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
-import { useAuth } from '../../context/AuthContext';
 import { useScroll } from '../../context/ScrollContext';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ExamService } from '../../services/examService';
-import { ExamAttempt, Exam } from '../../types/examTypes';
-import { ProfileStackParamList } from '../../types/types';
-import { ChevronLeft, Calendar, Clock, CheckCircle, Target } from 'lucide-react-native';
-
-type NavigationProp = NativeStackNavigationProp<ProfileStackParamList>;
+import { MockAttempt } from '../../types/examTypes';
+import { ChevronLeft, Clock, CheckCircle, Target } from 'lucide-react-native';
 
 interface ExamResultsScreenProps {
   navigation: any;
 }
 
 const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => {
-  const { user } = useAuth();
   const { handleScroll } = useScroll();
-  const typedNavigation = useNavigation<NavigationProp>();
-  const [examAttempts, setExamAttempts] = useState<ExamAttempt[]>([]);
-  const [exams, setExams] = useState<Map<string, Exam>>(new Map());
+  const typedNavigation = useNavigation<any>();
+  const [examAttempts, setExamAttempts] = useState<MockAttempt[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadExamResults();
-  }, [user]);
+  }, []);
 
   const loadExamResults = async () => {
-    if (!user?.id) return;
-
     try {
       setLoading(true);
-      const attempts = await ExamService.getUserExamAttempts(user.id);
-      setExamAttempts(attempts);
-
-      // Load exam details for each attempt
-      const examMap = new Map<string, Exam>();
-      for (const attempt of attempts) {
-        if (!examMap.has(attempt.examId)) {
-          const exam = await ExamService.getExamById(attempt.examId);
-          if (exam) {
-            examMap.set(attempt.examId, exam);
-          }
-        }
-      }
-      setExams(examMap);
+      // Mock data for now since API doesn't provide exam attempts
+      const mockAttempts: MockAttempt[] = [
+        {
+          examId: '1',
+          score: 85,
+          totalQuestions: 10,
+          correctAnswers: 8,
+          timeSpent: 450, // 7:30
+        },
+        {
+          examId: '2',
+          score: 92,
+          totalQuestions: 15,
+          correctAnswers: 14,
+          timeSpent: 720, // 12:00
+        },
+        {
+          examId: '3',
+          score: 78,
+          totalQuestions: 12,
+          correctAnswers: 9,
+          timeSpent: 380, // 6:20
+        },
+      ];
+      setExamAttempts(mockAttempts);
     } catch (error) {
       console.error('Error loading exam results:', error);
     } finally {
@@ -60,23 +61,10 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
     setRefreshing(false);
   };
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(date));
-  };
-
-  const formatTimeSpent = (minutes: number) => {
-    if (minutes < 60) {
-      return `${minutes}m`;
-    }
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+  const formatTimeSpent = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const getScoreColor = (score: number) => {
@@ -93,13 +81,10 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
     return 'bg-red-50 border-red-200';
   };
 
-  const renderExamResult = (attempt: ExamAttempt) => {
-    const exam = exams.get(attempt.examId);
-    if (!exam) return null;
-
+  const renderExamResult = (attempt: MockAttempt, index: number) => {
     return (
       <TouchableOpacity
-        key={attempt.id}
+        key={index}
         className={`bg-white rounded-xl p-4 mb-3 border ${getScoreBgColor(attempt.score)}`}
         onPress={() => {
           typedNavigation.navigate('ExamResultDetail', { attempt });
@@ -108,10 +93,10 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
         <View className="flex-row justify-between items-start mb-2">
           <View className="flex-1">
             <Text className="text-lg font-semibold text-gray-900 mb-1">
-              {exam.title}
+              Mock Exam {attempt.examId}
             </Text>
             <Text className="text-sm text-gray-600 mb-2">
-              {exam.subject.name} • {exam.level} • {exam.difficulty}
+              Practice Session
             </Text>
           </View>
           <View className={`px-3 py-1 rounded-full border ${getScoreBgColor(attempt.score)}`}>
@@ -122,13 +107,6 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
         </View>
 
         <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center">
-            <Calendar size={16} color="#6B7280" />
-            <Text className="text-sm text-gray-600 ml-1">
-              {formatDate(attempt.startTime)}
-            </Text>
-          </View>
-
           <View className="flex-row items-center">
             <Clock size={16} color="#6B7280" />
             <Text className="text-sm text-gray-600 ml-1">
@@ -142,14 +120,12 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
               {attempt.correctAnswers}/{attempt.totalQuestions}
             </Text>
           </View>
-        </View>
 
-        {attempt.completed && (
-          <View className="flex-row items-center mt-2">
+          <View className="flex-row items-center">
             <CheckCircle size={16} color="#10B981" />
             <Text className="text-sm text-green-600 ml-1">Completed</Text>
           </View>
-        )}
+        </View>
       </TouchableOpacity>
     );
   };
@@ -232,9 +208,7 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
               <Text className="text-lg font-semibold text-gray-900 mb-3">
                 Recent Results
               </Text>
-              {examAttempts
-                .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
-                .map(renderExamResult)}
+              {examAttempts.map((attempt, index) => renderExamResult(attempt, index))}
             </View>
           </>
         )}

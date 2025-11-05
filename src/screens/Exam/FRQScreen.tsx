@@ -9,24 +9,19 @@ import {
     KeyboardAvoidingView,
     Platform,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { ArrowLeft, RotateCcw, Clock, Save, Send } from 'lucide-react-native';
 
-import { PracticeSession, ExamStackParamList } from '../../types/examTypes';
 import { useScroll } from '../../context/ScrollContext';
 import { useAppToast } from '../../utils/toast';
 
-type NavigationProp = NativeStackNavigationProp<ExamStackParamList>;
-type RouteProps = RouteProp<ExamStackParamList, 'FRQ'>;
-
 const FRQScreen = () => {
-    const navigation = useNavigation<NavigationProp>();
-    const route = useRoute<RouteProps>();
-    const { session } = route.params;
+    const navigation = useNavigation<any>();
+    const route = useRoute();
+    const { examId } = route.params as { examId: string };
 
-    const [currentIndex, setCurrentIndex] = useState(session.currentIndex);
-    const [answers, setAnswers] = useState<Record<string, string>>(session.answers || {});
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [answers, setAnswers] = useState<Record<string, string>>({});
     const [currentAnswer, setCurrentAnswer] = useState('');
     const [timeRemaining, setTimeRemaining] = useState<number>(30 * 60); // 30 minutes default
     const [isTimerActive, setIsTimerActive] = useState(true);
@@ -34,9 +29,16 @@ const FRQScreen = () => {
     const [savedAnswers, setSavedAnswers] = useState<Set<string>>(new Set());
     const { handleScroll } = useScroll();
     const toast = useAppToast();
-    
-    const currentQuestion = session.questions[currentIndex];
-    const progress = ((currentIndex + 1) / session.questions.length) * 100;
+
+    // Mock questions for now - in real app, these would come from API
+    const questions = [
+        { id: '1', text: 'Describe the main themes in the novel "Pride and Prejudice".' },
+        { id: '2', text: 'Explain the concept of photosynthesis and its importance in the ecosystem.' },
+        { id: '3', text: 'What are the key differences between classical and operant conditioning?' },
+    ];
+
+    const currentQuestion = questions[currentIndex];
+    const progress = ((currentIndex + 1) / questions.length) * 100;
 
     // Timer effect
     useEffect(() => {
@@ -91,7 +93,7 @@ const FRQScreen = () => {
 
     // Handle next question
     const handleNext = () => {
-        if (currentIndex < session.questions.length - 1) {
+        if (currentIndex < questions.length - 1) {
             setCurrentIndex(currentIndex + 1);
         } else {
             submitAllAnswers();
@@ -108,7 +110,7 @@ const FRQScreen = () => {
     // Submit all answers
     const submitAllAnswers = () => {
         const completedAnswers = Object.keys(answers).length;
-        const totalQuestions = session.questions.length;
+        const totalQuestions = questions.length;
 
         Alert.alert(
             'Nộp bài',
@@ -129,7 +131,7 @@ const FRQScreen = () => {
 
         Alert.alert(
             'Hoàn thành!',
-            `Bài làm của bạn đã được nộp!\n\nThời gian: ${formatTime(timeSpent)}\nTổng số từ: ${wordCount}\nCâu đã trả lời: ${Object.keys(answers).length}/${session.questions.length}`,
+            `Bài làm của bạn đã được nộp!\n\nThời gian: ${formatTime(timeSpent)}\nTổng số từ: ${wordCount}\nCâu đã trả lời: ${Object.keys(answers).length}/${questions.length}`,
             [
                 { text: 'Xem kết quả', onPress: () => navigation.goBack() },
                 { text: 'Làm lại', onPress: () => resetSession() },
@@ -190,7 +192,7 @@ const FRQScreen = () => {
                     <View className="mb-4">
                         <View className="flex-row justify-between items-center mb-2">
                             <Text className="text-sm text-gray-600">
-                                Bài học: {currentIndex + 1} • Loại: Tự luận • Câu {currentIndex + 1} / {session.questions.length}
+                                Bài học: {currentIndex + 1} • Loại: Tự luận • Câu {currentIndex + 1} / {questions.length}
                             </Text>
                             <TouchableOpacity
                                 onPress={toggleTimer}
@@ -214,7 +216,7 @@ const FRQScreen = () => {
                     {/* Question Counter */}
                     <View className="flex-row justify-center">
                         <Text className="text-sm text-gray-600">
-                            Đã trả lời: {Object.keys(answers).length} / {session.questions.length} câu
+                            Đã trả lời: {Object.keys(answers).length} / {questions.length} câu
                         </Text>
                     </View>
                 </View>
@@ -222,13 +224,13 @@ const FRQScreen = () => {
                 {/* Question and Answer Area */}
                 <ScrollView className="flex-1 px-6"
                     showsVerticalScrollIndicator={false}
-                    onScroll={handleScroll} // scroll behavior 
-                    scrollEventThrottle={16} // scroll behavior 
+                    onScroll={handleScroll}
+                    scrollEventThrottle={16}
                 >
                     <View className="bg-white rounded-2xl p-6 my-6 shadow-sm border border-gray-100">
                         {/* Question */}
                         <Text className="text-xl font-bold text-gray-900 mb-6">
-                            {currentQuestion.question}
+                            {currentQuestion.text}
                         </Text>
 
                         {/* Answer Input */}
@@ -288,7 +290,7 @@ const FRQScreen = () => {
                                 className="bg-teal-400 px-6 py-3 rounded-xl"
                             >
                                 <Text className="text-white font-semibold">
-                                    {currentIndex === session.questions.length - 1 ? 'Nộp bài' : 'Tiếp →'}
+                                    {currentIndex === questions.length - 1 ? 'Nộp bài' : 'Tiếp →'}
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -298,7 +300,7 @@ const FRQScreen = () => {
                     <View className="bg-blue-50 rounded-xl p-4 mb-8">
                         <Text className="text-sm font-medium text-blue-800 mb-2">Tiến độ làm bài:</Text>
                         <View className="space-y-2">
-                            {session.questions.map((question, index) => (
+                            {questions.map((question, index) => (
                                 <View key={question.id} className="flex-row items-center justify-between">
                                     <Text className="text-sm text-blue-700">
                                         Câu {index + 1}: {answers[question.id] ? 'Đã trả lời' : 'Chưa trả lời'}

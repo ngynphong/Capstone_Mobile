@@ -6,32 +6,25 @@ import {
     ScrollView,
     ActivityIndicator,
     Alert,
-    Image,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp, CommonActions } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ArrowLeft, Clock, Users, BookOpen, TrendingUp, Play, FileText, Star, Coins } from 'lucide-react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { ArrowLeft, Clock, BookOpen, Play, FileText } from 'lucide-react-native';
 
-import { Exam, ExamStackParamList } from '../../types/examTypes';
+import { Exam } from '../../types/examTypes';
 import { ExamService } from '../../services/examService';
 import { useScroll } from '../../context/ScrollContext';
 import { useAppToast } from '../../utils/toast';
-import { useAuth } from '../../context/AuthContext';
-
-type NavigationProp = NativeStackNavigationProp<ExamStackParamList>;
-type RouteProps = RouteProp<ExamStackParamList, 'ExamDetail'>;
 
 const ExamDetailScreen = () => {
-    const navigation = useNavigation<NavigationProp>();
-    const route = useRoute<RouteProps>();
-    const { examId } = route.params;
+    const navigation = useNavigation<any>();
+    const route = useRoute();
+    const { examId } = route.params as { examId: string };
 
     const [exam, setExam] = useState<Exam | null>(null);
     const [loading, setLoading] = useState(true);
 
     const { handleScroll } = useScroll();
     const toast = useAppToast();
-    const { user, spendTokens } = useAuth();
 
     useEffect(() => {
         loadExamDetails();
@@ -40,13 +33,8 @@ const ExamDetailScreen = () => {
     const loadExamDetails = async () => {
         try {
             setLoading(true);
-            const examData = await ExamService.getExamById(examId);
-            if (examData) {
-                setExam(examData);
-            } else {
-                toast.error('Exam not found');
-                navigation.goBack();
-            }
+            const response = await ExamService.getExamById({ id: examId });
+            setExam(response.data);
         } catch (error) {
             console.error('Error loading exam details:', error);
             toast.error('Failed to load exam details');
@@ -63,34 +51,11 @@ const ExamDetailScreen = () => {
     };
 
     const handleFullTest = () => {
-        if (exam && user) {
-            // Check token balance
-            if (!user.tokenBalance || user.tokenBalance < exam.tokenCost) {
-                Alert.alert(
-                    'Không đủ Token',
-                    `Bạn cần ${exam.tokenCost} token để làm bài thi này. Số token hiện tại: ${user.tokenBalance || 0}. Bạn có muốn đi đến Store để mua token không?`,
-                    [
-                        { text: 'Hủy', style: 'cancel' },
-                        {
-                            text: 'Đi đến Store',
-                            onPress: () => {
-                                // Navigate to Profile tab, then to Store
-                                navigation.getParent()?.dispatch(
-                                    CommonActions.navigate('Profile', {
-                                        screen: 'Store',
-                                    })
-                                );
-                            },
-                        },
-                    ]
-                );
-                return;
-            }
-
-            // Show confirmation with token cost
+        if (exam) {
+            // Show confirmation for full test
             Alert.alert(
                 'Full Test Warning',
-                `Bài thi này tốn ${exam.tokenCost} token. Bạn có muốn bắt đầu không?\n\nThis is a full test including both Multiple Choice and Free Response sections. The timer will start immediately.`,
+                `This is a full test including both Multiple Choice and Free Response sections. The timer will start immediately.`,
                 [
                     { text: 'Cancel', style: 'cancel' },
                     { text: 'Start Full Test', style: 'destructive', onPress: () => startFullTest() },
@@ -100,44 +65,13 @@ const ExamDetailScreen = () => {
     };
 
     const startFullTest = async () => {
-        if (exam && user) {
-            // Deduct tokens
-            const success = await spendTokens(exam.tokenCost);
-            if (!success) {
-                toast.error('Failed to deduct tokens. Please try again.');
-                return;
-            }
-
+        if (exam) {
             // Navigate to FullTest
             navigation.navigate('FullTest', { examId: exam.id });
         }
     };
 
-    const getDifficultyColor = (difficulty: string) => {
-        switch (difficulty) {
-            case 'Easy':
-                return 'bg-green-100 text-green-800';
-            case 'Medium':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'Hard':
-                return 'bg-red-100 text-red-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
-        }
-    };
 
-    const getDifficultyDotColor = (difficulty: string) => {
-        switch (difficulty) {
-            case 'Easy':
-                return '#10B981';
-            case 'Medium':
-                return '#F59E0B';
-            case 'Hard':
-                return '#EF4444';
-            default:
-                return '#6B7280';
-        }
-    };
 
     if (loading) {
         return (
@@ -173,86 +107,46 @@ const ExamDetailScreen = () => {
 
                 {/* Exam Info Card */}
                 <View className="bg-white rounded-2xl p-6 border border-gray-100">
-                    <View className="flex-row justify-between items-start mb-4">
-                        <View className="flex-1">
-                            <Text className="text-xl font-bold text-gray-900 mb-2">
-                                {exam.title} - Level {exam.level}
-                            </Text>
-                            <Text className="text-gray-600 mb-3">
-                                {exam.description || 'Comprehensive exam covering various topics'}
-                            </Text>
+                    <View className="flex-1 mb-4">
+                        <Text className="text-xl font-bold text-gray-900 mb-2">
+                            {exam.title}
+                        </Text>
+                        <Text className="text-gray-600 mb-3">
+                            {exam.description || 'Comprehensive exam covering various topics'}
+                        </Text>
+                        <View className="flex-row items-center mb-2">
+                            <Text className="text-sm font-medium text-gray-700">Created by:</Text>
+                            <Text className="text-sm text-gray-600 ml-2">{exam.createdByName}</Text>
                         </View>
-                        <View className="flex-row items-center ml-4">
-                            <View
-                                className={`w-3 h-3 rounded-full mr-2`}
-                                style={{ backgroundColor: getDifficultyDotColor(exam.difficulty) }}
-                            />
-                            <Text className={`text-sm font-medium px-3 py-1 rounded-full ${getDifficultyColor(exam.difficulty)}`}>
-                                {exam.difficulty}
-                            </Text>
+                        <View className="flex-row items-center mb-2">
+                            <Text className="text-sm font-medium text-gray-700">Subjects:</Text>
+                            <Text className="text-sm text-gray-600 ml-2">{exam.subjectNames.join(', ')}</Text>
                         </View>
-                    </View>
-
-                    {/* Teacher Info */}
-                    <View className="flex-row items-center mb-4">
-                        <Image
-                            source={{ uri: exam.teacherAvatar }}
-                            className="w-12 h-12 rounded-full mr-3"
-                        />
-                        <View className="flex-1">
-                            <Text className="text-base font-semibold text-gray-900">
-                                {exam.teacherName}
-                            </Text>
-                            <View className="flex-row items-center mt-1">
-                                <Star size={14} color="#F59E0B" fill="#F59E0B" />
-                                <Text className="text-sm font-medium text-gray-700 ml-1">
-                                    {exam.rating.toFixed(1)}
-                                </Text>
-                            </View>
+                        <View className="flex-row items-center mb-2">
+                            <Text className="text-sm font-medium text-gray-700">Passing Score:</Text>
+                            <Text className="text-sm text-gray-600 ml-2">{exam.passingScore}</Text>
                         </View>
-                        <View className="flex-row items-center bg-yellow-50 px-3 py-2 rounded-lg">
-                            <Coins size={20} color="#F59E0B" />
-                            <Text className="text-base font-bold text-gray-900 ml-2">
-                                {exam.tokenCost}
+                        <View className="flex-row items-center mb-2">
+                            <Text className="text-sm font-medium text-gray-700">Status:</Text>
+                            <Text className={`text-sm ml-2 px-2 py-1 rounded-full ${exam.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                {exam.isActive ? 'Active' : 'Inactive'}
                             </Text>
                         </View>
                     </View>
 
                     {/* Stats */}
-                    <View className="flex-row items-center mb-4 space-x-6">
-                        <View className="flex-row items-center">
-                            <BookOpen size={18} color="#6B7280" />
-                            <Text className="text-sm text-gray-600 ml-2">
-                                {exam.sentences} Sentences
-                            </Text>
-                        </View>
-                        <View className="flex-row items-center">
-                            <Users size={18} color="#6B7280" />
-                            <Text className="text-sm text-gray-600 ml-2">
-                                {exam.questions} Questions
-                            </Text>
-                        </View>
+                    <View className="flex-row items-center space-x-6">
                         <View className="flex-row items-center">
                             <Clock size={18} color="#6B7280" />
                             <Text className="text-sm text-gray-600 ml-2">
                                 {exam.duration} Min
                             </Text>
                         </View>
-                    </View>
-
-                    {/* Progress */}
-                    <View className="mb-4">
-                        <View className="flex-row justify-between items-center mb-2">
-                            <Text className="text-sm text-gray-600">Popularity</Text>
-                            <Text className="text-sm text-gray-600">
-                                {exam.attempts || 0} attempts
+                        <View className="flex-row items-center">
+                            <BookOpen size={18} color="#6B7280" />
+                            <Text className="text-sm text-gray-600 ml-2">
+                                {exam.questionContents.length} Questions
                             </Text>
-                        </View>
-                        <View className="w-full bg-gray-200 rounded-full h-2">
-                            <View
-                                className="bg-teal-400 h-2 rounded-full"
-                                style={{ width: `${Math.min(100, (exam.attempts || 0) / 5)}%` }}
-                            />
                         </View>
                     </View>
                 </View>

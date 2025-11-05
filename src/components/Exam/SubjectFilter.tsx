@@ -1,11 +1,11 @@
 import React from 'react';
-import { ScrollView, TouchableOpacity, Text, View } from 'react-native';
-import { Subject, SubjectType } from '../../types/examTypes';
+import { ScrollView, TouchableOpacity, Text } from 'react-native';
+import { Subject } from '../../types/subjectTypes';
 
 interface SubjectFilterProps {
   subjects: Subject[];
-  selectedSubject: SubjectType;
-  onSubjectSelect: (subject: SubjectType) => void;
+  selectedSubject: string;
+  onSubjectSelect: (subject: string) => void;
 }
 
 const SubjectFilter: React.FC<SubjectFilterProps> = ({
@@ -29,10 +29,6 @@ const SubjectFilter: React.FC<SubjectFilterProps> = ({
               ? 'bg-teal-400 border-teal-400'
               : 'bg-white border-gray-300'
           }`}
-          style={{
-            backgroundColor: selectedSubject === subject.name ? subject.color : 'white',
-            borderColor: selectedSubject === subject.name ? subject.color : '#D1D5DB',
-          }}
         >
           <Text
             className={`font-medium text-sm ${

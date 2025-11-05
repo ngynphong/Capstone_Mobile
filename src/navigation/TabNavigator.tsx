@@ -91,7 +91,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
             backgroundColor: 'rgba(255, 255, 255, 0.10)',         
           }}
         >
-          <View className="flex-row items-center justify-around h-full px-1">
+          <View className="flex-row items-center justify-around h-full">
             {state.routes.map((route: any, index: number) => {
               const isActive = state.index === index;
               const IconComponent = iconMap[route.name as keyof typeof iconMap];

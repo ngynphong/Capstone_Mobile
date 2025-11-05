@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
-import { Clock, Users, BookOpen, TrendingUp, Star, Coins } from 'lucide-react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { Clock, BookOpen } from 'lucide-react-native';
 import { Exam } from '../../types/examTypes';
 
 interface ExamCardProps {
@@ -9,32 +9,6 @@ interface ExamCardProps {
 }
 
 const ExamCard: React.FC<ExamCardProps> = ({ exam, onPress }) => {
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Easy':
-        return 'bg-green-100 text-green-800';
-      case 'Medium':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Hard':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getDifficultyDotColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Easy':
-        return '#10B981';
-      case 'Medium':
-        return '#F59E0B';
-      case 'Hard':
-        return '#EF4444';
-      default:
-        return '#6B7280';
-    }
-  };
-
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -53,80 +27,64 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onPress }) => {
           <Text className="text-lg font-bold text-gray-900 mb-1">
             {exam.title}
           </Text>
-          <Text className="text-sm text-gray-600">Level {exam.level}</Text>
-        </View>
-        <View className="flex-row items-center">
-          <View
-            className={`w-2 h-2 rounded-full mr-2`}
-            style={{ backgroundColor: getDifficultyDotColor(exam.difficulty) }}
-          />
-          <Text className={`text-xs font-medium px-2 py-1 rounded-full ${getDifficultyColor(exam.difficulty)}`}>
-            {exam.difficulty}
+          <Text className="text-sm text-gray-600">
+            {exam.createdByName}
           </Text>
         </View>
       </View>
 
-      {/* Teacher Info */}
-      <View className="flex-row items-center mb-3">
-        <Image
-          source={{ uri: exam.teacherAvatar }}
-          className="w-8 h-8 rounded-full mr-2"
-        />
-        <Text className="text-sm text-gray-600 flex-1">
-          {exam.teacherName}
+      {/* Description */}
+      {exam.description && (
+        <Text className="text-sm text-gray-600 mb-3" numberOfLines={2}>
+          {exam.description}
         </Text>
-        <View className="flex-row items-center">
-          <Star size={14} color="#F59E0B" fill="#F59E0B" />
-          <Text className="text-sm font-medium text-gray-900 ml-1">
-            {exam.rating.toFixed(1)}
-          </Text>
-        </View>
-      </View>
+      )}
 
       {/* Stats */}
-      <View className="flex-row items-center mb-4 gap-2">
+      <View className="flex-row items-center mb-4 gap-4">
         <View className="flex-row items-center">
           <BookOpen size={16} color="#6B7280" />
           <Text className="text-sm text-gray-600 ml-1">
-            {exam.sentences} Sentences
-          </Text>
-        </View>
-        <View className="flex-row items-center">
-          <Users size={16} color="#6B7280" />
-          <Text className="text-sm text-gray-600 ml-1">
-            {exam.questions} Number
+            {exam.questionContents.length} câu hỏi
           </Text>
         </View>
         <View className="flex-row items-center">
           <Clock size={16} color="#6B7280" />
           <Text className="text-sm text-gray-600 ml-1">
-            {exam.duration} Min
+            {exam.duration} phút
           </Text>
         </View>
       </View>
 
-      {/* Progress Bar */}
-      <View className="mb-4">
-        <View className="w-full bg-gray-200 rounded-full h-2">
-          <View
-            className="bg-teal-400 h-2 rounded-full"
-            style={{ width: `${Math.min(100, (exam.attempts || 0) / 5)}%` }}
-          />
+      {/* Subjects */}
+      {exam.subjectNames.length > 0 && (
+        <View className="mb-4">
+          <Text className="text-xs text-gray-500 mb-1">Môn học:</Text>
+          <View className="flex-row flex-wrap gap-1">
+            {exam.subjectNames.slice(0, 3).map((subject, index) => (
+              <View key={index} className="bg-gray-100 px-2 py-1 rounded">
+                <Text className="text-xs text-gray-700">{subject}</Text>
+              </View>
+            ))}
+            {exam.subjectNames.length > 3 && (
+              <View className="bg-gray-100 px-2 py-1 rounded">
+                <Text className="text-xs text-gray-700">+{exam.subjectNames.length - 3}</Text>
+              </View>
+            )}
+          </View>
         </View>
-      </View>
+      )}
 
       {/* Footer */}
       <View className="flex-row justify-between items-center">
         <View className="flex-row items-center">
-          <TrendingUp size={16} color="#3CBCB2" />
-          <Text className="text-sm text-gray-600 ml-1">
-            {exam.attempts || 0} attempts
+          <Text className="text-sm text-gray-600">
+            {exam.isActive ? 'Đang hoạt động' : 'Không hoạt động'}
           </Text>
         </View>
         <View className="flex-row items-center">
-          <Coins size={16} color="#F59E0B" />
-          <Text className="text-sm font-medium text-gray-900 ml-1">
-            {exam.tokenCost} Tokens
+          <Text className="text-sm text-gray-500">
+            {new Date(exam.createdAt).toLocaleDateString('vi-VN')}
           </Text>
         </View>
       </View>

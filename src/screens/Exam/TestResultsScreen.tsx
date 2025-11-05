@@ -7,28 +7,29 @@ import {
   Alert,
   TextInput,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { ArrowLeft, RotateCcw, CheckCircle, XCircle, Clock, Award, Target, TrendingUp, Star } from 'lucide-react-native';
 
-import { ExamAttempt, ExamStackParamList, Question } from '../../types/examTypes';
 import { useScroll } from '../../context/ScrollContext';
 import { useAppToast } from '../../utils/toast';
 
-type NavigationProp = NativeStackNavigationProp<ExamStackParamList>;
-type RouteProps = RouteProp<ExamStackParamList, 'TestResults'>;
+interface MockAttempt {
+  examId: string;
+  score: number;
+  totalQuestions: number;
+  correctAnswers: number;
+  timeSpent: number;
+}
 
 interface ResultsData {
-  attempt: ExamAttempt;
-  questions: Question[];
+  attempt: MockAttempt;
   examTitle: string;
-  examLevel: string;
 }
 
 const TestResultsScreen = () => {
-  const navigation = useNavigation<NavigationProp>();
-  const route = useRoute<RouteProps>();
-  const { attempt } = route.params;
+  const navigation = useNavigation<any>();
+  const route = useRoute();
+  const { attempt } = route.params as { attempt: MockAttempt };
 
   const [resultsData, setResultsData] = useState<ResultsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,9 +51,7 @@ const TestResultsScreen = () => {
       // For now, we'll use mock data based on the attempt
       const mockResultsData: ResultsData = {
         attempt,
-        questions: [], // Would be loaded from API
         examTitle: 'Full Test',
-        examLevel: 'B1',
       };
       setResultsData(mockResultsData);
     } catch (error) {
@@ -167,7 +166,7 @@ const TestResultsScreen = () => {
         {/* Title */}
         <View className="items-center mb-6">
           <Text className="text-2xl font-bold text-gray-900 mb-2">Kết quả bài thi</Text>
-          <Text className="text-gray-600">Full Test - Level {resultsData.examLevel}</Text>
+          <Text className="text-gray-600">{resultsData.examTitle}</Text>
         </View>
       </View>
 

@@ -1,63 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { ChevronLeft, Calendar, Clock, CheckCircle, Target, Award, TrendingUp } from 'lucide-react-native';
 
-import { useAuth } from '../../context/AuthContext';
 import { useScroll } from '../../context/ScrollContext';
 import { ExamService } from '../../services/examService';
-import { ProfileStackParamList } from '../../types/types';
-import { ExamAttempt, Exam, QuizAnswer, FRQAnswer } from '../../types/examTypes';
-
-type NavigationProp = NativeStackNavigationProp<ProfileStackParamList>;
-type RouteProps = RouteProp<ProfileStackParamList, 'ExamResultDetail'>;
+import { MockAttempt } from '../../types/examTypes';
 
 const ExamResultDetailScreen = () => {
-  const navigation = useNavigation<NavigationProp>();
-  const route = useRoute<RouteProps>();
-  const { attempt } = route.params;
+  const navigation = useNavigation<any>();
+  const route = useRoute();
+  const { attempt } = route.params as { attempt: MockAttempt };
 
-  const { user } = useAuth();
   const { handleScroll } = useScroll();
-  const [exam, setExam] = useState<Exam | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadExamDetails();
-  }, [attempt.examId]);
-
-  const loadExamDetails = async () => {
-    try {
-      setLoading(true);
-      const examData = await ExamService.getExamById(attempt.examId);
-      if (examData) {
-        setExam(examData);
-      }
-    } catch (error) {
-      console.error('Error loading exam details:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(date));
-  };
-
-  const formatTimeSpent = (minutes: number) => {
-    if (minutes < 60) {
-      return `${minutes} minutes`;
-    }
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+  const formatTimeSpent = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const getScoreColor = (score: number) => {
@@ -80,65 +40,6 @@ const ExamResultDetailScreen = () => {
     if (score >= 70) return 'Good effort! Keep practicing to improve.';
     return 'Keep studying and try again. You\'ll get better!';
   };
-
-  const renderAnswer = (answer: QuizAnswer | FRQAnswer, index: number): React.ReactElement => {
-    const isMCQ = 'selectedAnswer' in answer;
-
-    return (
-      <View key={answer.questionId} className="bg-white rounded-xl p-4 mb-3 border border-gray-100">
-        <View className="flex-row justify-between items-start mb-2">
-          <Text className="text-base font-medium text-gray-900 flex-1 mr-2">
-            Question {index + 1}
-          </Text>
-          {isMCQ && (
-            <View className={`px-2 py-1 rounded-full ${answer.isCorrect ? 'bg-green-100' : 'bg-red-100'}`}>
-              <Text className={`text-xs font-medium ${answer.isCorrect ? 'text-green-800' : 'text-red-800'}`}>
-                {answer.isCorrect ? 'Correct' : 'Incorrect'}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {isMCQ ? (
-          <View className="mt-2">
-            <Text className="text-sm text-gray-600 mb-1">
-              Your answer: <Text className="font-medium">{answer.selectedAnswer}</Text>
-            </Text>
-            {!answer.isCorrect && (
-              <Text className="text-sm text-green-600">
-                This answer was incorrect
-              </Text>
-            )}
-          </View>
-        ) : (
-          <View className="mt-2">
-            <Text className="text-sm text-gray-600 mb-1">
-              Your answer: <Text className="font-medium">{answer.answer}</Text>
-            </Text>
-            <Text className="text-xs text-gray-500">
-              Word count: {answer.wordCount} • Time spent: {Math.floor(answer.timeSpent / 60)}m {answer.timeSpent % 60}s
-            </Text>
-          </View>
-        )}
-      </View>
-    );
-  };
-
-  if (loading) {
-    return (
-      <View className="flex-1 justify-center items-center bg-gray-50">
-        <Text className="text-gray-600 text-lg">Loading exam details...</Text>
-      </View>
-    );
-  }
-
-  if (!exam) {
-    return (
-      <View className="flex-1 justify-center items-center bg-gray-50">
-        <Text className="text-gray-600 text-lg">Exam not found</Text>
-      </View>
-    );
-  }
 
   return (
     <View className="flex-1 bg-gray-50">
@@ -184,61 +85,51 @@ const ExamResultDetailScreen = () => {
           {/* Quick Stats */}
           <View className="flex-row justify-between">
             <View className="items-center flex-1">
-              <Calendar size={20} color="#6B7280" />
-              <Text className="text-sm text-gray-600 mt-1">
-                {formatDate(attempt.startTime)}
-              </Text>
-            </View>
-            <View className="items-center flex-1">
               <Clock size={20} color="#6B7280" />
               <Text className="text-sm text-gray-600 mt-1">
                 {formatTimeSpent(attempt.timeSpent)}
               </Text>
             </View>
             <View className="items-center flex-1">
-              <TrendingUp size={20} color="#6B7280" />
+              <Target size={20} color="#6B7280" />
               <Text className="text-sm text-gray-600 mt-1">
                 {Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)}% Accuracy
+              </Text>
+            </View>
+            <View className="items-center flex-1">
+              <CheckCircle size={20} color="#10B981" />
+              <Text className="text-sm text-gray-600 mt-1">
+                Completed
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Exam Information */}
-        <View className="bg-white rounded-xl p-4 mb-4">
-          <Text className="text-lg font-semibold text-gray-900 mb-3">Exam Information</Text>
-          <View className="space-y-2">
-            <View className="flex-row justify-between">
-              <Text className="text-gray-600">Title:</Text>
-              <Text className="text-gray-900 font-medium">{exam.title}</Text>
+        {/* Performance Analysis */}
+        <View className="bg-white rounded-xl p-6 mb-4">
+          <Text className="text-lg font-semibold text-gray-900 mb-4">Performance Analysis</Text>
+
+          <View className="space-y-3">
+            <View className="flex-row justify-between items-center p-3 bg-gray-50 rounded-lg">
+              <Text className="text-gray-700">Total Questions</Text>
+              <Text className="font-semibold text-gray-900">{attempt.totalQuestions}</Text>
             </View>
-            <View className="flex-row justify-between">
-              <Text className="text-gray-600">Subject:</Text>
-              <Text className="text-gray-900 font-medium">{exam.subject.name}</Text>
+
+            <View className="flex-row justify-between items-center p-3 bg-gray-50 rounded-lg">
+              <Text className="text-gray-700">Correct Answers</Text>
+              <Text className="font-semibold text-green-600">{attempt.correctAnswers}</Text>
             </View>
-            <View className="flex-row justify-between">
-              <Text className="text-gray-600">Level:</Text>
-              <Text className="text-gray-900 font-medium">{exam.level}</Text>
+
+            <View className="flex-row justify-between items-center p-3 bg-gray-50 rounded-lg">
+              <Text className="text-gray-700">Incorrect Answers</Text>
+              <Text className="font-semibold text-red-600">{attempt.totalQuestions - attempt.correctAnswers}</Text>
             </View>
-            <View className="flex-row justify-between">
-              <Text className="text-gray-600">Difficulty:</Text>
-              <Text className="text-gray-900 font-medium">{exam.difficulty}</Text>
-            </View>
-            <View className="flex-row justify-between">
-              <Text className="text-gray-600">Duration:</Text>
-              <Text className="text-gray-900 font-medium">{exam.duration} minutes</Text>
+
+            <View className="flex-row justify-between items-center p-3 bg-gray-50 rounded-lg">
+              <Text className="text-gray-700">Time Spent</Text>
+              <Text className="font-semibold text-gray-900">{formatTimeSpent(attempt.timeSpent)}</Text>
             </View>
           </View>
-        </View>
-
-        {/* Detailed Answers */}
-        <View className="bg-white rounded-xl p-4 mb-4">
-          <Text className="text-lg font-semibold text-gray-900 mb-3">Question Breakdown</Text>
-          {attempt.answers.length === 0 ? (
-            <Text className="text-gray-600 text-center py-4">No detailed answers available</Text>
-          ) : (
-            attempt.answers.map((answer, index) => renderAnswer(answer, index))
-          )}
         </View>
 
         {/* Tips for Improvement */}
@@ -252,6 +143,18 @@ const ExamResultDetailScreen = () => {
             </Text>
           </View>
         )}
+
+        {/* Action Button */}
+        <View className="mb-8">
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            className="bg-teal-400 py-4 rounded-xl"
+          >
+            <Text className="text-white font-bold text-center text-lg">
+              Back to Results
+            </Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );

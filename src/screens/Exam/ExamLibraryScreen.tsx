@@ -2,104 +2,69 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
-  ScrollView,
   FlatList,
   RefreshControl,
   ActivityIndicator,
-  Dimensions,
+  ScrollView,
 } from 'react-native';
-import { Search, Filter, BookOpen } from 'lucide-react-native';
+import { BookOpen, Clock, Users } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { Exam, Subject, SubjectType, ExamFilters, ExamSortOption, ExamStackParamList } from '../../types/examTypes';
+import { Exam } from '../../types/examTypes';
 import { ExamService } from '../../services/examService';
-import ExamCard from '../../components/Exam/ExamCard';
-import SubjectFilter from '../../components/Exam/SubjectFilter';
-import CombinedTestBuilder from '../../components/Exam/CombinedTestBuilder';
 import { useScroll } from '../../context/ScrollContext';
-
-type NavigationProp = NativeStackNavigationProp<ExamStackParamList>;
-
-const { width } = Dimensions.get('window');
+import { useSubject } from '../../hooks/useSubject';
+import CombinedTestBuilder from '../../components/Exam/CombinedTestBuilder';
 
 const ExamLibraryScreen = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const navigation = useNavigation<any>();
   const { handleScroll } = useScroll();
-  // State management
+  const { subjects, fetchAllSubjects } = useSubject();
+
+  const [mode, setMode] = useState<'individual' | 'combined'>('individual');
   const [exams, setExams] = useState<Exam[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [filteredExams, setFilteredExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSubject, setSelectedSubject] = useState<SubjectType>('All');
-  const [sortOption, setSortOption] = useState<ExamSortOption>({ field: 'title', direction: 'asc' });
-  const [showFilters, setShowFilters] = useState(false);
-  const [mode, setMode] = useState<'single' | 'combined'>('single');
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('all');
 
-  // Load initial data
+  // Load exams and subjects data
   const loadData = useCallback(async (showRefreshIndicator = false) => {
     try {
       if (showRefreshIndicator) setRefreshing(true);
       else setLoading(true);
 
-      const [examsData, subjectsData] = await Promise.all([
-        ExamService.getExams(),
-        ExamService.getSubjects(),
+      // Load exams and subjects in parallel
+      await Promise.all([
+        ExamService.getAllExams().then(response => setExams(response.data)),
+        fetchAllSubjects(),
       ]);
-
-      setExams(examsData);
-      setSubjects(subjectsData);
     } catch (error) {
-      console.error('Error loading exam data:', error);
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [fetchAllSubjects]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Apply filters and search
-  const applyFilters = useCallback(async () => {
-    setLoading(true);
-    try {
-      const filters: ExamFilters = {};
-
-      if (selectedSubject !== 'All') {
-        filters.subject = selectedSubject;
-      }
-
-      if (searchQuery.trim()) {
-        filters.searchQuery = searchQuery.trim();
-      }
-
-      const filteredExams = await ExamService.getExams(filters, sortOption);
-      setExams(filteredExams);
-    } catch (error) {
-      console.error('Error applying filters:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedSubject, searchQuery, sortOption]);
-
-  // Debounced search
+  // Filter exams based on selected subject
   useEffect(() => {
-    const timer = setTimeout(() => {
-      applyFilters();
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [applyFilters]);
-
-  // Handle subject filter
-  const handleSubjectFilter = (subject: SubjectType) => {
-    setSelectedSubject(subject);
-  };
+    if (selectedSubjectId === 'all') {
+      setFilteredExams(exams);
+    } else {
+      const filtered = exams.filter(exam =>
+        exam.subjectNames.some(subjectName =>
+          subjects.find(subject => subject.id === selectedSubjectId)?.name === subjectName
+        )
+      );
+      setFilteredExams(filtered);
+    }
+  }, [exams, selectedSubjectId, subjects]);
 
   // Handle pull to refresh
   const handleRefresh = () => {
@@ -111,10 +76,71 @@ const ExamLibraryScreen = () => {
     navigation.navigate('ExamDetail', { examId: exam.id });
   };
 
-
   // Render exam card
   const renderExamCard = ({ item }: { item: Exam }) => (
-    <ExamCard exam={item} onPress={() => handleExamPress(item)} />
+    <TouchableOpacity
+      onPress={() => handleExamPress(item)}
+      className="bg-white rounded-2xl p-6 mb-4 border border-gray-100 mx-4"
+      style={{
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+      }}
+    >
+      <View className="flex-1">
+        <Text className="text-lg font-bold text-gray-900 mb-2">
+          {item.title}
+        </Text>
+        <Text className="text-gray-600 mb-3" numberOfLines={2}>
+          {item.description || 'No description available'}
+        </Text>
+
+        <View className="flex-row items-center justify-between mb-2">
+          <View className="flex-row items-center">
+            <Text className="text-sm font-medium text-gray-700">Created by:</Text>
+            <Text className="text-sm text-gray-600 ml-2">{item.createdByName}</Text>
+          </View>
+        </View>
+
+        <View className="flex-row items-center justify-between mb-2">
+          <View className="flex-row items-center">
+            <Text className="text-sm font-medium text-gray-700">Subjects:</Text>
+            <Text className="text-sm text-gray-600 ml-2">{item.subjectNames.join(', ')}</Text>
+          </View>
+        </View>
+
+        <View className="flex-row items-center justify-between mb-2">
+          <View className="flex-row items-center">
+            <Text className="text-sm font-medium text-gray-700">Passing Score:</Text>
+            <Text className="text-sm text-gray-600 ml-2">{item.passingScore}</Text>
+          </View>
+        </View>
+
+        <View className="flex-row items-center justify-between">
+          <View className="flex-row items-center">
+            <Clock size={16} color="#6B7280" />
+            <Text className="text-sm text-gray-600 ml-2">
+              {item.duration} Min
+            </Text>
+          </View>
+          <View className="flex-row items-center">
+            <BookOpen size={16} color="#6B7280" />
+            <Text className="text-sm text-gray-600 ml-2">
+              {item.questionContents.length} Questions
+            </Text>
+          </View>
+        </View>
+
+        <View className="flex-row items-center mt-3">
+          <Text className="text-sm font-medium text-gray-700">Status:</Text>
+          <Text className={`text-sm ml-2 px-2 py-1 rounded-full ${item.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            {item.isActive ? 'Active' : 'Inactive'}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
   );
 
   // Render empty state
@@ -125,9 +151,7 @@ const ExamLibraryScreen = () => {
         No exams found
       </Text>
       <Text className="text-gray-500 text-center mt-2">
-        {searchQuery || selectedSubject !== 'All'
-          ? 'Try adjusting your search or filters'
-          : 'Exams will appear here once available'}
+        Exams will appear here once available
       </Text>
     </View>
   );
@@ -142,77 +166,98 @@ const ExamLibraryScreen = () => {
     );
   }
 
+  // Handle combined test start
+  const handleStartCombinedTest = (examIds: string[]) => {
+    // Navigate to full test with combined exams
+    navigation.navigate('FullTest', { examId: examIds[0] }); // For now, just navigate to first exam
+  };
+
   return (
     <View className="flex-1 bg-gray-50">
-
       {/* Header */}
       <View className="bg-white pt-12 pb-4 px-6 shadow-sm">
         <View className="flex-row justify-between items-center mb-4">
           <View>
-            <Text className="text-2xl font-bold text-gray-900">Exam Test</Text>
+            <Text className="text-2xl font-bold text-gray-900">Thư viện bài thi</Text>
+            <Text className="text-gray-600 text-sm mt-1">
+              {mode === 'individual' ? `${filteredExams.length} bài thi có sẵn` : 'Tạo bộ đề tổ hợp'}
+            </Text>
           </View>
         </View>
 
-        {/* Search Bar */}
-        <View className="flex-row items-center bg-gray-100 rounded-xl px-4 py-3 mb-4">
-          <Search size={20} color="#6B7280" />
-          <TextInput
-            className="flex-1 ml-3 text-gray-900"
-            placeholder="Enter key word to search"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor="#9CA3AF"
-          />
-          <TouchableOpacity
-            onPress={() => setShowFilters(!showFilters)}
-            className="ml-2 p-2"
-          >
-            <Filter size={20} color={showFilters ? "#3CBCB2" : "#6B7280"} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Subject Filters */}
-        <SubjectFilter
-          subjects={subjects}
-          selectedSubject={selectedSubject}
-          onSubjectSelect={handleSubjectFilter}
-        />
-
         {/* Mode Selection Tabs */}
-        <View className="flex-row bg-gray-100 rounded-xl p-1 mt-4">
+        <View className="flex-row bg-gray-100 rounded-xl p-1 mb-4">
           <TouchableOpacity
-            onPress={() => setMode('single')}
-            className={`flex-1 py-2 rounded-lg ${mode === 'single' ? 'bg-teal-400' : ''}`}
+            onPress={() => setMode('individual')}
+            className={`flex-1 py-2 rounded-lg ${mode === 'individual' ? 'bg-teal-400' : ''}`}
           >
-            <Text className={`font-semibold text-center ${mode === 'single' ? 'text-white' : 'text-gray-600'}`}>
-              Thi Lẻ
+            <Text className={`font-semibold text-center text-sm ${mode === 'individual' ? 'text-white' : 'text-gray-600'}`}>
+              Thi lẻ
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setMode('combined')}
             className={`flex-1 py-2 rounded-lg ${mode === 'combined' ? 'bg-teal-400' : ''}`}
           >
-            <Text className={`font-semibold text-center ${mode === 'combined' ? 'text-white' : 'text-gray-600'}`}>
-              Thi Tổ hợp
+            <Text className={`font-semibold text-center text-sm ${mode === 'combined' ? 'text-white' : 'text-gray-600'}`}>
+              Thi tổ hợp
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Subject Filter - Only show for individual mode */}
+        {mode === 'individual' && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
+            <TouchableOpacity
+              onPress={() => setSelectedSubjectId('all')}
+              className={`mr-3 px-4 py-2 rounded-full border ${
+                selectedSubjectId === 'all'
+                  ? 'bg-teal-400 border-teal-400'
+                  : 'bg-white border-gray-300'
+              }`}
+            >
+              <Text className={`text-sm font-medium ${
+                selectedSubjectId === 'all' ? 'text-white' : 'text-gray-700'
+              }`}>
+                Tất cả môn
+              </Text>
+            </TouchableOpacity>
+
+            {subjects && subjects.map((subject) => (
+              <TouchableOpacity
+                key={subject.id}
+                onPress={() => setSelectedSubjectId(subject.id)}
+                className={`mr-3 px-4 py-2 rounded-full border ${
+                  selectedSubjectId === subject.id
+                    ? 'bg-teal-400 border-teal-400'
+                    : 'bg-white border-gray-300'
+                }`}
+              >
+                <Text className={`text-sm font-medium ${
+                  selectedSubjectId === subject.id ? 'text-white' : 'text-gray-700'
+                }`}>
+                  {subject.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
       </View>
 
-      {/* Exams List - Conditional Rendering */}
-      {mode === 'single' ? (
+      {/* Content based on mode */}
+      {mode === 'individual' ? (
+        /* Individual Exams List */
         <FlatList
-          data={exams}
+          data={filteredExams}
           renderItem={renderExamCard}
           keyExtractor={(item) => item.id}
-          numColumns={1}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
-            padding: 16,
+            paddingVertical: 16,
             paddingBottom: 100, // Space for tab bar
           }}
-          onScroll={handleScroll} // scroll behavior 
-          scrollEventThrottle={16} // scroll behavior 
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -229,15 +274,8 @@ const ExamLibraryScreen = () => {
           ) : null}
         />
       ) : (
-        <CombinedTestBuilder
-          onStartTest={(examIds) => {
-            // TODO: Implement combined test logic
-            // For now, just navigate to first exam
-            if (examIds.length > 0) {
-              navigation.navigate('ExamDetail', { examId: examIds[0] });
-            }
-          }}
-        />
+        /* Combined Test Builder */
+        <CombinedTestBuilder onStartTest={handleStartCombinedTest} />
       )}
     </View>
   );

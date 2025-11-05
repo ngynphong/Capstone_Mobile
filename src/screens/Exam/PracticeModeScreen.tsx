@@ -7,49 +7,35 @@ import {
     ActivityIndicator,
     Alert,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { ArrowLeft, FileText, Edit3, Clock, BookOpen } from 'lucide-react-native';
 
-import { Exam, Question, PracticeSession, ExamStackParamList } from '../../types/examTypes';
+import { Exam } from '../../types/examTypes';
 import { ExamService } from '../../services/examService';
 import { useAppToast } from '../../utils/toast';
 import { useScroll } from '../../context/ScrollContext';
 
-type NavigationProp = NativeStackNavigationProp<ExamStackParamList>;
-type RouteProps = RouteProp<ExamStackParamList, 'PracticeMode'>;
-
 const PracticeModeScreen = () => {
-    const navigation = useNavigation<NavigationProp>();
-    const route = useRoute<RouteProps>();
-    const { examId } = route.params;
+    const navigation = useNavigation<any>();
+    const route = useRoute();
+    const { examId } = route.params as { examId: string };
 
     const [exam, setExam] = useState<Exam | null>(null);
-    const [questions, setQuestions] = useState<Question[]>([]);
     const [loading, setLoading] = useState(true);
 
     const toast = useAppToast();
     const { handleScroll } = useScroll();
 
     useEffect(() => {
-        loadExamAndQuestions();
+        loadExamData();
     }, [examId]);
 
-    const loadExamAndQuestions = async () => {
+    const loadExamData = async () => {
         try {
             setLoading(true);
-            const [examData, questionsData] = await Promise.all([
-                ExamService.getExamById(examId),
-                ExamService.getExamQuestions(examId),
-            ]);
+            const examResponse = await ExamService.getExamById({ id: examId });
 
-            if (examData) {
-                setExam(examData);
-                setQuestions(questionsData);
-            } else {
-                toast.error('Exam not found');
-                navigation.goBack();
-            }
+            setExam(examResponse.data);
         } catch (error) {
             console.error('Error loading exam data:', error);
             toast.error('Failed to load exam data');
@@ -60,65 +46,18 @@ const PracticeModeScreen = () => {
     };
 
     const handleMCQPractice = () => {
-        const mcqQuestions = questions.filter(q => q.type === 'MCQ');
-        
-        if (mcqQuestions.length === 0) {
-            toast.error('This exam does not have multiple choice questions.');
-            return;
-        }
-
-        const session: PracticeSession = {
-            examId,
-            mode: 'quiz',
-            questions: mcqQuestions,
-            currentIndex: 0,
-            answers: {},
-            startTime: new Date(),
-            completed: false,
-        };
-
-        navigation.navigate('Quiz', { session });
+        // Navigate to Quiz screen with mock data for now
+        navigation.navigate('Quiz', { examId });
     };
 
     const handleFRQPractice = () => {
-        const frqQuestions = questions.filter(q => q.type === 'FRQ');
-        
-        if (frqQuestions.length === 0) {
-            toast.error('This exam does not have free response questions.');
-            return;
-        }
-
-        const session: PracticeSession = {
-            examId,
-            mode: 'frq',
-            questions: frqQuestions,
-            currentIndex: 0,
-            answers: {},
-            startTime: new Date(),
-            completed: false,
-        };
-
-        navigation.navigate('FRQ', { session });
+        // Navigate to FRQ screen with mock data for now
+        navigation.navigate('FRQ', { examId });
     };
 
     const handleFlashCard = () => {
-        const mcqQuestions = questions.filter(q => q.type === 'MCQ');      
-        if (mcqQuestions.length === 0) {
-            toast.error('This exam does not have questions for flash cards.');
-            return;
-        }
-
-        const session: PracticeSession = {
-            examId,
-            mode: 'flashcard',
-            questions: mcqQuestions,
-            currentIndex: 0,
-            answers: {},
-            startTime: new Date(),
-            completed: false,
-        };
-
-        navigation.navigate('FlashCard', { session });
+        // Navigate to FlashCard screen with mock data for now
+        navigation.navigate('FlashCard', { examId });
     };
 
     if (loading) {
@@ -134,9 +73,6 @@ const PracticeModeScreen = () => {
         return null;
     }
 
-    const mcqCount = questions.filter(q => q.type === 'MCQ').length;
-    const frqCount = questions.filter(q => q.type === 'FRQ').length;
-
     return (
         <View className="flex-1 bg-gray-50">
             {/* Header */}
@@ -149,21 +85,18 @@ const PracticeModeScreen = () => {
                         <ArrowLeft size={24} color="#374151" />
                     </TouchableOpacity>
                     <View className="flex-1">
-                        <Text className="text-2xl font-bold text-gray-900">Exam Test</Text>
+                        <Text className="text-2xl font-bold text-gray-900">Practice Mode</Text>
                     </View>
                 </View>
 
                 {/* Exam Info */}
                 <View className="bg-gray-50 rounded-xl p-4 mb-4">
                     <Text className="text-lg font-semibold text-gray-900 mb-2">
-                        {exam.title} - Level {exam.level}
+                        {exam.title}
                     </Text>
                     <View className="flex-row items-center justify-between">
                         <Text className="text-gray-600">
-                            📚 {exam.sentences} Sentences • 👥 {exam.questions} Questions • ⏱️ {exam.duration} Min
-                        </Text>
-                        <Text className="text-sm text-gray-500">
-                            {exam.attempts} people attempt in previous 14 days
+                            ⏱️ {exam.duration} phút • 📝 {exam.questionContents.length} câu hỏi
                         </Text>
                     </View>
                 </View>
@@ -257,7 +190,7 @@ const PracticeModeScreen = () => {
 
                     <View className="flex-row justify-between items-center">
                         <Text className="text-sm text-gray-600">
-                            📝 {mcqCount} câu hỏi
+                            📝 Có sẵn
                         </Text>
                         <Text className="text-sm font-medium text-teal-600">
                             Bắt đầu làm bài →
@@ -301,7 +234,7 @@ const PracticeModeScreen = () => {
 
                     <View className="flex-row justify-between items-center mt-4">
                         <Text className="text-sm text-gray-600">
-                            ✍️ {frqCount} câu hỏi
+                            ✍️ Có sẵn
                         </Text>
                         <Text className="text-sm font-medium text-purple-600">
                             Bắt đầu làm bài →

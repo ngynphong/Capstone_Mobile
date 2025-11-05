@@ -4,7 +4,6 @@ import {
   loginApi,
   registerApi,
   verifyEmailApi,
-  refreshTokenApi,
 } from '../services/authService';
 import { getUserProfile } from '../services/userService';
 import {

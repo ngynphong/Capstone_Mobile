@@ -6,35 +6,55 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { ArrowLeft, RotateCcw, CheckCircle, XCircle, Clock } from 'lucide-react-native';
 
-import { PracticeSession, ExamStackParamList } from '../../types/examTypes';
 import { useScroll } from '../../context/ScrollContext';
 
-type NavigationProp = NativeStackNavigationProp<ExamStackParamList>;
-type RouteProps = RouteProp<ExamStackParamList, 'Quiz'>;
-
 const QuizScreen = () => {
-  const navigation = useNavigation<NavigationProp>();
-  const route = useRoute<RouteProps>();
-  const { session } = route.params;
+  const navigation = useNavigation<any>();
+  const route = useRoute();
+  const { examId } = route.params as { examId: string };
 
-  const [currentIndex, setCurrentIndex] = useState(session.currentIndex);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
-  const [answers, setAnswers] = useState<Record<string, string>>(session.answers || {});
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showResult, setShowResult] = useState(false);
   const [startTime] = useState(Date.now());
   const { handleScroll } = useScroll();
 
-  const currentQuestion = session.questions[currentIndex];
-  const progress = ((currentIndex + 1) / session.questions.length) * 100;
+  // Mock questions for now - in real app, these would come from API
+  const questions = [
+    {
+      id: '1',
+      question: 'What is the capital of France?',
+      options: ['London', 'Berlin', 'Paris', 'Madrid'],
+      correctAnswer: 'Paris',
+      explanation: 'Paris is the capital and most populous city of France.'
+    },
+    {
+      id: '2',
+      question: 'What is 2 + 2?',
+      options: ['3', '4', '5', '6'],
+      correctAnswer: '4',
+      explanation: '2 + 2 equals 4 in basic arithmetic.'
+    },
+    {
+      id: '3',
+      question: 'What is the largest planet in our solar system?',
+      options: ['Mars', 'Venus', 'Jupiter', 'Saturn'],
+      correctAnswer: 'Jupiter',
+      explanation: 'Jupiter is the largest planet in our solar system.'
+    },
+  ];
+
+  const currentQuestion = questions[currentIndex];
+  const progress = ((currentIndex + 1) / questions.length) * 100;
 
   // Calculate current score
   const calculateScore = () => {
     let correct = 0;
-    session.questions.forEach(question => {
+    questions.forEach(question => {
       if (answers[question.id] === question.correctAnswer) {
         correct++;
       }
@@ -53,19 +73,19 @@ const QuizScreen = () => {
 
   // Handle next question
   const handleNext = () => {
-    if (currentIndex < session.questions.length - 1) {
+    if (currentIndex < questions.length - 1) {
       setCurrentIndex(currentIndex + 1);
-      setSelectedAnswer(answers[session.questions[currentIndex + 1]?.id] || '');
+      setSelectedAnswer(answers[questions[currentIndex + 1]?.id] || '');
       setShowResult(false);
     } else {
       // Quiz completed
       const finalScore = calculateScore();
-      const percentage = Math.round((finalScore / session.questions.length) * 100);
+      const percentage = Math.round((finalScore / questions.length) * 100);
       const timeSpent = Math.floor((Date.now() - startTime) / 1000);
 
       Alert.alert(
         'Hoàn thành Quiz!',
-        `Điểm số: ${finalScore}/${session.questions.length} (${percentage}%)\nThời gian: ${timeSpent}s`,
+        `Điểm số: ${finalScore}/${questions.length} (${percentage}%)\nThời gian: ${timeSpent}s`,
         [
           { text: 'Xem lại', onPress: () => reviewAnswers() },
           { text: 'Làm lại', onPress: () => resetQuiz() },
@@ -79,7 +99,7 @@ const QuizScreen = () => {
   const handlePrevious = () => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
-      setSelectedAnswer(answers[session.questions[currentIndex - 1]?.id] || '');
+      setSelectedAnswer(answers[questions[currentIndex - 1]?.id] || '');
       setShowResult(false);
     }
   };
@@ -145,7 +165,7 @@ const QuizScreen = () => {
   };
 
   if (!currentQuestion) {
-    console.log('Quiz Error - No current question:', { currentIndex, session });
+    console.log('Quiz Error - No current question:', { currentIndex });
     return (
       <View className="flex-1 justify-center items-center bg-gray-50 px-6">
         <Text className="text-xl font-semibold text-gray-900 mb-4">No Question Available</Text>
@@ -153,7 +173,7 @@ const QuizScreen = () => {
           Current Index: {currentIndex}
         </Text>
         <Text className="text-gray-600 text-center mb-6">
-          Total Questions: {session.questions.length}
+          Total Questions: {questions.length}
         </Text>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -194,7 +214,7 @@ const QuizScreen = () => {
               Bài học: {currentIndex + 1} • Loại: MCQ • Chế độ: Quiz
             </Text>
             <Text className="text-sm text-gray-600">
-              Câu {currentIndex + 1} / {session.questions.length}
+              Câu {currentIndex + 1} / {questions.length}
             </Text>
           </View>
           <View className="w-full bg-gray-200 rounded-full h-2">
@@ -293,7 +313,7 @@ const QuizScreen = () => {
               className="bg-teal-400 px-8 py-3 rounded-xl"
             >
               <Text className="text-white font-semibold">
-                {currentIndex === session.questions.length - 1 ? 'Hoàn thành' : 'Tiếp →'}
+                {currentIndex === questions.length - 1 ? 'Hoàn thành' : 'Tiếp →'}
               </Text>
             </TouchableOpacity>
           )}
@@ -304,7 +324,7 @@ const QuizScreen = () => {
         <View className="bg-gray-50 rounded-xl p-4 mb-8">
           <View className="flex-row justify-between items-center">
             <Text className="text-sm text-gray-600">
-              Tiến độ: {currentIndex + 1} / {session.questions.length}
+              Tiến độ: {currentIndex + 1} / {questions.length}
             </Text>
             <Text className="text-sm text-gray-600">
               {Math.round(progress)}% hoàn thành
