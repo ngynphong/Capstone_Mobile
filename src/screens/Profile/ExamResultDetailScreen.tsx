@@ -1,22 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { ChevronLeft, Calendar, Clock, CheckCircle, Target, Award, TrendingUp } from 'lucide-react-native';
+import { ChevronLeft, Calendar, Clock, CheckCircle, Target, Award, TrendingUp, Star } from 'lucide-react-native';
 
 import { useScroll } from '../../context/ScrollContext';
-import { ExamService } from '../../services/examService';
-import { MockAttempt } from '../../types/examTypes';
+import { useExamAttempt } from '../../hooks/useExamAttempt';
 
 const ExamResultDetailScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute();
-  const { attempt } = route.params as { attempt: MockAttempt };
+  const { attemptId } = route.params as { attemptId: string };
 
   const { handleScroll } = useScroll();
+  const { fetchAttemptResult, rateAttempt, attemptResultDetail, loading } = useExamAttempt();
 
-  const formatTimeSpent = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [showRating, setShowRating] = useState(false);
+
+  useEffect(() => {
+    if (attemptId) {
+      fetchAttemptResult(attemptId);
+    }
+  }, [attemptId, fetchAttemptResult]);
+
+  const attempt = attemptResultDetail;
+
+  const handleRateAttempt = async () => {
+    if (!attempt || rating === 0) {
+      Alert.alert('Error', 'Please select a rating.');
+      return;
+    }
+
+    try {
+      await rateAttempt(attemptId, { rating, comment });
+      Alert.alert('Success', 'Thank you for your feedback!');
+      setShowRating(false);
+    } catch (error: any) {
+      // Handle specific API error for rating restrictions
+      if (error?.response?.data?.code === 1034) {
+        Alert.alert(
+          'Rating Not Available',
+          'You cannot rate this exam because it has already been submitted or timed out. Ratings are only available during the exam session.',
+          [{ text: 'OK', onPress: () => setShowRating(false) }]
+        );
+      } else {
+        Alert.alert('Error', 'Failed to submit rating. Please try again.');
+      }
+    }
+  };
+
+  const formatTimeSpent = (startTime: string, endTime: string) => {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    const diffSeconds = Math.floor((end.getTime() - start.getTime()) / 1000);
+    const mins = Math.floor(diffSeconds / 60);
+    const secs = diffSeconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
@@ -41,6 +80,22 @@ const ExamResultDetailScreen = () => {
     return 'Keep studying and try again. You\'ll get better!';
   };
 
+  if (loading) {
+    return (
+      <View className="flex-1 justify-center items-center bg-gray-50">
+        <Text className="text-gray-600 text-lg">Loading exam result...</Text>
+      </View>
+    );
+  }
+
+  if (!attempt) {
+    return (
+      <View className="flex-1 justify-center items-center bg-gray-50">
+        <Text className="text-gray-600 text-lg">Exam result not found</Text>
+      </View>
+    );
+  }
+
   return (
     <View className="flex-1 bg-gray-50">
       {/* Header */}
@@ -64,17 +119,56 @@ const ExamResultDetailScreen = () => {
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
+        {/* Exam Info */}
+        <View className="bg-white rounded-xl p-6 mb-4">
+          <Text className="text-xl font-bold text-gray-900 mb-2">{attempt.title}</Text>
+          <View className="flex-row items-center mb-3">
+            <Text className="text-gray-600">Status: </Text>
+            <View className={`px-2 py-1 rounded-full ${attempt.status === 'COMPLETED' ? 'bg-green-100' : attempt.status === 'PENDING_GRADING' ? 'bg-yellow-100' : 'bg-gray-100'}`}>
+              <Text className={`text-xs font-medium ${attempt.status === 'COMPLETED' ? 'text-green-800' : attempt.status === 'PENDING_GRADING' ? 'text-yellow-800' : 'text-gray-800'}`}>
+                {attempt.status === 'PENDING_GRADING' ? 'Pending Grading' : attempt.status}
+              </Text>
+            </View>
+          </View>
+
+          {attempt.subjects && attempt.subjects.length > 0 && (
+            <View className="mb-3">
+              <Text className="text-gray-600 mb-2">Subjects:</Text>
+              <View className="flex-row flex-wrap">
+                {attempt.subjects.map((subject, index) => (
+                  <View key={index} className="bg-blue-100 px-3 py-1 rounded-full mr-2 mb-1">
+                    <Text className="text-xs text-blue-800 font-medium">{subject.name}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          <View className="flex-row justify-between items-center">
+            <View>
+              <Text className="text-sm text-gray-600">Passing Score</Text>
+              <Text className="text-lg font-semibold text-gray-900">{attempt.passingScore}%</Text>
+            </View>
+            <View className="items-end">
+              <Text className="text-sm text-gray-600">Your Score</Text>
+              <Text className={`text-2xl font-bold ${getScoreColor(attempt.score)}`}>
+                {attempt.score}%
+              </Text>
+            </View>
+          </View>
+        </View>
+
         {/* Score Overview */}
         <View className={`bg-white rounded-xl p-6 mb-4 border ${getScoreBgColor(attempt.score)}`}>
           <View className="items-center mb-4">
             <View className={`w-20 h-20 rounded-full items-center justify-center mb-3 ${getScoreBgColor(attempt.score)}`}>
-              <Award size={32} color={attempt.score >= 70 ? '#10B981' : '#EF4444'} />
+              <Award size={32} color={attempt.score >= attempt.passingScore ? '#10B981' : '#EF4444'} />
             </View>
             <Text className={`text-3xl font-bold ${getScoreColor(attempt.score)}`}>
-              {attempt.score}%
+              {attempt.score >= attempt.passingScore ? 'PASSED' : 'FAILED'}
             </Text>
             <Text className="text-gray-600 text-center mt-1">
-              {attempt.correctAnswers} out of {attempt.totalQuestions} correct
+              {attempt.questions.filter(q => q.score > 0).length} out of {attempt.questions.length} correct
             </Text>
           </View>
 
@@ -87,22 +181,126 @@ const ExamResultDetailScreen = () => {
             <View className="items-center flex-1">
               <Clock size={20} color="#6B7280" />
               <Text className="text-sm text-gray-600 mt-1">
-                {formatTimeSpent(attempt.timeSpent)}
+                {formatTimeSpent(attempt.startTime, attempt.endTime)}
               </Text>
             </View>
             <View className="items-center flex-1">
               <Target size={20} color="#6B7280" />
               <Text className="text-sm text-gray-600 mt-1">
-                {Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)}% Accuracy
+                {Math.round((attempt.questions.filter(q => q.score > 0).length / attempt.questions.length) * 100)}% Accuracy
               </Text>
             </View>
             <View className="items-center flex-1">
               <CheckCircle size={20} color="#10B981" />
               <Text className="text-sm text-gray-600 mt-1">
-                Completed
+                {attempt.questions.length} Questions
               </Text>
             </View>
           </View>
+        </View>
+
+        {/* Detailed Question Review */}
+        <View className="bg-white rounded-xl p-6 mb-4">
+          <Text className="text-lg font-semibold text-gray-900 mb-4">Question Details</Text>
+
+          {attempt.questions.map((questionItem, index) => (
+            <View key={questionItem.examQuestionId} className="mb-6 pb-4 border-b border-gray-100 last:border-b-0 last:pb-0 last:mb-0">
+              <View className="flex-row justify-between items-start mb-3">
+                <View className="flex-1">
+                  <Text className="text-lg font-semibold text-gray-900 mb-1">
+                    Question {questionItem.orderNumber}
+                  </Text>
+                  <View className="flex-row items-center mb-2">
+                    <View className="bg-gray-100 px-2 py-1 rounded mr-2">
+                      <Text className="text-xs text-gray-700">{questionItem.question.type.toUpperCase()}</Text>
+                    </View>
+                    <View className="bg-blue-100 px-2 py-1 rounded mr-2">
+                      <Text className="text-xs text-blue-700">{questionItem.question.subject.name}</Text>
+                    </View>
+                    <View className="bg-purple-100 px-2 py-1 rounded">
+                      <Text className="text-xs text-purple-700">{questionItem.question.difficulty.name}</Text>
+                    </View>
+                  </View>
+                  <Text className="text-sm text-gray-600 mb-1">Topic: {questionItem.question.topic}</Text>
+                </View>
+                <View className="items-end">
+                  <Text className={`text-sm font-semibold ${questionItem.score === questionItem.points ? 'text-green-600' : 'text-red-600'}`}>
+                    {questionItem.score}/{questionItem.points} pts
+                  </Text>
+                </View>
+              </View>
+
+              <Text className="text-gray-800 leading-6 mb-4">
+                {questionItem.question.content}
+              </Text>
+
+              {/* Answers */}
+              {questionItem.question.answers && questionItem.question.answers.length > 0 && (
+                <View className="mb-4">
+                  {questionItem.question.answers.map((answer, answerIndex) => {
+                    const isSelected = questionItem.studentAnswer?.selectedAnswerId === answer.id;
+                    const isCorrect = answer.id === questionItem.studentAnswer?.correctAnswer?.id;
+
+                    return (
+                      <View
+                        key={answer.id}
+                        className={`flex-row items-center p-3 rounded-lg mb-2 ${
+                          isCorrect ? 'bg-green-50 border border-green-200' :
+                          isSelected && !isCorrect ? 'bg-red-50 border border-red-200' :
+                          'bg-gray-50'
+                        }`}
+                      >
+                        <View className={`w-6 h-6 rounded-full items-center justify-center mr-3 ${
+                          isCorrect ? 'bg-green-500' :
+                          isSelected && !isCorrect ? 'bg-red-500' :
+                          'bg-gray-300'
+                        }`}>
+                          <Text className="text-xs text-white font-bold">
+                            {String.fromCharCode(65 + answerIndex)}
+                          </Text>
+                        </View>
+                        <Text className={`flex-1 text-sm ${
+                          isCorrect ? 'text-green-800 font-medium' :
+                          isSelected && !isCorrect ? 'text-red-800' :
+                          'text-gray-700'
+                        }`}>
+                          {answer.content}
+                        </Text>
+                        {isCorrect && (
+                          <CheckCircle size={16} color="#10B981" />
+                        )}
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+
+              {/* Student Answer Summary */}
+              <View className="bg-gray-50 rounded-lg p-3">
+                <Text className="text-sm font-medium text-gray-900 mb-2">Your Answer:</Text>
+                {questionItem.studentAnswer ? (
+                  <View>
+                    {questionItem.question.type === 'mcq' ? (
+                      <Text className="text-sm text-gray-700">
+                        Selected: {questionItem.question.answers?.find(a => a.id === questionItem.studentAnswer?.selectedAnswerId)?.content || 'N/A'}
+                      </Text>
+                    ) : (
+                      <Text className="text-sm text-gray-700">
+                        {questionItem.studentAnswer.frqAnswerText || 'No answer provided'}
+                      </Text>
+                    )}
+                    {questionItem.studentAnswer.feedback && (
+                      <Text className="text-sm text-blue-700 mt-1">
+                        Feedback: {questionItem.studentAnswer.feedback}
+                      </Text>
+                    )}
+                  </View>
+                ) : (
+                  <Text className="text-sm text-gray-500">No answer recorded</Text>
+                )}
+              </View>
+            </View>
+          ))}
         </View>
 
         {/* Performance Analysis */}
@@ -112,24 +310,108 @@ const ExamResultDetailScreen = () => {
           <View className="space-y-3">
             <View className="flex-row justify-between items-center p-3 bg-gray-50 rounded-lg">
               <Text className="text-gray-700">Total Questions</Text>
-              <Text className="font-semibold text-gray-900">{attempt.totalQuestions}</Text>
+              <Text className="font-semibold text-gray-900">{attempt.questions.length}</Text>
             </View>
 
             <View className="flex-row justify-between items-center p-3 bg-gray-50 rounded-lg">
               <Text className="text-gray-700">Correct Answers</Text>
-              <Text className="font-semibold text-green-600">{attempt.correctAnswers}</Text>
+              <Text className="font-semibold text-green-600">{attempt.questions.filter(q => q.score > 0).length}</Text>
             </View>
 
             <View className="flex-row justify-between items-center p-3 bg-gray-50 rounded-lg">
               <Text className="text-gray-700">Incorrect Answers</Text>
-              <Text className="font-semibold text-red-600">{attempt.totalQuestions - attempt.correctAnswers}</Text>
+              <Text className="font-semibold text-red-600">{attempt.questions.filter(q => q.score === 0).length}</Text>
+            </View>
+
+            <View className="flex-row justify-between items-center p-3 bg-gray-50 rounded-lg">
+              <Text className="text-gray-700">Total Points Earned</Text>
+              <Text className="font-semibold text-blue-600">
+                {attempt.questions.reduce((sum, q) => sum + q.score, 0)} / {attempt.questions.reduce((sum, q) => sum + q.points, 0)}
+              </Text>
             </View>
 
             <View className="flex-row justify-between items-center p-3 bg-gray-50 rounded-lg">
               <Text className="text-gray-700">Time Spent</Text>
-              <Text className="font-semibold text-gray-900">{formatTimeSpent(attempt.timeSpent)}</Text>
+              <Text className="font-semibold text-gray-900">{formatTimeSpent(attempt.startTime, attempt.endTime)}</Text>
+            </View>
+
+            <View className="flex-row justify-between items-center p-3 bg-gray-50 rounded-lg">
+              <Text className="text-gray-700">Start Time</Text>
+              <Text className="font-semibold text-gray-900">{new Date(attempt.startTime).toLocaleString('vi-VN')}</Text>
+            </View>
+
+            <View className="flex-row justify-between items-center p-3 bg-gray-50 rounded-lg">
+              <Text className="text-gray-700">End Time</Text>
+              <Text className="font-semibold text-gray-900">
+                {attempt.endTime ? new Date(attempt.endTime).toLocaleString('vi-VN') : 'Not completed'}
+              </Text>
             </View>
           </View>
+        </View>
+
+        {/* Rating Section */}
+        <View className="bg-white rounded-xl p-6 mb-4">
+          <Text className="text-lg font-semibold text-gray-900 mb-4">Rate This Exam</Text>
+
+          {!showRating ? (
+            <TouchableOpacity
+              onPress={() => setShowRating(true)}
+              className="bg-teal-50 border-2 border-dashed border-teal-200 rounded-xl p-4 items-center"
+            >
+              <Star size={32} color="#3CBCB2" />
+              <Text className="text-teal-700 font-medium mt-2">
+                {attempt.rating ? `Rated ${attempt.rating} stars` : 'Tap to rate this exam'}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <View>
+              <Text className="text-gray-700 mb-3">How would you rate this exam?</Text>
+
+              {/* Star Rating */}
+              <View className="flex-row justify-center mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <TouchableOpacity
+                    key={star}
+                    onPress={() => setRating(star)}
+                    className="mx-1"
+                  >
+                    <Star
+                      size={32}
+                      color={star <= rating ? '#F59E0B' : '#D1D5DB'}
+                      fill={star <= rating ? '#F59E0B' : 'none'}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Comment Input */}
+              <TextInput
+                multiline
+                numberOfLines={3}
+                placeholder="Leave a comment (optional)..."
+                value={comment}
+                onChangeText={setComment}
+                className="bg-gray-50 border border-gray-300 rounded-lg p-3 text-gray-700 mb-4"
+                textAlignVertical="top"
+              />
+
+              {/* Rating Buttons */}
+              <View className="flex-row gap-2">
+                <TouchableOpacity
+                  onPress={() => setShowRating(false)}
+                  className="flex-1 bg-gray-200 py-3 rounded-lg"
+                >
+                  <Text className="text-gray-700 font-medium text-center">Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleRateAttempt}
+                  className="flex-1 bg-teal-400 py-3 rounded-lg"
+                >
+                  <Text className="text-white font-medium text-center">Submit Rating</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Tips for Improvement */}

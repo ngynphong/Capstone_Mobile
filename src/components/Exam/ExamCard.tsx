@@ -1,14 +1,33 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Clock, BookOpen } from 'lucide-react-native';
-import { Exam } from '../../types/examTypes';
+import { Exam, ExamTemplate } from '../../types/examTypes';
 
 interface ExamCardProps {
-  exam: Exam;
+  exam: Exam | ExamTemplate;
   onPress: () => void;
 }
 
 const ExamCard: React.FC<ExamCardProps> = ({ exam, onPress }) => {
+  // Helper functions to handle different exam types
+  const getCreatedBy = (exam: Exam | ExamTemplate) => {
+    return 'createdByName' in exam ? exam.createdByName : exam.createdBy;
+  };
+
+  const getQuestionCount = (exam: Exam | ExamTemplate) => {
+    return 'questionContents' in exam
+      ? exam.questionContents.length
+      : exam.rules.reduce((sum, rule) => sum + rule.numberOfQuestions, 0);
+  };
+
+  const getSubjectNames = (exam: Exam | ExamTemplate) => {
+    return 'subjectNames' in exam ? exam.subjectNames : [exam.subject.name];
+  };
+
+  const getCreatedAt = (exam: Exam | ExamTemplate) => {
+    return 'createdAt' in exam ? exam.createdAt : exam.createdAt || '';
+  };
+
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -28,7 +47,7 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onPress }) => {
             {exam.title}
           </Text>
           <Text className="text-sm text-gray-600">
-            {exam.createdByName}
+            {getCreatedBy(exam)}
           </Text>
         </View>
       </View>
@@ -45,7 +64,7 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onPress }) => {
         <View className="flex-row items-center">
           <BookOpen size={16} color="#6B7280" />
           <Text className="text-sm text-gray-600 ml-1">
-            {exam.questionContents.length} câu hỏi
+            {getQuestionCount(exam)} câu hỏi
           </Text>
         </View>
         <View className="flex-row items-center">
@@ -57,18 +76,18 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onPress }) => {
       </View>
 
       {/* Subjects */}
-      {exam.subjectNames.length > 0 && (
+      {getSubjectNames(exam).length > 0 && (
         <View className="mb-4">
           <Text className="text-xs text-gray-500 mb-1">Môn học:</Text>
           <View className="flex-row flex-wrap gap-1">
-            {exam.subjectNames.slice(0, 3).map((subject, index) => (
+            {getSubjectNames(exam).slice(0, 3).map((subject, index) => (
               <View key={index} className="bg-gray-100 px-2 py-1 rounded">
                 <Text className="text-xs text-gray-700">{subject}</Text>
               </View>
             ))}
-            {exam.subjectNames.length > 3 && (
+            {getSubjectNames(exam).length > 3 && (
               <View className="bg-gray-100 px-2 py-1 rounded">
-                <Text className="text-xs text-gray-700">+{exam.subjectNames.length - 3}</Text>
+                <Text className="text-xs text-gray-700">+{getSubjectNames(exam).length - 3}</Text>
               </View>
             )}
           </View>
@@ -84,7 +103,7 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onPress }) => {
         </View>
         <View className="flex-row items-center">
           <Text className="text-sm text-gray-500">
-            {new Date(exam.createdAt).toLocaleDateString('vi-VN')}
+            {getCreatedAt(exam) && getCreatedAt(exam) !== '' ? new Date(getCreatedAt(exam)!).toLocaleDateString('vi-VN') : ''}
           </Text>
         </View>
       </View>

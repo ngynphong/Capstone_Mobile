@@ -17,7 +17,6 @@ export const useSubject = () => {
       const response: GetAllSubjectsResponse = await SubjectService.getAllSubjects();
       const subjectsData = response.data.items;
       setSubjects(subjectsData);
-      console.log('Subject data', subjectsData);
       return subjectsData;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch subjects';

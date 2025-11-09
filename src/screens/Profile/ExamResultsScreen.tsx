@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { useScroll } from '../../context/ScrollContext';
 import { useNavigation } from '@react-navigation/native';
-import { MockAttempt } from '../../types/examTypes';
+import { useExamAttemptHistory } from '../../hooks/useExamAttempt';
 import { ChevronLeft, Clock, CheckCircle, Target } from 'lucide-react-native';
 
 interface ExamResultsScreenProps {
@@ -12,54 +12,45 @@ interface ExamResultsScreenProps {
 const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => {
   const { handleScroll } = useScroll();
   const typedNavigation = useNavigation<any>();
-  const [examAttempts, setExamAttempts] = useState<MockAttempt[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { history, loading, error, fetchHistory, pageInfo } = useExamAttemptHistory();
+  const [allHistory, setAllHistory] = useState<any[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
 
+  // Accumulate history data
   useEffect(() => {
-    loadExamResults();
-  }, []);
-
-  const loadExamResults = async () => {
-    try {
-      setLoading(true);
-      // Mock data for now since API doesn't provide exam attempts
-      const mockAttempts: MockAttempt[] = [
-        {
-          examId: '1',
-          score: 85,
-          totalQuestions: 10,
-          correctAnswers: 8,
-          timeSpent: 450, // 7:30
-        },
-        {
-          examId: '2',
-          score: 92,
-          totalQuestions: 15,
-          correctAnswers: 14,
-          timeSpent: 720, // 12:00
-        },
-        {
-          examId: '3',
-          score: 78,
-          totalQuestions: 12,
-          correctAnswers: 9,
-          timeSpent: 380, // 6:20
-        },
-      ];
-      setExamAttempts(mockAttempts);
-    } catch (error) {
-      console.error('Error loading exam results:', error);
-    } finally {
-      setLoading(false);
+    if (history.length > 0) {
+      if (currentPage === 0) {
+        setAllHistory(history);
+      } else {
+        setAllHistory(prev => {
+          // Avoid duplicates by checking attemptId
+          const existingIds = new Set(prev.map(item => item.attemptId));
+          const newItems = history.filter(item => !existingIds.has(item.attemptId));
+          return [...prev, ...newItems];
+        });
+      }
     }
-  };
+  }, [history, currentPage]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadExamResults();
+    setCurrentPage(0);
+    await fetchHistory(0, 10);
     setRefreshing(false);
   };
+
+  const loadMore = async () => {
+    if (pageInfo && pageInfo.pageNo < pageInfo.totalPage - 1 && !loadingMore) {
+      setLoadingMore(true);
+      setCurrentPage(prev => prev + 1);
+      await fetchHistory(pageInfo.pageNo + 1, 10);
+      setLoadingMore(false);
+    }
+  };
+
+  const hasMorePages = pageInfo && pageInfo.pageNo < pageInfo.totalPage - 1;
 
   const formatTimeSpent = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -81,22 +72,26 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
     return 'bg-red-50 border-red-200';
   };
 
-  const renderExamResult = (attempt: MockAttempt, index: number) => {
+  const renderExamResult = (attempt: any, index: number) => {
+    const startTime = new Date(attempt.startTime);
+    const endTime = attempt.endTime ? new Date(attempt.endTime) : null;
+    const timeSpent = endTime ? Math.floor((endTime.getTime() - startTime.getTime()) / 1000) : 0;
+
     return (
       <TouchableOpacity
         key={index}
         className={`bg-white rounded-xl p-4 mb-3 border ${getScoreBgColor(attempt.score)}`}
         onPress={() => {
-          typedNavigation.navigate('ExamResultDetail', { attempt });
+          typedNavigation.navigate('ExamResultDetail', { attemptId: attempt.attemptId });
         }}
       >
         <View className="flex-row justify-between items-start mb-2">
           <View className="flex-1">
             <Text className="text-lg font-semibold text-gray-900 mb-1">
-              Mock Exam {attempt.examId}
+              Exam {attempt.examId}
             </Text>
             <Text className="text-sm text-gray-600 mb-2">
-              Practice Session
+              {startTime.toLocaleDateString('vi-VN')}
             </Text>
           </View>
           <View className={`px-3 py-1 rounded-full border ${getScoreBgColor(attempt.score)}`}>
@@ -110,20 +105,15 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
           <View className="flex-row items-center">
             <Clock size={16} color="#6B7280" />
             <Text className="text-sm text-gray-600 ml-1">
-              {formatTimeSpent(attempt.timeSpent)}
-            </Text>
-          </View>
-
-          <View className="flex-row items-center">
-            <Target size={16} color="#6B7280" />
-            <Text className="text-sm text-gray-600 ml-1">
-              {attempt.correctAnswers}/{attempt.totalQuestions}
+              {formatTimeSpent(timeSpent)}
             </Text>
           </View>
 
           <View className="flex-row items-center">
             <CheckCircle size={16} color="#10B981" />
-            <Text className="text-sm text-green-600 ml-1">Completed</Text>
+            <Text className="text-sm text-green-600 ml-1">
+              {attempt.endTime ? 'Completed' : 'In Progress'}
+            </Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -164,7 +154,7 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {examAttempts.length === 0 ? (
+        {allHistory.length === 0 ? (
           <View className="flex-1 justify-center items-center py-20">
             <Target size={64} color="#D1D5DB" />
             <Text className="text-xl font-semibold text-gray-900 mt-4 mb-2">
@@ -184,19 +174,19 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
               <View className="flex-row justify-between">
                 <View className="items-center">
                   <Text className="text-2xl font-bold text-teal-600">
-                    {examAttempts.length}
+                    {allHistory.length}
                   </Text>
                   <Text className="text-sm text-gray-600">Total Exams</Text>
                 </View>
                 <View className="items-center">
                   <Text className="text-2xl font-bold text-blue-600">
-                    {Math.round(examAttempts.reduce((acc, attempt) => acc + attempt.score, 0) / examAttempts.length)}%
+                    {Math.round(allHistory.reduce((acc: number, attempt: any) => acc + attempt.score, 0) / allHistory.length)}%
                   </Text>
                   <Text className="text-sm text-gray-600">Average Score</Text>
                 </View>
                 <View className="items-center">
                   <Text className="text-2xl font-bold text-green-600">
-                    {Math.max(...examAttempts.map(attempt => attempt.score))}%
+                    {Math.max(...allHistory.map((attempt: any) => attempt.score))}%
                   </Text>
                   <Text className="text-sm text-gray-600">Best Score</Text>
                 </View>
@@ -208,7 +198,40 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
               <Text className="text-lg font-semibold text-gray-900 mb-3">
                 Recent Results
               </Text>
-              {examAttempts.map((attempt, index) => renderExamResult(attempt, index))}
+              {allHistory.map((attempt: any, index: number) => renderExamResult(attempt, index))}
+
+              {/* Load More Button */}
+              {hasMorePages && (
+                <View className="mt-4">
+                  <TouchableOpacity
+                    onPress={loadMore}
+                    className="bg-teal-400 py-3 rounded-xl"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <View className="flex-row items-center justify-center">
+                        <ActivityIndicator size="small" color="white" />
+                        <Text className="text-white font-medium text-center text-lg ml-2">
+                          Loading...
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text className="text-white font-medium text-center text-lg">
+                        Load More Results
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Pagination Info */}
+              {pageInfo && (
+                <View className="mt-3 items-center">
+                  <Text className="text-sm text-gray-500">
+                    Page {pageInfo.pageNo + 1} of {pageInfo.totalPage}
+                  </Text>
+                </View>
+              )}
             </View>
           </>
         )}

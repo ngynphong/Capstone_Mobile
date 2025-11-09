@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
     View,
     Text,
@@ -8,52 +9,50 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { Check, BookOpen } from 'lucide-react-native';
-import { Exam } from '../../types/examTypes';
-import { ExamService } from '../../services/examService';
-import { SubjectService } from '../../services/subjectService';
-import { Subject } from '../../types/subjectTypes';
+import { ExamTemplate } from '../../types/examTypes';
 import ExamCard from './ExamCard';
 import { useAppToast } from '../../utils/toast';
 import { useScroll } from '../../context/ScrollContext';
+import { useBrowseExams } from '../../hooks/useExam';
+import { useSubject } from '../../hooks/useSubject';
+import { useExamAttempt } from '../../hooks/useExamAttempt';
 
 interface CombinedTestBuilderProps {
     onStartTest: (examIds: string[]) => void;
+    onStartAutoTest?: (subjectIds: string[]) => Promise<void>;
 }
 
-const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest }) => {
+const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest, onStartAutoTest }) => {
     const toast = useAppToast();
 
     const [mode, setMode] = useState<'manual' | 'auto'>('manual');
-    const [allExams, setAllExams] = useState<Exam[]>([]);
-    const [subjects, setSubjects] = useState<Subject[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [selectedExams, setSelectedExams] = useState<Exam[]>([]);
+    const [selectedExams, setSelectedExams] = useState<ExamTemplate[]>([]);
     const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+    const [filterSubjectId, setFilterSubjectId] = useState<string>('');
 
     const { handleScroll } = useScroll();
+    const { templates: allExams, loading: examsLoading } = useBrowseExams({ pageSize: 100 });
+    const { subjects, isLoading: subjectsLoading, fetchAllSubjects } = useSubject();
+    const { startComboRandomAttempt } = useExamAttempt();
+    const [isStartingTest, setIsStartingTest] = useState(false);
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    const loading = examsLoading || subjectsLoading;
 
-    const loadData = async () => {
-        try {
-            setLoading(true);
-            const [examsResponse, subjectsResponse] = await Promise.all([
-                ExamService.getAllExams(),
-                SubjectService.getAllSubjects()
-            ]);
-            setAllExams(examsResponse.data);
-            setSubjects(subjectsResponse.data?.items || []);
-        } catch (error) {
-            console.error('Error loading data:', error);
-            toast.error('Failed to load data');
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Load subjects when component mounts
+    useFocusEffect(
+        useCallback(() => {
+            if (subjects.length === 0) {
+                fetchAllSubjects();
+            }
+        }, [subjects.length, fetchAllSubjects])
+    );
 
-    const handleSelectExam = (exam: Exam) => {
+    // Filter exams based on selected subject
+    const filteredExams = filterSubjectId
+        ? allExams.filter(exam => exam.subject.id === filterSubjectId)
+        : allExams;
+
+    const handleSelectExam = (exam: ExamTemplate) => {
         if (selectedExams.find(e => e.id === exam.id)) {
             // Already selected, remove it
             setSelectedExams(selectedExams.filter(e => e.id !== exam.id));
@@ -71,56 +70,30 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest }
         }
     };
 
-    const handleStartAutoTest = () => {
+    const handleStartAutoTest = async () => {
         if (selectedSubjects.length === 0) {
             toast.error('Vui lòng chọn ít nhất một môn học');
             return;
         }
 
-        // Filter exams by selected subjects
-        const availableExams = allExams.filter(exam =>
-            exam.subjectNames.some(subjectName =>
-                selectedSubjects.some(subjectId =>
-                    subjects.find(s => s.id === subjectId)?.name === subjectName
-                )
-            )
-        );
-
-        if (availableExams.length === 0) {
-            toast.error('Không có bài thi nào cho các môn đã chọn');
+        if (!onStartAutoTest) {
+            toast.error('Tính năng này chưa được hỗ trợ');
             return;
         }
 
-        // Randomly select exams (up to 3 exams per subject)
-        const selectedExams: Exam[] = [];
-        selectedSubjects.forEach(subjectId => {
-            const subjectExams = availableExams.filter(exam =>
-                exam.subjectNames.includes(subjects.find(s => s.id === subjectId)?.name || '')
-            );
-            // Take up to 2 random exams per subject
-            const shuffled = subjectExams.sort(() => 0.5 - Math.random());
-            selectedExams.push(...shuffled.slice(0, Math.min(2, subjectExams.length)));
-        });
-
-        if (selectedExams.length === 0) {
-            toast.error('Không thể tạo bài thi từ các môn đã chọn');
-            return;
+        try {
+            setIsStartingTest(true);
+            await onStartAutoTest(selectedSubjects);
+        } catch (error) {
+            console.error('Error starting random combined test:', error);
+            toast.error('Không thể tạo bài thi tổ hợp. Vui lòng thử lại.');
+        } finally {
+            setIsStartingTest(false);
         }
-
-        Alert.alert(
-            'Bắt đầu Thi Tổ hợp',
-            `Hệ thống đã chọn ${selectedExams.length} bài thi từ ${selectedSubjects.length} môn học bạn đã chọn.`,
-            [
-                { text: 'Hủy', style: 'cancel' },
-                {
-                    text: 'Bắt đầu',
-                    onPress: () => onStartTest(selectedExams.map(e => e.id)),
-                },
-            ]
-        );
     };
 
     const handleStartTest = () => {
+        setIsStartingTest(true);
         if (selectedExams.length === 0) {
             toast.error('Vui lòng chọn ít nhất một bài thi');
             return;
@@ -151,10 +124,10 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest }
     return (
         <View className="flex-1 bg-gray-50">
             {/* Header */}
-            <View className="bg-white px-6 py-4 border-b border-gray-200">
-                <Text className="text-lg font-semibold text-gray-900">
+            <View className="bg-white px-6 py-2 border-b border-gray-200">
+                {/* <Text className="text-lg font-semibold text-gray-900">
                     Tạo bộ đề tổ hợp
-                </Text>
+                </Text> */}
                 {mode === 'manual' && selectedExams.length > 0 && (
                     <Text className="text-sm text-gray-600 mt-1">
                         Đã chọn: {selectedExams.length} bài thi
@@ -168,7 +141,7 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest }
             </View>
 
             {/* Mode Selection */}
-            <View className="bg-white px-6 py-4 border-b border-gray-200">
+            <View className="bg-white px-6 py-2 border-b border-gray-200">
                 <View className="flex-row bg-gray-100 rounded-xl p-1">
                     <TouchableOpacity
                         onPress={() => setMode('manual')}
@@ -193,8 +166,53 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest }
             {mode === 'manual' ? (
                 /* Manual Exam Selection */
                 <>
+                    {/* Subject Filter */}
+                    <View className="bg-white px-6 py-4 border-b border-gray-200">
+                        <Text className="text-base font-medium text-gray-900 mb-3">
+                            Lọc theo môn học
+                        </Text>
+                        <View className="flex-row flex-wrap">
+                            <TouchableOpacity
+                                onPress={() => setFilterSubjectId('')}
+                                className={`mr-3 mb-2 px-4 py-2 rounded-xl border ${
+                                    filterSubjectId === ''
+                                        ? 'bg-teal-400 border-teal-400'
+                                        : 'bg-white border-gray-300'
+                                }`}
+                            >
+                                <Text className={`font-medium ${
+                                    filterSubjectId === '' ? 'text-white' : 'text-gray-700'
+                                }`}>
+                                    Tất cả
+                                </Text>
+                            </TouchableOpacity>
+                            {subjects.map((subject) => (
+                                <TouchableOpacity
+                                    key={subject.id}
+                                    onPress={() => setFilterSubjectId(subject.id)}
+                                    className={`mr-3 mb-2 px-4 py-2 rounded-xl border ${
+                                        filterSubjectId === subject.id
+                                            ? 'bg-teal-400 border-teal-400'
+                                            : 'bg-white border-gray-300'
+                                    }`}
+                                >
+                                    <Text className={`font-medium ${
+                                        filterSubjectId === subject.id ? 'text-white' : 'text-gray-700'
+                                    }`}>
+                                        {subject.name}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                        {filterSubjectId && (
+                            <Text className="text-sm text-gray-600 mt-2">
+                                Đang lọc: {subjects.find(s => s.id === filterSubjectId)?.name}
+                            </Text>
+                        )}
+                    </View>
+
                     <FlatList
-                        data={allExams}
+                        data={filteredExams}
                         keyExtractor={(item) => item.id}
                         contentContainerStyle={{ padding: 16 }}
                         onScroll={handleScroll}
@@ -217,7 +235,9 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest }
                         }}
                         ListEmptyComponent={
                             <View className="items-center py-8">
-                                <Text className="text-gray-500">Không có bài thi nào</Text>
+                                <Text className="text-gray-500">
+                                    {filterSubjectId ? 'Không có bài thi nào cho môn học này' : 'Không có bài thi nào'}
+                                </Text>
                             </View>
                         }
                     />
@@ -293,6 +313,20 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest }
                         </View>
                     )}
                 </>
+            )}
+            {/* Loading Overlay */}
+            {isStartingTest && (
+                <View className="absolute inset-0 bg-black bg-opacity-50 justify-center items-center">
+                    <View className="bg-white rounded-2xl p-8 items-center shadow-lg">
+                        <ActivityIndicator size="large" color="#3CBCB2" />
+                            <Text className="text-gray-900 font-semibold mt-4 text-lg">
+                                        Đang khởi tạo bài thi...
+                            </Text>
+                            <Text className="text-gray-600 text-center mt-2">
+                                        Vui lòng đợi trong giây lát
+                            </Text>
+                    </View>
+                </View>
             )}
         </View>
     );

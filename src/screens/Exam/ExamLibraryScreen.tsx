@@ -7,77 +7,60 @@ import {
   RefreshControl,
   ActivityIndicator,
   ScrollView,
+  Alert,
 } from 'react-native';
-import { BookOpen, Clock, Users } from 'lucide-react-native';
+import { BookOpen, Clock, Users, Star } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 
-import { Exam } from '../../types/examTypes';
-import { ExamService } from '../../services/examService';
+import { ExamTemplate } from '../../types/examTypes';
 import { useScroll } from '../../context/ScrollContext';
 import { useSubject } from '../../hooks/useSubject';
+import { useBrowseExams } from '../../hooks/useExam';
+import { useExamAttempt } from '../../hooks/useExamAttempt';
+import { useAppToast } from '../../utils/toast';
 import CombinedTestBuilder from '../../components/Exam/CombinedTestBuilder';
 
 const ExamLibraryScreen = () => {
   const navigation = useNavigation<any>();
   const { handleScroll } = useScroll();
   const { subjects, fetchAllSubjects } = useSubject();
+  const { startComboAttempt, startComboRandomAttempt } = useExamAttempt();
+  const toast = useAppToast();
 
   const [mode, setMode] = useState<'individual' | 'combined'>('individual');
-  const [exams, setExams] = useState<Exam[]>([]);
-  const [filteredExams, setFilteredExams] = useState<Exam[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('all');
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Load exams and subjects data
-  const loadData = useCallback(async (showRefreshIndicator = false) => {
-    try {
-      if (showRefreshIndicator) setRefreshing(true);
-      else setLoading(true);
+  const { templates, loading, applyFilters, fetchTemplates, filters } = useBrowseExams({ pageSize: 100 });
 
-      // Load exams and subjects in parallel
-      await Promise.all([
-        ExamService.getAllExams().then(response => setExams(response.data)),
-        fetchAllSubjects(),
-      ]);
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [fetchAllSubjects]);
-
+  // Load subjects data
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    fetchAllSubjects();
+  }, [fetchAllSubjects]);
 
   // Filter exams based on selected subject
   useEffect(() => {
     if (selectedSubjectId === 'all') {
-      setFilteredExams(exams);
+      applyFilters({});
     } else {
-      const filtered = exams.filter(exam =>
-        exam.subjectNames.some(subjectName =>
-          subjects.find(subject => subject.id === selectedSubjectId)?.name === subjectName
-        )
-      );
-      setFilteredExams(filtered);
+      applyFilters({ subject: selectedSubjectId });
     }
-  }, [exams, selectedSubjectId, subjects]);
+  }, [selectedSubjectId, applyFilters]);
 
   // Handle pull to refresh
-  const handleRefresh = () => {
-    loadData(true);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchTemplates(filters);
+    setRefreshing(false);
   };
 
   // Handle exam card press
-  const handleExamPress = (exam: Exam) => {
+  const handleExamPress = (exam: ExamTemplate) => {
     navigation.navigate('ExamDetail', { examId: exam.id });
   };
 
   // Render exam card
-  const renderExamCard = ({ item }: { item: Exam }) => (
+  const renderExamCard = ({ item }: { item: ExamTemplate }) => (
     <TouchableOpacity
       onPress={() => handleExamPress(item)}
       className="bg-white rounded-2xl p-6 mb-4 border border-gray-100 mx-4"
@@ -100,14 +83,14 @@ const ExamLibraryScreen = () => {
         <View className="flex-row items-center justify-between mb-2">
           <View className="flex-row items-center">
             <Text className="text-sm font-medium text-gray-700">Created by:</Text>
-            <Text className="text-sm text-gray-600 ml-2">{item.createdByName}</Text>
+            <Text className="text-sm text-gray-600 ml-2">{item.createdBy}</Text>
           </View>
         </View>
 
         <View className="flex-row items-center justify-between mb-2">
           <View className="flex-row items-center">
             <Text className="text-sm font-medium text-gray-700">Subjects:</Text>
-            <Text className="text-sm text-gray-600 ml-2">{item.subjectNames.join(', ')}</Text>
+            <Text className="text-sm text-gray-600 ml-2">{item.subject.name}</Text>
           </View>
         </View>
 
@@ -128,7 +111,16 @@ const ExamLibraryScreen = () => {
           <View className="flex-row items-center">
             <BookOpen size={16} color="#6B7280" />
             <Text className="text-sm text-gray-600 ml-2">
-              {item.questionContents.length} Questions
+              {item.rules.reduce((sum, rule) => sum + rule.numberOfQuestions, 0)} Questions
+            </Text>
+          </View>
+        </View>
+
+        <View className="flex-row items-center justify-between mt-2">
+          <View className="flex-row items-center">
+            <Star size={16} color="#F59E0B" fill="#F59E0B" />
+            <Text className="text-sm text-gray-600 ml-2">
+              {item.averageRating.toFixed(1)} ({item.totalRatings} ratings)
             </Text>
           </View>
         </View>
@@ -167,9 +159,50 @@ const ExamLibraryScreen = () => {
   }
 
   // Handle combined test start
-  const handleStartCombinedTest = (examIds: string[]) => {
-    // Navigate to full test with combined exams
-    navigation.navigate('FullTest', { examId: examIds[0] }); // For now, just navigate to first exam
+  const handleStartCombinedTest = async (examIds: string[]) => {
+    try {
+
+      if (examIds.length === 0) {
+        Alert.alert('Error', 'Please select at least one exam.');
+        return;
+      }
+
+      // Start combined test attempt
+      const attempt = await startComboAttempt({ templateIds: examIds });
+      if (attempt) {
+        // Navigate to FullTest with the combined attempt
+        navigation.navigate('FullTest', { attempt });
+      }
+    } catch (error) {
+      console.error('Error starting combined test:', error);
+      Alert.alert('Error', 'Failed to start combined test. Please try again.');
+    }
+  };
+
+  // Handle auto combined test start
+  const handleStartAutoCombinedTest = async (subjectIds: string[]) => {
+    try {
+      if (subjectIds.length === 0) {
+        Alert.alert('Error', 'Please select at least one subject.');
+        return;
+      }
+
+      // Start random combined test attempt
+      const attempt = await startComboRandomAttempt({ subjectIds });
+      if (attempt) {
+        // Navigate to FullTest with the combined attempt
+        navigation.navigate('FullTest', { attempt });
+      }
+    } catch (error: any) {
+      console.error('Error starting auto combined test:', error);
+
+      // Handle specific 400 error for subjects with no exams
+      if (error?.response?.status === 400) {
+        toast.error('Môn thi bạn chọn chưa có bài thi');
+      } else {
+        Alert.alert('Error', 'Failed to start auto combined test. Please try again.');
+      }
+    }
   };
 
   return (
@@ -180,13 +213,13 @@ const ExamLibraryScreen = () => {
           <View>
             <Text className="text-2xl font-bold text-gray-900">Thư viện bài thi</Text>
             <Text className="text-gray-600 text-sm mt-1">
-              {mode === 'individual' ? `${filteredExams.length} bài thi có sẵn` : 'Tạo bộ đề tổ hợp'}
+              {mode === 'individual' ? `${templates.length} bài thi có sẵn` : 'Tạo bộ đề tổ hợp'}
             </Text>
           </View>
         </View>
 
         {/* Mode Selection Tabs */}
-        <View className="flex-row bg-gray-100 rounded-xl p-1 mb-4">
+        <View className="flex-row bg-gray-100 rounded-xl p-1 mb-2">
           <TouchableOpacity
             onPress={() => setMode('individual')}
             className={`flex-1 py-2 rounded-lg ${mode === 'individual' ? 'bg-teal-400' : ''}`}
@@ -248,7 +281,7 @@ const ExamLibraryScreen = () => {
       {mode === 'individual' ? (
         /* Individual Exams List */
         <FlatList
-          data={filteredExams}
+          data={templates}
           renderItem={renderExamCard}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
@@ -275,7 +308,10 @@ const ExamLibraryScreen = () => {
         />
       ) : (
         /* Combined Test Builder */
-        <CombinedTestBuilder onStartTest={handleStartCombinedTest} />
+        <CombinedTestBuilder
+          onStartTest={handleStartCombinedTest}
+          onStartAutoTest={handleStartAutoCombinedTest}
+        />
       )}
     </View>
   );
