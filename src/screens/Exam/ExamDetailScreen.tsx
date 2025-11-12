@@ -7,6 +7,7 @@ import {
     ActivityIndicator,
     Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { ArrowLeft, Clock, BookOpen, Play, FileText } from 'lucide-react-native';
 
@@ -40,21 +41,75 @@ const ExamDetailScreen = () => {
         }
     };
 
-    const handleFullTest = () => {
+    const handleFullTest = async () => {
         if (exam) {
-            // Show confirmation for full test
-            Alert.alert(
-                'Full Test Warning',
-                `This is a full test including both Multiple Choice and Free Response sections. The timer will start immediately.`,
-                [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                        text: 'Start Full Test',
-                        style: 'destructive',
-                        onPress: () => startFullTest(),
-                    },
-                ]
-            );
+            // Check for saved attempts for this exam template
+            try {
+                const keys = await AsyncStorage.getAllKeys();
+                const attemptKeys = keys.filter(key => key.startsWith('exam_') && key.endsWith('_attempt_data'));
+
+                let savedAttempt = null;
+                for (const key of attemptKeys) {
+                    const attemptData = await AsyncStorage.getItem(key);
+                    if (attemptData) {
+                        const attempt = JSON.parse(attemptData);
+                        // Check if this attempt is for the current exam template
+                        if (attempt.examTemplateId === exam.id) {
+                            savedAttempt = { attempt, key };
+                            break;
+                        }
+                    }
+                }
+
+                if (savedAttempt) {
+                    // Found a saved attempt, ask user what to do
+                    Alert.alert(
+                        'Bài thi chưa hoàn thành',
+                        'Bạn có bài thi chưa hoàn thành cho đề thi này. Bạn muốn tiếp tục làm bài hay bắt đầu bài thi mới?',
+                        [
+                            { text: 'Hủy', style: 'cancel' },
+                            {
+                                text: 'Bắt đầu mới',
+                                style: 'destructive',
+                                onPress: () => startFullTest(),
+                            },
+                            {
+                                text: 'Tiếp tục',
+                                onPress: () => continueSavedAttempt(savedAttempt.attempt),
+                            },
+                        ]
+                    );
+                } else {
+                    // No saved attempt, show normal confirmation
+                    Alert.alert(
+                        'Full Test Warning',
+                        `This is a full test including both Multiple Choice and Free Response sections. The timer will start immediately.`,
+                        [
+                            { text: 'Cancel', style: 'cancel' },
+                            {
+                                text: 'Start Full Test',
+                                style: 'destructive',
+                                onPress: () => startFullTest(),
+                            },
+                        ]
+                    );
+                }
+            } catch (error) {
+                console.error('Error checking saved attempts:', error);
+                // If error checking, proceed with normal flow
+                Alert.alert(
+                    'Full Test Warning',
+                    `This is a full test including both Multiple Choice and Free Response sections. The timer will start immediately.`,
+                    [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                            text: 'Start Full Test',
+                            style: 'destructive',
+                            onPress: () => startFullTest(),
+                        },
+                    ]
+                );
+            }
         }
     };
 
@@ -74,6 +129,11 @@ const ExamDetailScreen = () => {
                 setIsStartingTest(false);
             }
         }
+    };
+
+    const continueSavedAttempt = (savedAttempt: any) => {
+        // Navigate to FullTest with the saved attempt data
+        navigation.navigate('FullTest', { attempt: savedAttempt });
     };
 
 
