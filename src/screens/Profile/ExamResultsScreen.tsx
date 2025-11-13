@@ -12,7 +12,7 @@ interface ExamResultsScreenProps {
 const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => {
   const { handleScroll } = useScroll();
   const typedNavigation = useNavigation<any>();
-  const { history, loading, fetchHistory, pageInfo } = useExamAttemptHistory();
+  const { history, loading, error, fetchHistory, pageInfo } = useExamAttemptHistory();
   const [allHistory, setAllHistory] = useState<any[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -123,15 +123,7 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
   if (loading) {
     return (
       <View className="flex-1 justify-center items-center bg-gray-50">
-        <View className="bg-white rounded-2xl p-8 shadow-lg items-center">
-          <ActivityIndicator size="large" color="#3CBCB2" />
-          <Text className="text-gray-900 font-semibold mt-4 text-lg">
-            Đang tải kết quả thi...
-          </Text>
-          <Text className="text-gray-600 text-center mt-2">
-            Vui lòng đợi trong giây lát
-          </Text>
-        </View>
+        <Text className="text-gray-600 text-lg">Loading exam results...</Text>
       </View>
     );
   }

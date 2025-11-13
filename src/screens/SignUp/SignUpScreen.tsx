@@ -152,7 +152,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
     if (!success) {
       toast.error('Unable to create account. Please try again.');
     } else {
-      toast.success('Your account has been created successfully please check your email to verify!');
+      toast.success('Your account has been created successfully!');
       // Đợi 1 giây để user thấy toast, sau đó navigate
       setTimeout(() => {
         navigation.navigate('Login');
