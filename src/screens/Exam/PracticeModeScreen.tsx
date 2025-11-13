@@ -10,8 +10,8 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { ArrowLeft, FileText, Edit3, Clock, BookOpen } from 'lucide-react-native';
 
-import { Exam } from '../../types/examTypes';
-import { ExamService } from '../../services/examService';
+import { ExamTemplate } from '../../types/examTypes';
+import ExamService from '../../services/examService';
 import { useAppToast } from '../../utils/toast';
 import { useScroll } from '../../context/ScrollContext';
 
@@ -20,7 +20,7 @@ const PracticeModeScreen = () => {
     const route = useRoute();
     const { examId } = route.params as { examId: string };
 
-    const [exam, setExam] = useState<Exam | null>(null);
+    const [exam, setExam] = useState<ExamTemplate | null>(null);
     const [loading, setLoading] = useState(true);
 
     const toast = useAppToast();
@@ -33,9 +33,9 @@ const PracticeModeScreen = () => {
     const loadExamData = async () => {
         try {
             setLoading(true);
-            const examResponse = await ExamService.getExamById({ id: examId });
+            const examResponse = await ExamService.getTemplateById(examId);
 
-            setExam(examResponse.data);
+            setExam(examResponse.data.data);
         } catch (error) {
             console.error('Error loading exam data:', error);
             toast.error('Failed to load exam data');
@@ -96,7 +96,7 @@ const PracticeModeScreen = () => {
                     </Text>
                     <View className="flex-row items-center justify-between">
                         <Text className="text-gray-600">
-                            ⏱️ {exam.duration} phút • 📝 {exam.questionContents.length} câu hỏi
+                            ⏱️ {exam.duration} phút • 📝 {exam.rules.reduce((total, rule) => total + rule.numberOfQuestions, 0)} câu hỏi
                         </Text>
                     </View>
                 </View>

@@ -5,11 +5,13 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { ArrowLeft, RotateCcw, CheckCircle, XCircle, Clock } from 'lucide-react-native';
 
 import { useScroll } from '../../context/ScrollContext';
+import { useGetAllQuestions } from '../../hooks/useQuestion';
 
 const QuizScreen = () => {
   const navigation = useNavigation<any>();
@@ -23,39 +25,30 @@ const QuizScreen = () => {
   const [startTime] = useState(Date.now());
   const { handleScroll } = useScroll();
 
-  // Mock questions for now - in real app, these would come from API
-  const questions = [
-    {
-      id: '1',
-      question: 'What is the capital of France?',
-      options: ['London', 'Berlin', 'Paris', 'Madrid'],
-      correctAnswer: 'Paris',
-      explanation: 'Paris is the capital and most populous city of France.'
-    },
-    {
-      id: '2',
-      question: 'What is 2 + 2?',
-      options: ['3', '4', '5', '6'],
-      correctAnswer: '4',
-      explanation: '2 + 2 equals 4 in basic arithmetic.'
-    },
-    {
-      id: '3',
-      question: 'What is the largest planet in our solar system?',
-      options: ['Mars', 'Venus', 'Jupiter', 'Saturn'],
-      correctAnswer: 'Jupiter',
-      explanation: 'Jupiter is the largest planet in our solar system.'
-    },
-  ];
-
+  // Use questions from API and filter for MCQ only
+  const { questions: allQuestions, loading, error } = useGetAllQuestions({ pageSize: 50 });
+  const questions = allQuestions.filter(q => q.type === 'mcq');
   const currentQuestion = questions[currentIndex];
-  const progress = ((currentIndex + 1) / questions.length) * 100;
+  const progress = questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
+
+  // Get the correct answer for questions
+  const getCorrectAnswer = (question: any) => {
+    if (question.type === 'mcq' && question.answers && question.answers.length > 0) {
+      // For MCQ, assume the first answer is correct
+      return question.answers[0].content;
+    }
+    if (question.type === 'frq' && question.answers && question.answers.length > 0) {
+      return question.answers[0].content;
+    }
+    return '';
+  };
 
   // Calculate current score
   const calculateScore = () => {
     let correct = 0;
     questions.forEach(question => {
-      if (answers[question.id] === question.correctAnswer) {
+      const correctAns = getCorrectAnswer(question);
+      if (answers[question.id] === correctAns) {
         correct++;
       }
     });
@@ -133,47 +126,69 @@ const QuizScreen = () => {
   };
 
   // Get option background color
-  const getOptionBgColor = (option: string, index: number) => {
+  const getOptionBgColor = (optionText: string, index: number) => {
     if (!showResult) {
-      return selectedAnswer === option ? 'bg-teal-100 border-teal-300' : 'bg-white border-gray-200';
+      return selectedAnswer === optionText ? 'bg-teal-100 border-teal-300' : 'bg-white border-gray-200';
     }
 
-    const correctAnswer = currentQuestion.correctAnswer;
-    if (option === correctAnswer) {
+    const correctAnswer = getCorrectAnswer(currentQuestion);
+    if (optionText === correctAnswer) {
       return 'bg-green-100 border-green-300';
     }
-    if (option === selectedAnswer && selectedAnswer !== correctAnswer) {
+    if (optionText === selectedAnswer && selectedAnswer !== correctAnswer) {
       return 'bg-red-100 border-red-300';
     }
     return 'bg-gray-50 border-gray-200';
   };
 
   // Get option text color
-  const getOptionTextColor = (option: string, index: number) => {
+  const getOptionTextColor = (optionText: string, index: number) => {
     if (!showResult) {
-      return selectedAnswer === option ? 'text-teal-700' : 'text-gray-700';
+      return selectedAnswer === optionText ? 'text-teal-700' : 'text-gray-700';
     }
 
-    const correctAnswer = currentQuestion.correctAnswer;
-    if (option === correctAnswer) {
+    const correctAnswer = getCorrectAnswer(currentQuestion);
+    if (optionText === correctAnswer) {
       return 'text-green-800';
     }
-    if (option === selectedAnswer && selectedAnswer !== correctAnswer) {
+    if (optionText === selectedAnswer && selectedAnswer !== correctAnswer) {
       return 'text-red-800';
     }
     return 'text-gray-500';
   };
 
-  if (!currentQuestion) {
-    console.log('Quiz Error - No current question:', { currentIndex });
+  // Loading state
+  if (loading) {
+    return (
+      <View className="flex-1 justify-center items-center bg-gray-50">
+        <ActivityIndicator size="large" color="#3CBCB2" />
+        <Text className="text-gray-600 mt-4">Loading questions...</Text>
+      </View>
+    );
+  }
+
+  // Error state
+  if (error) {
     return (
       <View className="flex-1 justify-center items-center bg-gray-50 px-6">
-        <Text className="text-xl font-semibold text-gray-900 mb-4">No Question Available</Text>
+        <Text className="text-xl font-semibold text-gray-900 mb-4">Error Loading Questions</Text>
+        <Text className="text-gray-600 text-center mb-6">{error}</Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          className="bg-teal-400 px-6 py-3 rounded-xl"
+        >
+          <Text className="text-white font-semibold">Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!currentQuestion) {
+    return (
+      <View className="flex-1 justify-center items-center bg-gray-50 px-6">
+        <Text className="text-xl font-semibold text-gray-900 mb-4">No Questions Available</Text>
         <Text className="text-gray-600 text-center mb-6">
-          Current Index: {currentIndex}
-        </Text>
-        <Text className="text-gray-600 text-center mb-6">
-          Total Questions: {questions.length}
+          No questions found. Please try again later.
         </Text>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -242,30 +257,30 @@ const QuizScreen = () => {
         <View className="bg-white rounded-2xl p-6 my-6 shadow-sm border border-gray-100">
           {/* Question */}
           <Text className="text-xl font-bold text-gray-900 mb-6 text-center">
-            {currentQuestion.question}
+            {currentQuestion.content}
           </Text>
 
           {/* Options */}
           <View className="space-y-3">
-            {currentQuestion.options && currentQuestion.options.length > 0 ? (
-              currentQuestion.options.map((option, index) => (
+            {currentQuestion.answers && currentQuestion.answers.length > 0 ? (
+              currentQuestion.answers.map((answer, index) => (
                 <TouchableOpacity
                   key={`${currentQuestion.id}-${index}`}
-                  onPress={() => !showResult && handleAnswerSelect(option)}
+                  onPress={() => !showResult && handleAnswerSelect(answer.content)}
                   disabled={showResult}
-                  className={`p-4 my-1 rounded-xl border-2 ${getOptionBgColor(option, index)}`}
+                  className={`p-4 my-1 rounded-xl border-2 ${getOptionBgColor(answer.content, index)}`}
                 >
                   <View className="flex-row items-center">
-                    <Text className={`text-lg font-semibold mr-3 ${getOptionTextColor(option, index)}`}>
+                    <Text className={`text-lg font-semibold mr-3 ${getOptionTextColor(answer.content, index)}`}>
                       {getOptionLetter(index)}.
                     </Text>
-                    <Text className={`text-base flex-1 ${getOptionTextColor(option, index)}`}>
-                      {option}
+                    <Text className={`text-base flex-1 ${getOptionTextColor(answer.content, index)}`}>
+                      {answer.content}
                     </Text>
-                    {showResult && option === currentQuestion.correctAnswer && (
+                    {showResult && answer.content === getCorrectAnswer(currentQuestion) && (
                       <CheckCircle size={20} color="#10B981" />
                     )}
-                    {showResult && option === selectedAnswer && option !== currentQuestion.correctAnswer && (
+                    {showResult && answer.content === selectedAnswer && answer.content !== getCorrectAnswer(currentQuestion) && (
                       <XCircle size={20} color="#EF4444" />
                     )}
                   </View>
@@ -278,11 +293,13 @@ const QuizScreen = () => {
             )}
           </View>
 
-          {/* Explanation */}
-          {showResult && currentQuestion.explanation && (
+          {/* Explanation - Note: QuestionBankItem doesn't have explanation field */}
+          {showResult && (
             <View className="mt-6 p-4 bg-blue-50 rounded-xl">
-              <Text className="text-sm font-medium text-blue-800 mb-2">Giải thích:</Text>
-              <Text className="text-sm text-blue-700">{currentQuestion.explanation}</Text>
+              <Text className="text-sm font-medium text-blue-800 mb-2">Kết quả:</Text>
+              <Text className="text-sm text-blue-700">
+                Đáp án đúng: {getCorrectAnswer(currentQuestion)}
+              </Text>
             </View>
           )}
         </View>

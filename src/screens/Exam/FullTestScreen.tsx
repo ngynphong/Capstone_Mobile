@@ -9,6 +9,8 @@ import {
   TextInput,
   ProgressBarAndroid,
   Platform,
+  Animated,
+  Easing,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Clock, BookOpen, CheckCircle, Circle } from 'lucide-react-native';
@@ -25,8 +27,15 @@ const FullTestScreen = () => {
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [answers, setAnswers] = useState<{[key: string]: {selectedAnswerId?: string, frqAnswerText?: string}}>({});
   const [currentSection, setCurrentSection] = useState<'mcq' | 'frq'>('mcq');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [showSuccess, setShowSuccess] = useState<boolean>(false);
   const { handleScroll } = useScroll();
   const { submitAttempt } = useExamAttempt();
+
+  // Animation values
+  const submitButtonScale = useState(new Animated.Value(1))[0];
+  const successOpacity = useState(new Animated.Value(0))[0];
+  const successScale = useState(new Animated.Value(0.8))[0];
 
   // Hide tab bar when entering test
   useEffect(() => {
@@ -99,6 +108,16 @@ const FullTestScreen = () => {
 
   const confirmSubmission = async () => {
     try {
+      setIsSubmitting(true);
+
+      // Animate submit button
+      Animated.timing(submitButtonScale, {
+        toValue: 0.95,
+        duration: 200,
+        easing: Easing.ease,
+        useNativeDriver: true,
+      }).start();
+
       // Prepare answers from state
       const submissionAnswers = attempt.questions.map(question => ({
         examQuestionId: question.examQuestionId,
@@ -108,15 +127,50 @@ const FullTestScreen = () => {
 
       await submitAttempt(attempt.examAttemptId, { answers: submissionAnswers });
 
-      Alert.alert(
-        'Hoàn thành!',
-        'Bài làm của bạn đã được nộp thành công!',
-        [
-          { text: 'OK', onPress: () => navigation.goBack() },
-        ]
-      );
+      // Reset button animation
+      Animated.timing(submitButtonScale, {
+        toValue: 1,
+        duration: 200,
+        easing: Easing.ease,
+        useNativeDriver: true,
+      }).start();
+
+      setIsSubmitting(false);
+      setShowSuccess(true);
+
+      // Animate success message
+      Animated.parallel([
+        Animated.timing(successOpacity, {
+          toValue: 1,
+          duration: 500,
+          easing: Easing.ease,
+          useNativeDriver: true,
+        }),
+        Animated.spring(successScale, {
+          toValue: 1,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // Auto navigate back after showing success
+      setTimeout(() => {
+        navigation.goBack();
+      }, 2000);
+
     } catch (error) {
       console.error('Error submitting test:', error);
+      setIsSubmitting(false);
+
+      // Reset button animation on error
+      Animated.timing(submitButtonScale, {
+        toValue: 1,
+        duration: 200,
+        easing: Easing.ease,
+        useNativeDriver: true,
+      }).start();
+
       Alert.alert('Error', 'Failed to submit test. Please try again.');
     }
   };
@@ -358,14 +412,32 @@ const FullTestScreen = () => {
 
         {/* Submit Button */}
         <View className="mb-8">
-          <TouchableOpacity
-            onPress={submitTest}
-            className="bg-teal-400 px-6 py-4 rounded-xl items-center"
+          <Animated.View
+            style={{
+              transform: [{ scale: submitButtonScale }],
+            }}
           >
-            <Text className="text-white font-semibold text-lg">
-              Nộp bài
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={submitTest}
+              disabled={isSubmitting}
+              className={`px-6 py-4 rounded-xl items-center ${
+                isSubmitting ? 'bg-teal-300' : 'bg-teal-400'
+              }`}
+            >
+              {isSubmitting ? (
+                <View className="flex-row items-center">
+                  <ActivityIndicator size="small" color="#ffffff" />
+                  <Text className="text-white font-semibold text-lg ml-2">
+                    Đang nộp bài...
+                  </Text>
+                </View>
+              ) : (
+                <Text className="text-white font-semibold text-lg">
+                  Nộp bài
+                </Text>
+              )}
+            </TouchableOpacity>
+          </Animated.View>
         </View>
 
         {/* Warning */}
@@ -378,6 +450,43 @@ const FullTestScreen = () => {
           </Text>
         </View>
       </ScrollView>
+
+      {/* Success Animation Overlay */}
+      {showSuccess && (
+        <Animated.View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            opacity: successOpacity,
+          }}
+        >
+          <Animated.View
+            style={{
+              backgroundColor: 'white',
+              borderRadius: 20,
+              padding: 40,
+              alignItems: 'center',
+              transform: [{ scale: successScale }],
+            }}
+          >
+            <View className="w-16 h-16 bg-green-100 rounded-full items-center justify-center mb-4">
+              <CheckCircle size={40} color="#10B981" />
+            </View>
+            <Text className="text-xl font-bold text-gray-900 mb-2">
+              Nộp bài thành công!
+            </Text>
+            <Text className="text-gray-600 text-center">
+              Bài làm của bạn đã được ghi nhận.{'\n'}Đang chuyển hướng...
+            </Text>
+          </Animated.View>
+        </Animated.View>
+      )}
     </View>
   );
 };

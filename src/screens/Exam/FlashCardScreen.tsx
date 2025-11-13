@@ -4,9 +4,12 @@ import {
   Text,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, Eye } from 'lucide-react-native';
+
+import { useGetAllQuestions } from '../../hooks/useQuestion';
 
 const FlashCardScreen = () => {
   const navigation = useNavigation<any>();
@@ -17,27 +20,23 @@ const FlashCardScreen = () => {
   const [showAnswer, setShowAnswer] = useState(false);
   const [learnedCards, setLearnedCards] = useState<Set<number>>(new Set());
 
-  // Mock questions for now - in real app, these would come from API
-  const questions = [
-    {
-      id: '1',
-      question: 'What is the capital of France?',
-      correctAnswer: 'Paris'
-    },
-    {
-      id: '2',
-      question: 'What is 2 + 2?',
-      correctAnswer: '4'
-    },
-    {
-      id: '3',
-      question: 'What is the largest planet in our solar system?',
-      correctAnswer: 'Jupiter'
-    },
-  ];
-
+  // Use questions from API and filter for MCQ only
+  const { questions: allQuestions, loading, error } = useGetAllQuestions({ pageSize: 50 });
+  const questions = allQuestions.filter(q => q.type === 'mcq');
   const currentQuestion = questions[currentIndex];
-  const progress = ((currentIndex + 1) / questions.length) * 100;
+  const progress = questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
+
+  // Get the correct answer for questions
+  const getCorrectAnswer = (question: any) => {
+    if (question.type === 'mcq' && question.answers && question.answers.length > 0) {
+      // For MCQ, assume the first answer is correct (based on API structure)
+      return question.answers[0].content;
+    }
+    if (question.type === 'frq' && question.answers && question.answers.length > 0) {
+      return question.answers[0].content;
+    }
+    return 'No answer available';
+  };
 
   // Simple card flip without animation
   const flipCard = () => {
@@ -83,10 +82,45 @@ const FlashCardScreen = () => {
     handleNext();
   };
 
-  if (!currentQuestion) {
+  // Loading state
+  if (loading) {
     return (
       <View className="flex-1 justify-center items-center bg-gray-50">
-        <Text className="text-gray-600">No questions available</Text>
+        <ActivityIndicator size="large" color="#3CBCB2" />
+        <Text className="text-gray-600 mt-4">Loading questions...</Text>
+      </View>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <View className="flex-1 justify-center items-center bg-gray-50 px-6">
+        <Text className="text-xl font-semibold text-gray-900 mb-4">Error Loading Questions</Text>
+        <Text className="text-gray-600 text-center mb-6">{error}</Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          className="bg-teal-400 px-6 py-3 rounded-xl"
+        >
+          <Text className="text-white font-semibold">Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!currentQuestion) {
+    return (
+      <View className="flex-1 justify-center items-center bg-gray-50 px-6">
+        <Text className="text-xl font-semibold text-gray-900 mb-4">No Questions Available</Text>
+        <Text className="text-gray-600 text-center mb-6">
+          No questions found. Please try again later.
+        </Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          className="bg-teal-400 px-6 py-3 rounded-xl"
+        >
+          <Text className="text-white font-semibold">Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -142,7 +176,7 @@ const FlashCardScreen = () => {
               <View className="items-center justify-center min-h-[200px]">
                 <TouchableOpacity onPress={flipCard} className="items-center w-full">
                   <Text className="text-2xl font-bold text-gray-900 mb-4 text-center">
-                    {currentQuestion.question}
+                    {currentQuestion.content}
                   </Text>
                   <View className="flex-row items-center justify-center">
                     <Eye size={20} color="#3CBCB2" />
@@ -159,7 +193,7 @@ const FlashCardScreen = () => {
                   Đáp án
                 </Text>
                 <Text className="text-lg text-gray-800 mb-4 text-center">
-                  {currentQuestion.correctAnswer}
+                  {getCorrectAnswer(currentQuestion)}
                 </Text>
                 <TouchableOpacity
                   onPress={flipCard}

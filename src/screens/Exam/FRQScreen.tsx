@@ -8,12 +8,14 @@ import {
     Alert,
     KeyboardAvoidingView,
     Platform,
+    ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { ArrowLeft, RotateCcw, Clock, Save, Send } from 'lucide-react-native';
 
 import { useScroll } from '../../context/ScrollContext';
 import { useAppToast } from '../../utils/toast';
+import { useGetAllQuestions } from '../../hooks/useQuestion';
 
 const FRQScreen = () => {
     const navigation = useNavigation<any>();
@@ -30,13 +32,9 @@ const FRQScreen = () => {
     const { handleScroll } = useScroll();
     const toast = useAppToast();
 
-    // Mock questions for now - in real app, these would come from API
-    const questions = [
-        { id: '1', text: 'Describe the main themes in the novel "Pride and Prejudice".' },
-        { id: '2', text: 'Explain the concept of photosynthesis and its importance in the ecosystem.' },
-        { id: '3', text: 'What are the key differences between classical and operant conditioning?' },
-    ];
-
+    // Use questions from API and filter for FRQ only
+    const { questions: allQuestions, loading, error } = useGetAllQuestions({ pageSize: 50 });
+    const questions = allQuestions.filter(q => q.type === 'frq');
     const currentQuestion = questions[currentIndex];
     const progress = ((currentIndex + 1) / questions.length) * 100;
 
@@ -154,10 +152,45 @@ const FRQScreen = () => {
         setIsTimerActive(!isTimerActive);
     };
 
-    if (!currentQuestion) {
+    // Loading state
+    if (loading) {
         return (
             <View className="flex-1 justify-center items-center bg-gray-50">
-                <Text className="text-gray-600">No questions available</Text>
+                <ActivityIndicator size="large" color="#3CBCB2" />
+                <Text className="text-gray-600 mt-4">Loading questions...</Text>
+            </View>
+        );
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <View className="flex-1 justify-center items-center bg-gray-50 px-6">
+                <Text className="text-xl font-semibold text-gray-900 mb-4">Error Loading Questions</Text>
+                <Text className="text-gray-600 text-center mb-6">{error}</Text>
+                <TouchableOpacity
+                    onPress={() => navigation.goBack()}
+                    className="bg-teal-400 px-6 py-3 rounded-xl"
+                >
+                    <Text className="text-white font-semibold">Go Back</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    if (!currentQuestion) {
+        return (
+            <View className="flex-1 justify-center items-center bg-gray-50 px-6">
+                <Text className="text-xl font-semibold text-gray-900 mb-4">No Questions Available</Text>
+                <Text className="text-gray-600 text-center mb-6">
+                    No questions found. Please try again later.
+                </Text>
+                <TouchableOpacity
+                    onPress={() => navigation.goBack()}
+                    className="bg-teal-400 px-6 py-3 rounded-xl"
+                >
+                    <Text className="text-white font-semibold">Go Back</Text>
+                </TouchableOpacity>
             </View>
         );
     }
@@ -230,7 +263,7 @@ const FRQScreen = () => {
                     <View className="bg-white rounded-2xl p-6 my-6 shadow-sm border border-gray-100">
                         {/* Question */}
                         <Text className="text-xl font-bold text-gray-900 mb-6">
-                            {currentQuestion.text}
+                            {currentQuestion.content}
                         </Text>
 
                         {/* Answer Input */}
