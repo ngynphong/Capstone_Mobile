@@ -4,6 +4,7 @@ import ExamService from '../services/examService'; // Import service tổng củ
 import type {
   ActiveExam,
   ExamResult,
+  SaveProgressPayload,
   SubmitExamPayload,
 } from '../types/examTypes';
 import type {
@@ -56,6 +57,7 @@ export const useExamAttempt = () => {
         // Đã đổi tên hàm: ExamService.startSingleAttempt
         const res = await ExamService.startSingleAttempt(payload);
         if (res.data.code === 0 || res.data.code === 1000) {
+          console.log('data bài thi', res.data.data)
           setActiveAttempt(res.data.data);
           return res.data.data;
         } else {
@@ -221,6 +223,61 @@ export const useExamAttempt = () => {
     }
   }, []);
 
+  /**
+  * Lưu tiến độ làm bài (thường dùng cho Auto-save hoặc nút "Lưu tạm").
+  * Hàm này thường không nên hiện toast success liên tục để tránh spam, 
+  * trừ khi có lỗi.
+  */
+  const saveProgress = useCallback(
+    async (attemptId: string, payload: SaveProgressPayload) => {
+      // Lưu ý: Có thể không cần set loading toàn cục nếu muốn save ngầm (silent save)
+      // Ở đây mình set loading để có thể hiển thị trạng thái "Đang lưu..."
+      setLoading(true);
+      try {
+        const res = await ExamService.saveProgress(attemptId, payload);
+        if (res.data.code === 0 || res.data.code === 1000) {
+          // Success - có thể return true để component biết đã lưu xong
+          return true;
+        } else {
+          console.error("Save progress failed:", res.data.message);
+          return false;
+        }
+      } catch (err) {
+        console.error("Save progress error:", err);
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  /**
+   * Khôi phục đáp án từ savedAnswer trong ActiveExam
+   */
+  const restoreSavedAnswers = useCallback(
+    (activeExam: ActiveExam | null) => {
+      if (!activeExam?.savedAnswer) {
+        return null;
+      }
+      return activeExam.savedAnswer;
+    },
+    []
+  );
+
+  /**
+   * Kiểm tra xem có đáp án đã lưu hay không
+   */
+  const hasSavedAnswers = useCallback(
+    (activeExam: ActiveExam | null) => {
+      return activeExam?.savedAnswer !== null && 
+             activeExam?.savedAnswer?.answers !== undefined && 
+             activeExam.savedAnswer.answers.length > 0;
+    },
+    []
+  );
+
+
   return {
     loading,
     error,
@@ -234,6 +291,9 @@ export const useExamAttempt = () => {
     rateAttempt,
     fetchAttemptResult,
     subscribeAttemptResult,
+    saveProgress,
+    restoreSavedAnswers,
+    hasSavedAnswers,
   };
 };
 
@@ -250,7 +310,7 @@ export const useExamAttemptHistory = () => {
   const [error, setError] = useState<string | null>(null);
   const [sorts, setSorts] = useState<string[]>(['startTime_desc']);
   const toast = useAppToast();
-  
+
   if (!sorts) {
     setSorts(['startTime_desc']);
   }

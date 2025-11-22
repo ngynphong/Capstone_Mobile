@@ -11,6 +11,7 @@ import type {
   StartComboRandomPayload,
   RateAttemptPayload,
   AttemptResultDetail,
+  SaveProgressPayload,
 } from '../types/examTypes';
 import type { AxiosResponse } from 'axios';
 
@@ -130,6 +131,17 @@ const ExamService = {
     attemptId: string,
   ): Promise<AxiosResponse<ApiResponse<AttemptResultDetail>>> => {
     return axiosInstance.get(`/exam-attempts/${attemptId}/subscribe`);
+  },
+
+  /**
+     * 🔹 Lưu tiến độ làm bài (Save Progress).
+     * POST /exam-attempts/{attemptId}/save-progress
+     */
+  saveProgress(
+    attemptId: string,
+    data: SaveProgressPayload
+  ): Promise<AxiosResponse<ApiResponse<string>>> { // Giả sử data trả về là string hoặc object đơn giản
+    return axiosInstance.post(`/exam-attempts/${attemptId}/save-progress`, data);
   },
 };
 

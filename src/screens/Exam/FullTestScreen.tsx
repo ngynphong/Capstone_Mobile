@@ -13,11 +13,12 @@ import {
   Easing,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Clock, BookOpen, CheckCircle, Circle } from 'lucide-react-native';
+import { Clock, BookOpen, CheckCircle, Circle, Save } from 'lucide-react-native';
 
 import { ActiveExam } from '../../types/examTypes';
 import { useScroll } from '../../context/ScrollContext';
 import { useExamAttempt } from '../../hooks/useExamAttempt';
+import { useAutoSave } from '../../hooks/useAutoSave';
 
 const FullTestScreen = () => {
   const navigation = useNavigation<any>();
@@ -30,7 +31,16 @@ const FullTestScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
   const { handleScroll } = useScroll();
-  const { submitAttempt } = useExamAttempt();
+  const { submitAttempt, saveProgress } = useExamAttempt();
+
+  // Auto-save hook
+  const { lastSaved, isSaving, saveNow } = useAutoSave(
+    attempt?.examAttemptId || null,
+    saveProgress,
+    answers,
+    true, // enabled
+    30000 // 30 seconds
+  );
 
   // Animation values
   const submitButtonScale = useState(new Animated.Value(1))[0];
@@ -50,6 +60,34 @@ const FullTestScreen = () => {
       });
     };
   }, [navigation]);
+
+  // Khôi phục đáp án đã lưu khi component mount
+  useEffect(() => {
+    if (attempt?.questions) {
+      console.log('Khôi phục đáp án đã lưu từ questions');
+      const savedAnswers: {[key: string]: {selectedAnswerId?: string, frqAnswerText?: string}} = {};
+      
+      attempt.questions.forEach(question => {
+        if (question.savedAnswer && question.savedAnswer !== null) {
+          // savedAnswer có thể là object với selectedAnswerId hoặc frqAnswerText
+          if (question.savedAnswer.selectedAnswerId) {
+            savedAnswers[question.examQuestionId] = {
+              selectedAnswerId: question.savedAnswer.selectedAnswerId,
+            };
+          }
+          if (question.savedAnswer.frqAnswerText) {
+            savedAnswers[question.examQuestionId] = {
+              ...savedAnswers[question.examQuestionId],
+              frqAnswerText: question.savedAnswer.frqAnswerText,
+            };
+          }
+        }
+      });
+      
+      setAnswers(savedAnswers);
+      console.log('Đã khôi phục answers:', savedAnswers);
+    }
+  }, [attempt]);
 
   useEffect(() => {
     if (attempt) {
@@ -298,6 +336,35 @@ const FullTestScreen = () => {
                 />
               </View>
             )}
+          </View>
+
+          {/* Auto-save Status */}
+          <View className="mt-2 flex-row items-center justify-between">
+            <View className="flex-row items-center">
+              {isSaving ? (
+                <View className="flex-row items-center">
+                  <ActivityIndicator size="small" color="#3CBCB2" />
+                  <Text className="text-xs text-teal-600 ml-1">Đang lưu...</Text>
+                </View>
+              ) : lastSaved ? (
+                <View className="flex-row items-center">
+                  <Save size={12} color="#10B981" />
+                  <Text className="text-xs text-green-600 ml-1">
+                    Đã lưu: {lastSaved.toLocaleTimeString()}
+                  </Text>
+                </View>
+              ) : (
+                <Text className="text-xs text-gray-500">Chưa lưu</Text>
+              )}
+            </View>
+            
+            <TouchableOpacity
+              onPress={saveNow}
+              disabled={isSaving}
+              className="flex-row items-center"
+            >
+              <Text className="text-xs text-teal-600">Lưu ngay</Text>
+            </TouchableOpacity>
           </View>
         </View>
 

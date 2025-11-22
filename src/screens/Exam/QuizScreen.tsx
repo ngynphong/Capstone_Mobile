@@ -251,8 +251,8 @@ const QuizScreen = () => {
       {/* Question Card */}
       <ScrollView className="flex-1 px-6"
         showsVerticalScrollIndicator={false}
-        onScroll={handleScroll} 
-        scrollEventThrottle={16} 
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
         <View className="bg-white rounded-2xl p-6 my-6 shadow-sm border border-gray-100">
           {/* Question */}

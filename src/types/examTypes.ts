@@ -88,6 +88,10 @@ export interface ActiveExamQuestion {
   question: ExamQuestionDetail;
   orderNumber: number;
   points: number;
+  savedAnswer?: {
+    selectedAnswerId?: string | null;
+    frqAnswerText?: string | null;
+  } | null;
 }
 
 /**
@@ -102,6 +106,7 @@ export interface ActiveExam {
   passingScore: number;
   belongTo: string;
   questions: ActiveExamQuestion[];
+  savedAnswer: SaveProgressPayload | null; // Đáp án đã lưu (null nếu thi lần đầu)
 }
 
 // 2. Types cho API /exam-test/submit/{attemptId}
@@ -263,4 +268,15 @@ export interface HistoryRecord {
   startTime: string;
   endTime: string | null;
   rating: number | null;
+}
+
+/**
+ * Payload cho API /exam-attempts/{attemptId}/save-progress
+ */
+export interface SaveProgressPayload {
+  answers: {
+    examQuestionId: string;
+    selectedAnswerId?: string | null; // Dùng cho MCQ
+    frqAnswerText?: string | null;    // Dùng cho FRQ
+  }[];
 }
