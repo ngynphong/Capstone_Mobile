@@ -6,15 +6,14 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, Eye } from 'lucide-react-native';
 
 import { useGetAllQuestions } from '../../hooks/useQuestion';
 
 const FlashCardScreen = () => {
   const navigation = useNavigation<any>();
-  const route = useRoute();
-  const { examId } = route.params as { examId: string };
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
@@ -25,6 +24,23 @@ const FlashCardScreen = () => {
   const questions = allQuestions.filter(q => q.type === 'mcq');
   const currentQuestion = questions[currentIndex];
   const progress = questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
+
+  // Hide tab bar when entering flashcard
+  useFocusEffect(
+    React.useCallback(() => {
+      // Hide tab bar when screen is focused
+      navigation.getParent()?.setOptions({
+        tabBarStyle: { display: 'none' },
+      });
+
+      // Show tab bar when screen loses focus
+      return () => {
+        navigation.getParent()?.setOptions({
+          tabBarStyle: { display: 'flex' },
+        });
+      };
+    }, [navigation])
+  );
 
   // Get the correct answer for questions
   const getCorrectAnswer = (question: any) => {

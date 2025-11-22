@@ -11,7 +11,8 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { ArrowLeft, RotateCcw, Clock, Save, Send } from 'lucide-react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { ArrowLeft, RotateCcw, Clock, Save } from 'lucide-react-native';
 
 import { useScroll } from '../../context/ScrollContext';
 import { useAppToast } from '../../utils/toast';
@@ -37,6 +38,23 @@ const FRQScreen = () => {
     const questions = allQuestions.filter(q => q.type === 'frq');
     const currentQuestion = questions[currentIndex];
     const progress = ((currentIndex + 1) / questions.length) * 100;
+
+    // Hide tab bar when entering FRQ
+    useFocusEffect(
+        React.useCallback(() => {
+            // Hide tab bar when screen is focused
+            navigation.getParent()?.setOptions({
+                tabBarStyle: { display: 'none' },
+            });
+
+            // Show tab bar when screen loses focus
+            return () => {
+                navigation.getParent()?.setOptions({
+                    tabBarStyle: { display: 'flex' },
+                });
+            };
+        }, [navigation])
+    );
 
     // Timer effect
     useEffect(() => {

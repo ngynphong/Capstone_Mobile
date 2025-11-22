@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Clock, BookOpen, CheckCircle, Circle, Save } from 'lucide-react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { ActiveExam } from '../../types/examTypes';
 import { useScroll } from '../../context/ScrollContext';
@@ -48,18 +49,21 @@ const FullTestScreen = () => {
   const successScale = useState(new Animated.Value(0.8))[0];
 
   // Hide tab bar when entering test
-  useEffect(() => {
-    navigation.getParent()?.setOptions({
-      tabBarStyle: { display: 'none' },
-    });
-
-    return () => {
-      // Show tab bar when leaving
+  useFocusEffect(
+    React.useCallback(() => {
+      // Hide tab bar when screen is focused
       navigation.getParent()?.setOptions({
-        tabBarStyle: { display: 'flex' },
+        tabBarStyle: { display: 'none' },
       });
-    };
-  }, [navigation]);
+
+      // Show tab bar when screen loses focus
+      return () => {
+        navigation.getParent()?.setOptions({
+          tabBarStyle: { display: 'flex' },
+        });
+      };
+    }, [navigation])
+  );
 
   // Khôi phục đáp án đã lưu khi component mount
   useEffect(() => {
