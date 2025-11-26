@@ -17,8 +17,19 @@ export interface UserProfile {
         type: 'free' | 'premium';
         expiresAt?: string;
     };
+    studentProfile?: StudentProfile;
+    parentProfile?: ParentProfile;
 }
-
+export interface StudentProfile {
+    id: string;
+    schoolName: string;
+    emergencyContact: string;
+    parentPhone: string;
+}
+export interface ParentProfile {
+    id: string;
+    occupation: string;
+}
 // Request for PUT /users/me
 export interface UpdateProfileRequest {
     firstName: string;
@@ -26,6 +37,17 @@ export interface UpdateProfileRequest {
     dob: string;
 }
 
+export interface UpdateStudentProfileRequest {
+    schoolName: string;
+    parentPhone: string;
+    emergencyContact: string;
+}
+
+export interface UpdateStudentProfileResponse {
+    code: number;
+    message: string;
+    data: StudentProfile;
+}
 // Response from PUT /users/me
 export interface UpdateProfileResponse {
     code: number;

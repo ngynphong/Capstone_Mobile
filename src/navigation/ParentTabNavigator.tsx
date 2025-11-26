@@ -2,23 +2,19 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Home, BookOpen, User, FileText, Users, Route } from 'lucide-react-native';
-import HomeScreen from '../screens/Home/HomeScreen';
-
-import ExamScreen from '../screens/Exam/ExamScreen';
-import { TabParamList } from '../types/types';
+import { Home, Users, FileText, User } from 'lucide-react-native';
+import { ParentTabParamList } from '../types/types';
 import { useScroll } from '../context/ScrollContext';
-import MaterialsScreen from '../screens/Materials/MaterialsScreen';
-import ProfileStack from './ProfileStack';
-import CommunityStack from './CommunityStack';
+import ParentDashboardScreen from '../screens/Parent/ParentDashboardScreen';
+import ChildManagementScreen from '../screens/Parent/ChildManagementScreen';
+import ChildProgressScreen from '../screens/Parent/ChildProgressScreen';
+import ParentProfileScreen from '../screens/Parent/ParentProfileScreen';
 
-import RoadmapScreen from '../screens/Roadmap/RoadmapScreen';
-
-const Tab = createBottomTabNavigator<TabParamList>();
+const Tab = createBottomTabNavigator<ParentTabParamList>();
 
 const { width } = Dimensions.get('window');
 const TAB_BAR_WIDTH = width * 0.9;
-const TAB_WIDTH = TAB_BAR_WIDTH / 6;
+const TAB_WIDTH = TAB_BAR_WIDTH / 4; // 4 tabs for parents
 
 interface CustomTabBarProps {
   state: any;
@@ -28,10 +24,10 @@ interface CustomTabBarProps {
 
 const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigation }) => {
   const animatedValues = React.useRef(state.routes.map(() => new Animated.Value(0))).current;
+
   const { tabBarTranslateY } = useScroll();
 
   React.useEffect(() => {
-    // Animate to active state
     Animated.spring(animatedValues[state.index], {
       toValue: 1,
       useNativeDriver: true,
@@ -39,7 +35,6 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
       friction: 8,
     }).start();
 
-    // Animate inactive states back to 0
     state.routes.forEach((_: any, index: number) => {
       if (index !== state.index) {
         Animated.spring(animatedValues[index], {
@@ -53,20 +48,16 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
   }, [state.index]);
 
   const iconMap = {
-    Home: Home,
-    Materials: BookOpen,
-    Exams: FileText,
-    Community: Users,
-    Roadmap: Route,
+    Dashboard: Home,
+    Children: Users,
+    Reports: FileText,
     Profile: User,
   };
 
   const labelMap = {
-    Home: 'Home',
-    Materials: 'Materials',
-    Exams: 'Exams',
-    Community: 'Groups',
-    Roadmap: 'Roadmap',
+    Dashboard: 'Dashboard',
+    Children: 'Children',
+    Reports: 'Reports',
     Profile: 'Profile',
   };
 
@@ -88,7 +79,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
           style={{
             width: TAB_BAR_WIDTH,
             height: 70,
-            backgroundColor: 'rgba(255, 255, 255, 0.10)',         
+            backgroundColor: 'rgba(255, 255, 255, 0.10)',
           }}
         >
           <View className="flex-row items-center justify-around h-full">
@@ -116,7 +107,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
                       console.error('Navigation error when pressing tab:', route.name, e);
                     }
                   }}
-                  className="items-center justify-center "
+                  className="items-center justify-center"
                   style={{ width: TAB_WIDTH }}
                 >
                   <Animated.View
@@ -167,7 +158,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
   );
 };
 
-const TabNavigator = () => {
+const ParentTabNavigator = () => {
   return (
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
@@ -175,14 +166,12 @@ const TabNavigator = () => {
         headerShown: false,
       }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Materials" component={MaterialsScreen} />
-      <Tab.Screen name="Roadmap" component={RoadmapScreen} />
-      <Tab.Screen name="Exams" component={ExamScreen} />
-      <Tab.Screen name="Community" component={CommunityStack} />
-      <Tab.Screen name="Profile" component={ProfileStack} />
+      <Tab.Screen name="Dashboard" component={ParentDashboardScreen} />
+      <Tab.Screen name="Children" component={ChildManagementScreen} />
+      <Tab.Screen name="Reports" component={ChildProgressScreen} />
+      <Tab.Screen name="Profile" component={ParentProfileScreen} />
     </Tab.Navigator>
   );
 };
 
-export default TabNavigator;
+export default ParentTabNavigator;

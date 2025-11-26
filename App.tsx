@@ -11,6 +11,7 @@ import SignUpScreen from './src/screens/SignUp/SignUpScreen';
 import ForgotPasswordScreen from './src/screens/ForgotPassword/ForgotPasswordScreen';
 import VerifyOTPScreen from './src/screens/VerifyOTP/VerifyOTPScreen';
 import TabNavigator from './src/navigation/TabNavigator';
+import ParentTabNavigator from './src/navigation/ParentTabNavigator';
 import ChatBotScreen from './src/screens/ChatBotScreen';
 import LoadingScreen from './src/components/LoadingScreen';
 import { RootStackParamList } from './src/types/types';
@@ -21,7 +22,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const AppContent: React.FC = () => {
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
-  const { isLoggedIn, isLoading } = useAuth();
+  const { isLoggedIn, isLoading, user } = useAuth();
 
   useEffect(() => {
     AsyncStorage.getItem('onboardingViewed').then(value => {
@@ -38,13 +39,25 @@ const AppContent: React.FC = () => {
     return <LoadingScreen />;
   }
 
+  const isParent = user?.roles?.includes('PARENT');
+
+
   return (
     <>
-      <NavigationContainer key={isLoggedIn ? 'loggedIn' : 'loggedOut'}>
+      <NavigationContainer>
         {isLoggedIn ? (
           <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="MainTabs" component={TabNavigator} />
-            <Stack.Screen name="ChatBot" component={ChatBotScreen} />
+            {isParent ? (
+              <>
+                <Stack.Screen name="MainTabs" component={ParentTabNavigator} />
+                <Stack.Screen name="ChatBot" component={ChatBotScreen} />
+              </>
+            ) : (
+              <>
+                <Stack.Screen name="MainTabs" component={TabNavigator} />
+                <Stack.Screen name="ChatBot" component={ChatBotScreen} />
+              </>
+            )}
           </Stack.Navigator>
         ) : (
           <Stack.Navigator screenOptions={{ headerShown: false }}>
