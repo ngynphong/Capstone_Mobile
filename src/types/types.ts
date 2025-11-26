@@ -20,6 +20,13 @@ export type TabParamList = {
   Roadmap: undefined;
 };
 
+export type ParentTabParamList = {
+  Dashboard: undefined;
+  Children: undefined;
+  Reports: undefined;
+  Profile: undefined;
+};
+
 export type ProfileStackParamList = {
   ProfileMain: undefined;
   ExamResults: undefined;
