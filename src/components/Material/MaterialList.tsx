@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,45 +6,36 @@ import {
   ActivityIndicator,
   StyleSheet,
   RefreshControl,
+  TouchableOpacity,
+  Modal,
+  ScrollView,
+  Alert,
+  Image,
 } from "react-native";
-import { getPublicMaterials } from "../../services/materialService";
+import useMaterial from "../../hooks/useMaterial";
 import { Material } from "../../types/material";
 
 
 const MaterialList = () => {
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  /** Gọi API */
-  const fetchMaterials = async () => {
-    try {
-      setError(null);
-      const res = await getPublicMaterials();
-      setMaterials(res.data.items);
-    } catch (err: any) {
-      console.error("❌ Error loading materials:", err);
-      setError(err.message || "Failed to load materials");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  /** Tải lại khi kéo xuống */
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchMaterials();
-  }, []);
+  const {
+    materials,
+    isLoading,
+    isRefreshing,
+    error,
+    fetchMaterials,
+    refreshMaterials,
+    getMaterialImageUrl,
+    getMaterialImageSource,
+  } = useMaterial();
+  const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
 
   /** Gọi API khi component mount */
   useEffect(() => {
     fetchMaterials();
-  }, []);
+  }, [fetchMaterials]);
 
   /** Khi đang loading */
-  if (loading) {
+  if (isLoading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#3CBCB2" />
@@ -62,30 +53,99 @@ const MaterialList = () => {
     );
   }
 
+  const handleEnroll = () => {
+    if (!selectedMaterial) return;
+    Alert.alert(
+      "Enroll",
+      `Bạn đã chọn đăng ký khoá học "${selectedMaterial.title}". Chúng tôi sẽ cập nhật tính năng này sớm!`
+    );
+  };
+
+  const closeModal = () => setSelectedMaterial(null);
+
   /** Khi có dữ liệu */
   return (
-    <FlatList
-      data={materials}
-      keyExtractor={(item) => item.id}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-      renderItem={({ item }) => (
-        <View style={styles.card}>
-          <Text style={styles.title}>{item.title}</Text>
-          <Text style={styles.desc}>{item.description}</Text>
-          <Text style={styles.meta}>
-            {item.subjectName} • {item.authorName}
-          </Text>
+    <>
+      <FlatList
+        data={materials}
+        keyExtractor={(item) => item.id}
+        refreshControl={
+           <RefreshControl refreshing={isRefreshing} onRefresh={refreshMaterials} />
+        }
+        renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => setSelectedMaterial(item)}>
+            <View style={styles.card}>
+               <Image
+                 source={getMaterialImageSource(item.fileImage)}
+                 style={styles.cardImage}
+                 resizeMode="cover"
+               />
+              <View style={styles.cardInfo}>
+                <Text style={styles.title}>{item.title}</Text>
+                <Text style={styles.desc}>{item.description}</Text>
+                <Text style={styles.meta}>
+                  {item.subjectName} • {item.authorName}
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
+        ListEmptyComponent={
+          <View style={styles.center}>
+            <Text style={{ color: "#999" }}>No materials available</Text>
+          </View>
+        }
+        contentContainerStyle={{ padding: 16 }}
+      />
+
+      <Modal
+        transparent
+        visible={!!selectedMaterial}
+        animationType="slide"
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ScrollView
+              contentContainerStyle={{ paddingBottom: 24 }}
+              showsVerticalScrollIndicator={false}
+            >
+               <Image
+                 source={getMaterialImageSource(selectedMaterial?.fileImage)}
+                 style={styles.modalImage}
+                 resizeMode="cover"
+               />
+              <Text style={styles.modalTitle}>{selectedMaterial?.title}</Text>
+              <Text style={styles.modalSubtitle}>
+                {selectedMaterial?.subjectName} • {selectedMaterial?.authorName}
+              </Text>
+              <Text style={styles.modalDescription}>
+                {selectedMaterial?.description || "Chưa có mô tả chi tiết."}
+              </Text>
+              {selectedMaterial?.typeName && (
+                <Text style={styles.modalMeta}>
+                  Hình thức: {selectedMaterial.typeName}
+                </Text>
+              )}
+              {selectedMaterial?.createdAt && (
+                <Text style={styles.modalMeta}>
+                  Cập nhật: {new Date(selectedMaterial.createdAt).toLocaleDateString()}
+                </Text>
+              )}
+            </ScrollView>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.secondaryBtn} onPress={closeModal}>
+                <Text style={styles.secondaryText}>Close</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.primaryBtn} onPress={handleEnroll}>
+                <Text style={styles.primaryText}>Enroll Now</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-      )}
-      ListEmptyComponent={
-        <View style={styles.center}>
-          <Text style={{ color: "#999" }}>No materials available</Text>
-        </View>
-      }
-      contentContainerStyle={{ padding: 16 }}
-    />
+      </Modal>
+    </>
   );
 };
 
@@ -108,6 +168,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   card: {
+    flexDirection: "row",
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
@@ -117,6 +178,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 3,
+    gap: 12,
+  },
+  cardImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    backgroundColor: "#E5E7EB",
+  },
+  cardInfo: {
+    flex: 1,
   },
   title: {
     fontSize: 16,
@@ -132,5 +203,75 @@ const styles = StyleSheet.create({
   meta: {
     fontSize: 12,
     color: "#999",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    maxHeight: "80%",
+  },
+  modalImage: {
+    width: "100%",
+    height: 180,
+    borderRadius: 16,
+    marginBottom: 16,
+    backgroundColor: "#E5E7EB",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#111",
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: "#6B7280",
+    marginBottom: 16,
+  },
+  modalDescription: {
+    fontSize: 14,
+    color: "#374151",
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  modalMeta: {
+    fontSize: 13,
+    color: "#4B5563",
+    marginBottom: 6,
+  },
+  modalActions: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 12,
+  },
+  primaryBtn: {
+    flex: 1,
+    backgroundColor: "#3CBCB2",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  primaryText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  secondaryBtn: {
+    flex: 1,
+    backgroundColor: "#F3F4F6",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  secondaryText: {
+    color: "#111827",
+    fontWeight: "600",
+    fontSize: 16,
   },
 });

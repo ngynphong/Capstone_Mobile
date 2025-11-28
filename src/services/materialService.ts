@@ -1,27 +1,48 @@
-import { isAxiosError } from "axios";
-import { MaterialResponse } from "../types/material";
-import api from "../configs/axios";
+import type { AxiosResponse } from 'axios';
+import axiosInstance from '../configs/axios';
+import type { MaterialResponse } from '../types/material';
 
-const handleApiError = (error: unknown, defaultMessage: string): never => {
-  if (isAxiosError(error) && error.response) {
-    const responseData = error.response.data;
-    if (responseData?.message) throw new Error(responseData.message);
-    if (responseData?.error) throw new Error(responseData.error);
-  }
-  throw new Error(defaultMessage);
+const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || '').replace(/\/$/, '');
+const PLACEHOLDER_IMAGE =
+  'https://images.unsplash.com/photo-1517430816045-df4b7de11d1d?auto=format&fit=crop&w=600&q=60';
+
+const MaterialService = {
+  /**
+   * GET /learning-materials
+   * Lấy danh sách học liệu công khai (có hỗ trợ query params).
+   */
+  getPublicMaterials(
+    params?: Record<string, unknown>,
+  ): Promise<AxiosResponse<MaterialResponse>> {
+    return axiosInstance.get('/learning-materials', { params });
+  },
+
+  /**
+   * GET /{fileName}/materials
+   * Lấy file (ảnh/pdf/etc) của học liệu theo fileName.
+   * Sử dụng responseType: 'arraybuffer' để xử lý đa định dạng.
+   */
+  getMaterialAsset(fileName: string): Promise<AxiosResponse<ArrayBuffer>> {
+    const safeFileName = encodeURIComponent(fileName.trim());
+    return axiosInstance.get(`/${safeFileName}/materials`, {
+      responseType: 'arraybuffer',
+    });
+  },
+
+  /**
+   * Helper trả về URL xem trực tiếp file học liệu (ảnh, pdf...).
+   * Nếu thiếu fileName sẽ trả placeholder cố định.
+   */
+  getMaterialAssetUrl(fileName?: string): string {
+    if (!fileName || fileName.trim().length === 0 || fileName === 'string') {
+      return PLACEHOLDER_IMAGE;
+    }
+    if (!API_BASE_URL) {
+      return PLACEHOLDER_IMAGE;
+    }
+    const safeName = encodeURIComponent(fileName.trim());
+    return `${API_BASE_URL}/${safeName}/materials`;
+  },
 };
 
-
-export const getPublicMaterials = async (
-  params?: Record<string, any>
-): Promise<MaterialResponse> => {
-  try {
-    const response = await api.get<MaterialResponse>(
-      "/learning-materials",
-      { params }
-    );
-    return response.data;
-  } catch (error: unknown) {
-    return handleApiError(error, "Failed to fetch public materials");
-  }
-};
+export default MaterialService;
