@@ -2,6 +2,7 @@ export interface Material {
   id: string;
   title: string;
   description: string;
+  fileImage?: string;
   contentUrl: string;
   typeId: string;
   typeName: string;
