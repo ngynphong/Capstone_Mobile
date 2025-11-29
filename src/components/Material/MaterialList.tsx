@@ -7,13 +7,17 @@ import {
   StyleSheet,
   RefreshControl,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Modal,
   ScrollView,
-  Alert,
   Image,
+  Pressable,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import useMaterial from "../../hooks/useMaterial";
 import { Material } from "../../types/material";
+import { MaterialStackParamList } from "../../types/types";
 
 
 const MaterialList = () => {
@@ -24,10 +28,11 @@ const MaterialList = () => {
     error,
     fetchMaterials,
     refreshMaterials,
-    getMaterialImageUrl,
     getMaterialImageSource,
   } = useMaterial();
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
+  const navigation =
+    useNavigation<NativeStackNavigationProp<MaterialStackParamList>>();
 
   /** Gọi API khi component mount */
   useEffect(() => {
@@ -55,10 +60,9 @@ const MaterialList = () => {
 
   const handleEnroll = () => {
     if (!selectedMaterial) return;
-    Alert.alert(
-      "Enroll",
-      `Bạn đã chọn đăng ký khoá học "${selectedMaterial.title}". Chúng tôi sẽ cập nhật tính năng này sớm!`
-    );
+    const material = selectedMaterial;
+    closeModal();
+    navigation.navigate("MaterialDetail", { material });
   };
 
   const closeModal = () => setSelectedMaterial(null);
@@ -104,8 +108,9 @@ const MaterialList = () => {
         animationType="slide"
         onRequestClose={closeModal}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <Pressable style={styles.modalOverlay} onPress={closeModal}>
+          <TouchableWithoutFeedback>
+            <View style={styles.modalContent}>
             <ScrollView
               contentContainerStyle={{ paddingBottom: 24 }}
               showsVerticalScrollIndicator={false}
@@ -142,8 +147,9 @@ const MaterialList = () => {
                 <Text style={styles.primaryText}>Enroll Now</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </Pressable>
       </Modal>
     </>
   );

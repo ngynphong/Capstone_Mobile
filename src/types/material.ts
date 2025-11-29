@@ -1,5 +1,6 @@
 export interface Material {
   id: string;
+  learningMaterialId?: string;
   title: string;
   description: string;
   fileImage?: string;

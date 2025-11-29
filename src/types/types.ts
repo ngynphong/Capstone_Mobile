@@ -1,7 +1,7 @@
 import { ExamStackParamList, MockAttempt } from './examTypes';
+import type { Material } from './material';
 
 export type RootStackParamList = {
-  Onboarding: undefined;
   Login: undefined;
   SignUp: undefined;
   ForgotPassword: undefined;
@@ -18,6 +18,11 @@ export type TabParamList = {
   Exams: undefined;
   Community: undefined;
   Roadmap: undefined;
+};
+
+export type MaterialStackParamList = {
+  MaterialMain: undefined;
+  MaterialDetail: { material: Material };
 };
 
 export type ParentTabParamList = {
