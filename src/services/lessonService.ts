@@ -7,6 +7,10 @@ import type {
   LessonVideosResponse,
 } from '../types/lessonTypes';
 
+const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || '').replace(/\/$/, '');
+const PLACEHOLDER_LESSON =
+  'https://placehold.co/600x400?text=Lesson+Resource';
+
 export interface LessonListParams {
   pageNo?: number;
   pageSize?: number;
@@ -28,12 +32,24 @@ const LessonService = {
     });
   },
 
+  getLessonAssetUrl(fileName?: string): string {
+    if (!fileName || fileName.trim().length === 0 || fileName === 'string') {
+      return PLACEHOLDER_LESSON;
+    }
+    if (!API_BASE_URL) {
+      return PLACEHOLDER_LESSON;
+    }
+    const safeName = encodeURIComponent(fileName.trim());
+    return `${API_BASE_URL}/${safeName}/lesson`;
+  },
+
   /**
-   * GET /videos
-   * Lấy danh sách video lesson.
+   * GET /videos?fileName=
+   * Lấy danh sách video lesson hoặc một video cụ thể theo fileName.
    */
-  getVideos(): Promise<AxiosResponse<LessonVideosResponse>> {
-    return axiosInstance.get('/videos');
+  getVideos(nameFile?: string): Promise<AxiosResponse<LessonVideosResponse>> {
+    const params = nameFile ? { nameFile } : undefined;
+    return axiosInstance.get('/videos', { params });
   },
 
   /**

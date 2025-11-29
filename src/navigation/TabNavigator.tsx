@@ -8,7 +8,7 @@ import HomeScreen from '../screens/Home/HomeScreen';
 import ExamScreen from '../screens/Exam/ExamScreen';
 import { TabParamList } from '../types/types';
 import { useScroll } from '../context/ScrollContext';
-import MaterialsScreen from '../screens/Materials/MaterialsScreen';
+import MaterialsStack from './MaterialsStack';
 import ProfileStack from './ProfileStack';
 import CommunityStack from './CommunityStack';
 
@@ -17,8 +17,8 @@ import RoadmapScreen from '../screens/Roadmap/RoadmapScreen';
 const Tab = createBottomTabNavigator<TabParamList>();
 
 const { width } = Dimensions.get('window');
-const TAB_BAR_WIDTH = width * 0.9;
-const TAB_WIDTH = TAB_BAR_WIDTH / 6;
+// Đảm bảo tab bar không vượt quá màn hình, để margin 20px mỗi bên
+const TAB_BAR_WIDTH = width - 40;
 
 interface CustomTabBarProps {
   state: any;
@@ -27,6 +27,14 @@ interface CustomTabBarProps {
 }
 
 const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigation }) => {
+  // Debug: Log số lượng routes
+  React.useEffect(() => {
+    console.log('=== TAB BAR DEBUG ===');
+    console.log('Total routes:', state.routes.length);
+    console.log('Route names:', state.routes.map((r: any) => r.name));
+    console.log('Current index:', state.index);
+  }, [state.routes, state.index]);
+  
   const animatedValues = React.useRef(state.routes.map(() => new Animated.Value(0))).current;
   const { tabBarTranslateY } = useScroll();
 
@@ -87,18 +95,26 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
           className="border border-white/30 shadow-lg"
           style={{
             width: TAB_BAR_WIDTH,
-            height: 70,
+            height: 54,
             backgroundColor: 'rgba(255, 255, 255, 0.10)',         
           }}
         >
-          <View className="flex-row items-center justify-around h-full">
+          <View 
+            style={{ 
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-evenly',
+              height: '100%',
+              paddingHorizontal: 2,
+            }}
+          >
             {state.routes.map((route: any, index: number) => {
               const isActive = state.index === index;
               const IconComponent = iconMap[route.name as keyof typeof iconMap];
 
               const scaleValue = animatedValues[index].interpolate({
                 inputRange: [0, 1],
-                outputRange: [1, 1.2],
+                outputRange: [1, 1.05],
               });
 
               const opacityValue = animatedValues[index].interpolate({
@@ -116,46 +132,53 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
                       console.error('Navigation error when pressing tab:', route.name, e);
                     }
                   }}
-                  className="items-center justify-center "
-                  style={{ width: TAB_WIDTH }}
+                  style={{ 
+                    flex: 1,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minWidth: 0,
+                  }}
+                  activeOpacity={0.7}
                 >
                   <Animated.View
-                    className="items-center justify-center"
                     style={{
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       transform: [{ scale: scaleValue }],
                       opacity: opacityValue,
                     }}
                   >
                     {/* Active indicator dot */}
                     {isActive && (
-                      <View className="absolute -top-1 w-8 h-1 bg-teal-400 rounded-full" />
+                      <View 
+                        style={{
+                          position: 'absolute',
+                          top: -3,
+                          width: 20,
+                          height: 2,
+                          backgroundColor: '#3CBCB2',
+                          borderRadius: 1,
+                        }}
+                      />
                     )}
 
-                    {/* Icon container with pill background for active state */}
+                    {/* Icon container */}
                     <View
-                      className={`items-center justify-center p-2 rounded-xl ${isActive ? 'bg-teal-400/20' : ''
-                        }`}
+                      style={{
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 3,
+                        borderRadius: 8,
+                        backgroundColor: isActive ? 'rgba(60, 188, 178, 0.15)' : 'transparent',
+                      }}
                     >
                       <IconComponent
-                        size={22}
+                        size={16}
                         color={isActive ? '#3CBCB2' : '#9CA3AF'}
                         fill={isActive ? '#3CBCB2' : 'none'}
                         strokeWidth={isActive ? 0 : 1.5}
                       />
                     </View>
-
-                    {/* Active label */}
-                    {isActive && (
-                      <Text
-                        className="text-xs font-medium text-gray-700 mt-1"
-                        style={{
-                          color: '#3CBCB2',
-                          fontFamily: 'System',
-                        }}
-                      >
-                        {labelMap[route.name as keyof typeof labelMap]}
-                      </Text>
-                    )}
                   </Animated.View>
                 </TouchableOpacity>
               );
@@ -176,9 +199,10 @@ const TabNavigator = () => {
       }}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Materials" component={MaterialsScreen} />
+
       <Tab.Screen name="Roadmap" component={RoadmapScreen} />
       <Tab.Screen name="Exams" component={ExamScreen} />
+      <Tab.Screen name="Materials" component={MaterialsStack} />
       <Tab.Screen name="Community" component={CommunityStack} />
       <Tab.Screen name="Profile" component={ProfileStack} />
     </Tab.Navigator>

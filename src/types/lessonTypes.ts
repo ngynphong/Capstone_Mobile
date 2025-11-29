@@ -48,6 +48,7 @@ export type LessonVideosResponse = ApiResponse<LessonVideo[]>;
 
 /**
  * Kết quả trả về khi lấy lesson theo learning material.
+ * Có thể là array trực tiếp hoặc PageInfo structure
  */
-export type LessonByMaterialResponse = ApiResponse<Lesson[]>;
+export type LessonByMaterialResponse = ApiResponse<Lesson[] | PageInfo<Lesson>>;
 
