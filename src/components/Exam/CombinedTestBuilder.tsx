@@ -93,7 +93,7 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest, 
     };
 
     const handleStartTest = () => {
-        setIsStartingTest(true);
+        
         if (selectedExams.length === 0) {
             toast.error('Vui lòng chọn ít nhất một bài thi');
             return;
@@ -101,12 +101,15 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest, 
 
         Alert.alert(
             'Bắt đầu Thi Tổ hợp',
-            `Bạn sẽ bắt đầu làm ${selectedExams.length} bài thi.`,
+            `Bạn sẽ bắt đầu làm ${selectedExams.length} bài thi. Token: ${selectedExams.reduce((total, exam) => total + exam.tokenCost, 0)} 💰`,
             [
                 { text: 'Hủy', style: 'cancel' },
                 {
                     text: 'Bắt đầu',
-                    onPress: () => onStartTest(selectedExams.map(e => e.id)),
+                    onPress: () => {
+                        setIsStartingTest(true);
+                        onStartTest(selectedExams.map(e => e.id));
+                    },
                 },
             ]
         );
@@ -316,7 +319,7 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest, 
             )}
             {/* Loading Overlay */}
             {isStartingTest && (
-                <View className="absolute inset-0 bg-black bg-opacity-50 justify-center items-center">
+                <View className="absolute inset-0 bg-white bg-opacity-50 justify-center items-center">
                     <View className="bg-white rounded-2xl p-8 items-center shadow-lg">
                         <ActivityIndicator size="large" color="#3CBCB2" />
                             <Text className="text-gray-900 font-semibold mt-4 text-lg">

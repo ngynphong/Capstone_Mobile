@@ -88,7 +88,7 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
         <View className="flex-row justify-between items-start mb-2">
           <View className="flex-1">
             <Text className="text-lg font-semibold text-gray-900 mb-1">
-              Exam {attempt.examId}
+              Exam {attempt.title}
             </Text>
             <Text className="text-sm text-gray-600 mb-2">
               {startTime.toLocaleDateString('vi-VN')}
