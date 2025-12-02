@@ -45,7 +45,7 @@ const ExamDetailScreen = () => {
             // Show confirmation for full test
             Alert.alert(
                 'Full Test Warning',
-                `This is a full test including both Multiple Choice and Free Response sections. The timer will start immediately.`,
+                `This is a full test including both Multiple Choice and Free Response sections. The timer will start immediately. The exam costs ${exam.tokenCost} tokens.`,
                 [
                     { text: 'Cancel', style: 'cancel' },
                     {
@@ -131,6 +131,10 @@ const ExamDetailScreen = () => {
                             <View className="flex-row items-center mb-2">
                                 <Text className="text-sm font-medium text-gray-700">Passing Score:</Text>
                                 <Text className="text-sm text-gray-600 ml-2">{exam.passingScore}</Text>
+                            </View>
+                            <View className="flex-row items-center mb-2">
+                                <Text className="text-sm font-medium text-gray-700">Token Cost:</Text>
+                                <Text className="text-sm text-gray-600 ml-2">{exam.tokenCost} 💰</Text>
                             </View>
                             <View className="flex-row items-center mb-2">
                                 <Text className="text-sm font-medium text-gray-700">Status:</Text>
@@ -249,7 +253,7 @@ const ExamDetailScreen = () => {
 
             {/* Loading Overlay */}
             {isStartingTest && (
-                <View className="absolute inset-0 bg-black bg-opacity-50 justify-center items-center">
+                <View className="absolute inset-0 bg-white bg-opacity-50 justify-center items-center">
                     <View className="bg-white rounded-2xl p-8 items-center shadow-lg">
                         <ActivityIndicator size="large" color="#3CBCB2" />
                         <Text className="text-gray-900 font-semibold mt-4 text-lg">

@@ -94,11 +94,23 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onPress }) => {
         </View>
       )}
 
+      {exam.tokenCost ? (
+        <View className="mb-4">
+          <Text className="text-xs text-gray-500 mb-1">Token Cost:</Text>
+          <Text className="text-sm text-gray-600">{exam.tokenCost} 💰</Text>
+        </View>
+      ) :
+        <View className="mb-4">
+          <Text className="text-xs text-gray-500 mb-1">Token Cost:</Text>
+          <Text className="text-sm text-gray-600">Free</Text>
+        </View>}
+
       {/* Footer */}
       <View className="flex-row justify-between items-center">
         <View className="flex-row items-center">
-          <Text className="text-sm text-gray-600">
-            {exam.isActive ? 'Đang hoạt động' : 'Không hoạt động'}
+          <Text className="text-sm text-gray-600">Status:</Text>
+          <Text className={`text-sm ml-2 px-2 py-1 rounded-full ${exam.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            {exam.isActive ? 'Active' : 'Inactive'}
           </Text>
         </View>
         <View className="flex-row items-center">

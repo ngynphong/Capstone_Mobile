@@ -10,6 +10,7 @@ export interface Exam {
   questionContents: string[];
   isActive: boolean;
   createdAt: string;
+  tokenCost: number;
 }
 
 export interface ApiResponse<T> {
@@ -167,6 +168,7 @@ export interface ExamTemplate {
   createdBy: string;
   createdAt?: string;
   rules: ExamRule[];
+  tokenCost: number;
   averageRating: number;
   totalRatings: number;
   totalTakers: number;

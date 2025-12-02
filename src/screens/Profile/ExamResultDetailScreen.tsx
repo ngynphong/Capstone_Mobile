@@ -168,7 +168,7 @@ const ExamResultDetailScreen = () => {
               {attempt.score >= attempt.passingScore ? 'PASSED' : 'FAILED'}
             </Text>
             <Text className="text-gray-600 text-center mt-1">
-              {attempt.questions.filter(q => q.score > 0).length} out of {attempt.questions.length} correct
+              {attempt.questions.filter(q => q.studentAnswer?.selectedAnswerId === q.studentAnswer?.correctAnswer?.id).length} out of {attempt.questions.length} correct
             </Text>
           </View>
 
@@ -187,7 +187,7 @@ const ExamResultDetailScreen = () => {
             <View className="items-center flex-1">
               <Target size={20} color="#6B7280" />
               <Text className="text-sm text-gray-600 mt-1">
-                {Math.round((attempt.questions.filter(q => q.score > 0).length / attempt.questions.length) * 100)}% Accuracy
+                {Math.round((attempt.questions.filter(q => q.studentAnswer?.selectedAnswerId === q.studentAnswer?.correctAnswer?.id).length / attempt.questions.length) * 100)}% Accuracy
               </Text>
             </View>
             <View className="items-center flex-1">
@@ -244,26 +244,23 @@ const ExamResultDetailScreen = () => {
                     return (
                       <View
                         key={answer.id}
-                        className={`flex-row items-center p-3 rounded-lg mb-2 ${
-                          isCorrect ? 'bg-green-50 border border-green-200' :
+                        className={`flex-row items-center p-3 rounded-lg mb-2 ${isCorrect ? 'bg-green-50 border border-green-200' :
                           isSelected && !isCorrect ? 'bg-red-50 border border-red-200' :
-                          'bg-gray-50'
-                        }`}
+                            'bg-gray-50'
+                          }`}
                       >
-                        <View className={`w-6 h-6 rounded-full items-center justify-center mr-3 ${
-                          isCorrect ? 'bg-green-500' :
+                        <View className={`w-6 h-6 rounded-full items-center justify-center mr-3 ${isCorrect ? 'bg-green-500' :
                           isSelected && !isCorrect ? 'bg-red-500' :
-                          'bg-gray-300'
-                        }`}>
+                            'bg-gray-300'
+                          }`}>
                           <Text className="text-xs text-white font-bold">
                             {String.fromCharCode(65 + answerIndex)}
                           </Text>
                         </View>
-                        <Text className={`flex-1 text-sm ${
-                          isCorrect ? 'text-green-800 font-medium' :
+                        <Text className={`flex-1 text-sm ${isCorrect ? 'text-green-800 font-medium' :
                           isSelected && !isCorrect ? 'text-red-800' :
-                          'text-gray-700'
-                        }`}>
+                            'text-gray-700'
+                          }`}>
                           {answer.content}
                         </Text>
                         {isCorrect && (
@@ -315,19 +312,12 @@ const ExamResultDetailScreen = () => {
 
             <View className="flex-row justify-between items-center p-3 bg-gray-50 rounded-lg">
               <Text className="text-gray-700">Correct Answers</Text>
-              <Text className="font-semibold text-green-600">{attempt.questions.filter(q => q.score > 0).length}</Text>
+              <Text className="font-semibold text-green-600">{attempt.questions.filter(q => q.studentAnswer?.selectedAnswerId === q.studentAnswer?.correctAnswer?.id).length}</Text>
             </View>
 
             <View className="flex-row justify-between items-center p-3 bg-gray-50 rounded-lg">
               <Text className="text-gray-700">Incorrect Answers</Text>
-              <Text className="font-semibold text-red-600">{attempt.questions.filter(q => q.score === 0).length}</Text>
-            </View>
-
-            <View className="flex-row justify-between items-center p-3 bg-gray-50 rounded-lg">
-              <Text className="text-gray-700">Total Points Earned</Text>
-              <Text className="font-semibold text-blue-600">
-                {attempt.questions.reduce((sum, q) => sum + q.score, 0)} / {attempt.questions.reduce((sum, q) => sum + q.points, 0)}
-              </Text>
+              <Text className="font-semibold text-red-600">{attempt.questions.filter(q => q.studentAnswer?.selectedAnswerId !== q.studentAnswer?.correctAnswer?.id).length}</Text>
             </View>
 
             <View className="flex-row justify-between items-center p-3 bg-gray-50 rounded-lg">

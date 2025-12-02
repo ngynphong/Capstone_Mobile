@@ -125,6 +125,13 @@ const ExamLibraryScreen = () => {
           </View>
         </View>
 
+        <View className="flex-row items-center justify-between mt-2">
+          <View className="flex-row items-center">
+            <Text className="text-sm font-medium text-gray-700">Token Cost:</Text>
+            <Text className="text-sm text-gray-600 ml-2">{item.tokenCost ? item.tokenCost : 'Free'} 💰</Text>
+          </View>
+        </View> 
+
         <View className="flex-row items-center mt-3">
           <Text className="text-sm font-medium text-gray-700">Status:</Text>
           <Text className={`text-sm ml-2 px-2 py-1 rounded-full ${item.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
