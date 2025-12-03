@@ -6,7 +6,11 @@ import {
   TokenPurchaseRequest,
   SubscriptionRequest,
   PaymentResponse,
-  TransactionHistoryResponse
+  TransactionHistoryResponse,
+  TransactionsResponse,
+  UserTokenTransactionsResponse,
+  MomoCreateRequest,
+  MomoCreateResponse,
 } from '../types/storeTypes';
 
 // Mock data for development - replace with actual API calls
@@ -180,58 +184,47 @@ export const subscribeToPlan = async (request: SubscriptionRequest): Promise<Pay
   }
 };
 
-// Get transaction history
+// Get transaction history cho user hiện tại - dùng API /api/token-transaction/user
 export const getTransactionHistory = async (
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
 ): Promise<TransactionHistoryResponse> => {
   try {
-    // TODO: Replace with actual API call
-    // const response = await publicAxios.get(`/store/transactions?page=${page}&limit=${limit}`);
-    // return response.data;
+    const response = await publicAxios.get<UserTokenTransactionsResponse>(
+      '/api/token-transaction/user',
+    );
+    const body = response.data;
+    const list: Transaction[] = Array.isArray(body.data) ? body.data : [];
 
-    // Mock implementation
-    const MOCK_TRANSACTIONS: Transaction[] = [
-      {
-        id: `txn_${Date.now()}`,
-        type: 'token_purchase',
-        amount: 39.99,
-        currency: 'USD',
-        description: 'Purchased 50 tokens',
-        status: 'completed',
-        createdAt: new Date().toISOString(),
-        paymentMethod: 'Credit Card',
-        referenceId: 'pkg_popular',
+    return {
+      code: body.code ?? 200,
+      message: body.message ?? 'OK',
+      data: {
+        transactions: list,
+        totalCount: list.length,
+        currentPage: page,
+        totalPages: 1,
       },
-      {
-        id: `sub_${Date.now() - 86400000}`,
-        type: 'subscription',
-        amount: 19.99,
-        currency: 'USD',
-        description: 'Premium Monthly Subscription',
-        status: 'completed',
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        paymentMethod: 'Credit Card',
-        referenceId: 'premium_monthly',
-      },
-    ];
-
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          code: 200,
-          message: 'Transaction history fetched successfully',
-          data: {
-            transactions: MOCK_TRANSACTIONS,
-            totalCount: MOCK_TRANSACTIONS.length,
-            currentPage: page,
-            totalPages: 1,
-          },
-        });
-      }, 500);
-    });
+    };
   } catch (error) {
     console.error('Failed to fetch transaction history:', error);
     throw error;
   }
+};
+
+// Lấy toàn bộ transactions (nếu cần cho admin / thống kê) - API /api/transactions
+export const getAllTransactions = async (): Promise<TransactionsResponse> => {
+  const response = await publicAxios.get<TransactionsResponse>('/api/transactions');
+  return response.data;
+};
+
+// Tạo giao dịch thanh toán MoMo - API /payment/momo/create
+export const createMomoPayment = async (
+  payload: MomoCreateRequest,
+): Promise<MomoCreateResponse> => {
+  const response = await publicAxios.post<MomoCreateResponse>(
+    '/payment/momo/create',
+    payload,
+  );
+  return response.data;
 };

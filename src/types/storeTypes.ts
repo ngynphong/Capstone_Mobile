@@ -74,6 +74,38 @@ export interface TransactionHistoryResponse {
   };
 }
 
+// API /api/transactions - toàn bộ giao dịch (admin / thống kê)
+export interface TransactionsResponse {
+  code: number;
+  message: string;
+  data: Transaction[];
+}
+
+// API /api/token-transaction/user - lịch sử giao dịch theo user hiện tại
+export interface UserTokenTransactionsResponse {
+  code: number;
+  message: string;
+  data: Transaction[];
+}
+
+// API /payment/momo/create - tạo giao dịch thanh toán MoMo
+export interface MomoCreateRequest {
+  amount: number;
+  orderInfo: string;
+  extraData?: string;
+}
+
+export interface MomoCreateResponse {
+  code: number;
+  message: string;
+  data: {
+    payUrl: string;
+    deeplink?: string;
+    orderId: string;
+    requestId: string;
+  };
+}
+
 // Store Screen State
 export interface StoreState {
   tokenBalance: number;
