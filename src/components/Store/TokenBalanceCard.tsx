@@ -11,17 +11,20 @@ const TokenBalanceCard: React.FC<TokenBalanceCardProps> = ({
   isLoading = false,
 }) => {
   return (
-    <View className="mx-6 mb-6 p-6 rounded-2xl shadow-lg" style={{ backgroundColor: '#6366f1' }}>
+    <View
+      className="mb-4 p-6 rounded-2xl shadow-lg"
+      style={{ backgroundColor: '#0f766e' }}
+    >
       <View className="flex-row items-center justify-between">
         <View className="flex-1">
           <Text className="text-white text-sm font-medium mb-1" style={{ opacity: 0.9 }}>
-            Current Balance
+            Số dư hiện tại
           </Text>
           {isLoading ? (
             <ActivityIndicator size="large" color="white" />
           ) : (
             <Text className="text-white text-3xl font-bold">
-              {tokenBalance.toLocaleString()} Tokens
+              {tokenBalance.toLocaleString()} đ
             </Text>
           )}
         </View>
@@ -31,9 +34,8 @@ const TokenBalanceCard: React.FC<TokenBalanceCardProps> = ({
         </View>
       </View>
 
-      {/* Usage hint */}
       <Text className="text-white text-sm mt-3" style={{ opacity: 0.8 }}>
-        Use tokens to access premium exams and materials
+        Sử dụng số dư để mua khoá học, đề thi và tài liệu trong hệ thống.
       </Text>
     </View>
   );

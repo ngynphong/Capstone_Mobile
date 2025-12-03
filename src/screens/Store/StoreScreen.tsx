@@ -4,7 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useScroll } from '../../context/ScrollContext';
 import TokenBalanceCard from '../../components/Store/TokenBalanceCard';
 import TokenPackages from '../../components/Store/TokenPackages';
-import SubscriptionPlans from '../../components/Store/SubscriptionPlans';
 import TransactionHistory from '../../components/Store/TransactionHistory';
 
 const StoreScreen = () => {
@@ -14,7 +13,6 @@ const StoreScreen = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const tokenBalance = user?.tokenBalance || 0;
-  const currentSubscription = user?.currentSubscription;
 
   const handleTokenPurchased = (tokens: number) => {
     // Update user token balance (simulate)
@@ -23,11 +21,6 @@ const StoreScreen = () => {
       // For now, we'll just refresh the user data
       refreshUser();
     }
-  };
-
-  const handleSubscriptionChange = () => {
-    // Refresh user data when subscription changes
-    refreshUser();
   };
 
   const handleRefresh = async () => {
@@ -63,28 +56,34 @@ const StoreScreen = () => {
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Header */}
-        <View className="pt-12 pb-6 px-6">
-          <Text className="text-2xl font-bold text-gray-900 mb-2">My Wallet</Text>
-          <Text className="text-gray-600">
-            Manage your tokens and subscription
+        {/* Header + Balance */}
+        <View className="pt-12 pb-4 px-6">
+          <Text className="text-2xl font-bold text-gray-900 mb-1">
+            My Wallet
           </Text>
+          <Text className="text-gray-600 mb-4">
+            Quản lý số dư và lịch sử giao dịch của bạn
+          </Text>
+
+          {/* Token Balance Card */}
+          <TokenBalanceCard
+            tokenBalance={tokenBalance}
+            isLoading={isRefreshing}
+          />
+
+          {/* Quick actions */}
+          <View className="mt-2 flex-row space-x-3">
+            <View className="flex-1 bg-emerald-500 rounded-2xl py-3 items-center justify-center shadow-md">
+              <Text className="text-white font-semibold">Nạp tiền</Text>
+            </View>
+            <View className="flex-1 bg-sky-500 rounded-2xl py-3 items-center justify-center shadow-md">
+              <Text className="text-white font-semibold">Rút / Đổi thưởng</Text>
+            </View>
+          </View>
         </View>
 
-        {/* Token Balance Card */}
-        <TokenBalanceCard
-          tokenBalance={tokenBalance}
-          isLoading={isRefreshing}
-        />
-
-        {/* Token Packages */}
+        {/* Token Packages - gợi ý gói nạp */}
         <TokenPackages onTokenPurchased={handleTokenPurchased} />
-
-        {/* Subscription Plans */}
-        <SubscriptionPlans
-          currentPlanId={currentSubscription?.id}
-          onSubscriptionChange={handleSubscriptionChange}
-        />
 
         {/* Transaction History */}
         <TransactionHistory refreshTrigger={refreshTrigger} />
