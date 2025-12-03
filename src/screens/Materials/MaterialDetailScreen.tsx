@@ -66,6 +66,26 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
       setDownloadingLessonId(lesson.id);
 
       const { url, headers } = getLessonAssetDownloadConfig(lesson.fileName);
+
+      // Trên web: không dùng FileSystem.downloadAsync (không hỗ trợ / deprecated)
+      // và cần gửi kèm header Authorization -> dùng fetch lấy blob rồi mở tab mới
+      if (Platform.OS === 'web') {
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: headers as Record<string, string> | undefined,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to load PDF: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+        return;
+      }
+
+      // Native (iOS/Android): tải file về rồi mở chia sẻ/xem PDF
       // @ts-ignore - expo-file-system types may not include documentDirectory
       const docDir = (FileSystem as any).documentDirectory || '';
       const targetPath = `${docDir}${lesson.id}.pdf`;
@@ -243,59 +263,6 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.ctaCard}>
-          <View>
-            <Text style={styles.ctaTitle}>Hỏi trợ giảng AI</Text>
-            <Text style={styles.ctaSubtitle}>
-              Tương tác tức thời và giải đáp mọi thắc mắc trong bài học này.
-            </Text>
-          </View>
-          <View style={styles.ctaButton}>
-            <Text style={styles.ctaButtonText}>Chat now</Text>
-          </View>
-        </TouchableOpacity>
-
-        <View style={styles.resourceCard}>
-          <View style={styles.resourceHeader}>
-            <View style={styles.resourceTitleGroup}>
-              <Text style={styles.resourceTitle}>Lesson Material</Text>
-              <Text style={styles.resourceHint}>PDF & ghi chú tải về</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.downloadBtn}
-              onPress={() => {
-                const firstDoc =
-                  derivedLessons.find(
-                    (lesson: Lesson) => lesson.documentUrl || lesson.fileName,
-                  ) || null;
-                if (firstDoc) {
-                  handleOpenPdf(firstDoc);
-                } else {
-                  Alert.alert(
-                    'Chưa có tài liệu',
-                    'Bài học chưa đính kèm PDF.',
-                  );
-                }
-              }}
-            >
-              <Text style={styles.downloadText}>Download PDF</Text>
-            </TouchableOpacity>
-          </View>
-          <ImageBackground
-            source={getMaterialImageSource(material.fileImage)}
-            style={styles.previewBox}
-            imageStyle={{ borderRadius: 16 }}
-          >
-            <View style={styles.previewOverlay}>
-              <Text style={styles.previewTitle}>Preview Mode</Text>
-              <Text style={styles.previewCaption}>
-                Nếu không hiển thị mượt mà, hãy tải PDF để đọc trong trình xem
-                yêu thích của bạn.
-              </Text>
-            </View>
-          </ImageBackground>
-        </View>
-
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Danh sách bài học</Text>
@@ -407,99 +374,6 @@ const styles = StyleSheet.create({
   readMoreText: {
     color: '#2563EB',
     fontWeight: '600',
-  },
-  ctaCard: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    backgroundColor: '#7C3AED',
-    borderRadius: 24,
-    padding: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  ctaTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  ctaSubtitle: {
-    color: '#E0E7FF',
-    marginTop: 6,
-    maxWidth: '80%',
-  },
-  ctaButton: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 16,
-  },
-  ctaButtonText: {
-    color: '#7C3AED',
-    fontWeight: '700',
-  },
-  resourceCard: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: 20,
-    gap: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  resourceHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  resourceTitleGroup: {
-    gap: 4,
-  },
-  resourceTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  resourceHint: {
-    color: '#6B7280',
-  },
-  downloadBtn: {
-    backgroundColor: '#EEF2FF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 999,
-  },
-  downloadText: {
-    color: '#4338CA',
-    fontWeight: '600',
-  },
-  previewBox: {
-    height: 180,
-    borderRadius: 16,
-    backgroundColor: '#F8FAFC',
-    overflow: 'hidden',
-  },
-  previewOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15,23,42,0.65)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  previewTitle: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
-    marginBottom: 6,
-  },
-  previewCaption: {
-    color: '#E2E8F0',
-    textAlign: 'center',
-    fontSize: 13,
   },
   section: {
     marginHorizontal: 16,
