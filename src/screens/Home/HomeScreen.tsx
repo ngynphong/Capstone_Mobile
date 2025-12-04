@@ -1,14 +1,34 @@
 import React from "react";
-import { ScrollView, StyleSheet, View, Text } from "react-native";
+import { ScrollView, StyleSheet, View, Text, ActivityIndicator } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { HomeStackParamList } from "../../types/types";
 import HeroSection from "./HeroSection";
 import CourseCard from "./MaterialCard";
 import CareerOrientationCard from "./CareerOrientationCard";
 import GoalTargetCard from "./GoalTargetCard";
 import SmallCourseCard from "./SmallCourseCard";
 import PopularCourseCard from "./PopularCourseCard";
+import ExamCard from "./ExamCard";
+import TeacherCard from "./TeacherCard";
 import ChatBotBubble from "../../components/ChatBotCard";
+import { useBrowseExams } from "../../hooks/useExam";
+import { useUsers } from "../../hooks/useUser";
+
+type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, "HomeMain">;
 
 const HomeScreen = () => {
+  const navigation = useNavigation<HomeScreenNavigationProp>();
+
+  // Fetch exams and teachers
+  const { templates: exams, loading: examsLoading } = useBrowseExams({ pageSize: 10 });
+  const { users: teachers, loading: teachersLoading } = useUsers();
+
+  // Filter teachers to only show users with ROLE_TEACHER
+  const teacherUsers = teachers.filter((user) =>
+    user.roles.includes("TEACHER")
+  );
+
   return (
     <View style={styles.mainContainer}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -90,6 +110,62 @@ const HomeScreen = () => {
           />
         </View>
 
+        {/* Exams Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Available Exams</Text>
+            <Text style={styles.seeAll}>See All</Text>
+          </View>
+          {examsLoading ? (
+            <ActivityIndicator size="small" color="#3CBCB2" style={styles.loader} />
+          ) : exams.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.horizontalScroll}
+              contentContainerStyle={styles.horizontalScrollContent}
+            >
+              {exams.map((exam) => (
+                <ExamCard
+                  key={exam.id}
+                  exam={exam}
+                  onPress={() => console.log("Exam pressed:", exam.id)}
+                />
+              ))}
+            </ScrollView>
+          ) : (
+            <Text style={styles.emptyText}>No exams available</Text>
+          )}
+        </View>
+
+        {/* Teachers Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Featured Teachers</Text>
+            <Text style={styles.seeAll}>See All</Text>
+          </View>
+          {teachersLoading ? (
+            <ActivityIndicator size="small" color="#3CBCB2" style={styles.loader} />
+          ) : teacherUsers.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.horizontalScroll}
+              contentContainerStyle={styles.horizontalScrollContent}
+            >
+              {teacherUsers.map((teacher) => (
+                <TeacherCard
+                  key={teacher.id}
+                  teacher={teacher}
+                  onPress={() => navigation.navigate("TeacherDetail", { teacherId: teacher.id })}
+                />
+              ))}
+            </ScrollView>
+          ) : (
+            <Text style={styles.emptyText}>No teachers available</Text>
+          )}
+        </View>
+
         {/* Bottom Spacing for Tab Bar */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
@@ -151,5 +227,14 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 100,
+  },
+  loader: {
+    marginVertical: 20,
+  },
+  emptyText: {
+    fontSize: 13,
+    color: "#999",
+    textAlign: "center",
+    paddingVertical: 20,
   },
 });
