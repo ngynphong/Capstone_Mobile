@@ -11,6 +11,11 @@ export type RootStackParamList = {
   ChatBot: undefined;
 };
 
+export type HomeStackParamList = {
+  HomeMain: undefined;
+  TeacherDetail: { teacherId: string };
+};
+
 export type TabParamList = {
   Home: undefined;
   Materials: undefined;

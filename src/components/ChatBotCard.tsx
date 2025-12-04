@@ -43,7 +43,7 @@ const ChatBotBubble = () => {
     >
       <TouchableOpacity
         onPress={handlePress}
-        className="bg-backgroundColor rounded-full p-4 shadow-xl"
+        className="bg-backgroundColor rounded-full border border-backgroundColor shadow-xl"
         style={{
           shadowColor: '#3CBCB2',
           shadowOffset: { width: 0, height: 4 },

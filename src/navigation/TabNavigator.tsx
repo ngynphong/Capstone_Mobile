@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Home, BookOpen, User, FileText, Users, Route } from 'lucide-react-native';
-import HomeScreen from '../screens/Home/HomeScreen';
+import HomeStack from './HomeStack';
 
 import ExamScreen from '../screens/Exam/ExamScreen';
 import { TabParamList } from '../types/types';
@@ -34,7 +34,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
     console.log('Route names:', state.routes.map((r: any) => r.name));
     console.log('Current index:', state.index);
   }, [state.routes, state.index]);
-  
+
   const animatedValues = React.useRef(state.routes.map(() => new Animated.Value(0))).current;
   const { tabBarTranslateY } = useScroll();
 
@@ -96,11 +96,11 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
           style={{
             width: TAB_BAR_WIDTH,
             height: 54,
-            backgroundColor: 'rgba(255, 255, 255, 0.10)',         
+            backgroundColor: 'rgba(255, 255, 255, 0.10)',
           }}
         >
-          <View 
-            style={{ 
+          <View
+            style={{
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-evenly',
@@ -132,7 +132,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
                       console.error('Navigation error when pressing tab:', route.name, e);
                     }
                   }}
-                  style={{ 
+                  style={{
                     flex: 1,
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -150,7 +150,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
                   >
                     {/* Active indicator dot */}
                     {isActive && (
-                      <View 
+                      <View
                         style={{
                           position: 'absolute',
                           top: -3,
@@ -198,7 +198,7 @@ const TabNavigator = () => {
         headerShown: false,
       }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Home" component={HomeStack} />
 
       <Tab.Screen name="Roadmap" component={RoadmapScreen} />
       <Tab.Screen name="Exams" component={ExamScreen} />

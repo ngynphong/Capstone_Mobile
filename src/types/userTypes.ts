@@ -19,6 +19,7 @@ export interface UserProfile {
     };
     studentProfile?: StudentProfile;
     parentProfile?: ParentProfile;
+    teacherProfile?: TeacherProfile;
 }
 export interface StudentProfile {
     id: string;
@@ -29,6 +30,17 @@ export interface StudentProfile {
 export interface ParentProfile {
     id: string;
     occupation: string;
+}
+export interface TeacherProfile {
+    id: string;
+    dateOfBirth: string;
+    qualification: string;
+    specialization: string;
+    experience: string;
+    biography: string;
+    rating: number;
+    certificateUrls: string[];
+    isVerified: boolean;
 }
 // Request for PUT /users/me
 export interface UpdateProfileRequest {
@@ -68,3 +80,26 @@ export interface ChangePasswordResponse {
     message: string;
     data: Record<string, never>; // Empty object based on API docs
 }
+
+export interface UserQueryParams {
+    pageNo?: number;
+    pageSize?: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+}
+export interface UserPaginationData {
+    pageNo: number;
+    pageSize: number;
+    totalPage: number;
+    totalElement: number;
+    sortBy: string[];
+    items: UserProfile[];
+}
+
+export interface UserResponse {
+    code: number;
+    message: string;
+    data: UserPaginationData;
+}
+

@@ -6,7 +6,15 @@ import {
   UpdateProfileResponse,
   ChangePasswordRequest,
   ChangePasswordResponse,
+  UserQueryParams,
+  UserResponse,
 } from '../types/userTypes';
+
+interface SingleUserResponse {
+  code: number;
+  message: string;
+  data: UserProfile;
+}
 
 const handleApiError = (error: unknown, defaultMessage: string): never => {
   if (isAxiosError(error) && error.response) {
@@ -60,3 +68,21 @@ export const changePassword = async (data: ChangePasswordRequest): Promise<Chang
     return handleApiError(error, 'Failed to change password');
   }
 };
+
+export const getUsers = async (params: UserQueryParams): Promise<UserResponse> => {
+  try {
+    const response = await api.get<UserResponse>("/users", { params });
+    return response.data;
+  } catch (error: unknown) {
+    return handleApiError(error, 'Failed to fetch users');
+  }
+};
+
+export const getUserProfileById = async (userId: string): Promise < SingleUserResponse > => {
+  try {
+    const response = await api.get<SingleUserResponse>(`/users/${userId}/profile`);
+    return response.data;
+  } catch(err) {
+    throw err;
+  }
+}
