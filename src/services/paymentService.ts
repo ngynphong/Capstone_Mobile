@@ -9,7 +9,6 @@ import {
   TransactionHistoryResponse,
   TransactionsResponse,
   UserTokenTransactionsResponse,
-  MomoCreateRequest,
   MomoCreateResponse,
 } from '../types/storeTypes';
 
@@ -218,13 +217,14 @@ export const getAllTransactions = async (): Promise<TransactionsResponse> => {
   return response.data;
 };
 
-// Tạo giao dịch thanh toán MoMo - API /payment/momo/create
+// Tạo giao dịch thanh toán MoMo - API /payment/momo/create?amount=
 export const createMomoPayment = async (
-  payload: MomoCreateRequest,
+  amount: number,
 ): Promise<MomoCreateResponse> => {
   const response = await publicAxios.post<MomoCreateResponse>(
     '/payment/momo/create',
-    payload,
+    null,
+    { params: { amount } },
   );
   return response.data;
 };

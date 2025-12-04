@@ -62,7 +62,7 @@ export interface PaymentResponse {
   };
 }
 
-// Transaction History Response
+// Transaction History Response (UI đang dùng)
 export interface TransactionHistoryResponse {
   code: number;
   message: string;
@@ -74,37 +74,37 @@ export interface TransactionHistoryResponse {
   };
 }
 
-// API /api/transactions - toàn bộ giao dịch (admin / thống kê)
-export interface TransactionsResponse {
-  code: number;
-  message: string;
-  data: Transaction[];
+// Transaction theo schema của API ví (token-transaction)
+export interface WalletTransaction {
+  id: string;
+  amount: number;
+  status: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+  balanceAfter?: number;
+  externalReference?: string;
+  errorMessage?: string;
+  userId?: string;
+  type?: {
+    id: string;
+    name: string;
+    description?: string;
+  };
 }
+
+// API /api/transactions - toàn bộ giao dịch (trả về array thuần)
+export type TransactionsResponse = WalletTransaction[];
 
 // API /api/token-transaction/user - lịch sử giao dịch theo user hiện tại
 export interface UserTokenTransactionsResponse {
   code: number;
   message: string;
-  data: Transaction[];
+  data: WalletTransaction[];
 }
 
-// API /payment/momo/create - tạo giao dịch thanh toán MoMo
-export interface MomoCreateRequest {
-  amount: number;
-  orderInfo: string;
-  extraData?: string;
-}
-
-export interface MomoCreateResponse {
-  code: number;
-  message: string;
-  data: {
-    payUrl: string;
-    deeplink?: string;
-    orderId: string;
-    requestId: string;
-  };
-}
+// API /payment/momo/create - tạo giao dịch thanh toán MoMo (query: amount)
+export type MomoCreateResponse = Record<string, unknown>;
 
 // Store Screen State
 export interface StoreState {
