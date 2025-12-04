@@ -52,26 +52,6 @@ export const useMaterial = () => {
     }
   }, [fetchMaterials]);
 
-  const getMaterialImageUrl = useCallback((fileName?: string) => {
-    return MaterialService.getMaterialAssetUrl(fileName);
-  }, []);
-
-  const getMaterialImageSource = useCallback(
-    (fileName?: string) => {
-      const uri = MaterialService.getMaterialAssetUrl(fileName);
-      if (authToken) {
-        return {
-          uri,
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        };
-      }
-      return { uri };
-    },
-    [authToken],
-  );
-
   const getMaterialAsset = useCallback(async (fileName: string) => {
     try {
       const response = await MaterialService.getMaterialAsset(fileName);
@@ -91,9 +71,7 @@ export const useMaterial = () => {
     error,
     fetchMaterials,
     refreshMaterials,
-    getMaterialImageUrl,
     getMaterialAsset,
-    getMaterialImageSource,
   };
 };
 

@@ -19,7 +19,6 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import type { MaterialStackParamList } from '../../types/types';
 import type { Lesson } from '../../types/lessonTypes';
-import useMaterial from '../../hooks/useMaterial';
 import { useMaterialDetail } from '../../hooks/useMaterialDetail';
 
 type DetailRouteProp = RouteProp<MaterialStackParamList, 'MaterialDetail'>;
@@ -36,7 +35,6 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
   const navigation = useNavigation<DetailNavProp>();
   const { material } = route.params;
   const learningMaterialId = material.learningMaterialId || material.id;
-  const { getMaterialImageSource } = useMaterial();
   
   const {
     lessons: derivedLessons,

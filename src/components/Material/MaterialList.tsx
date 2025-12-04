@@ -18,6 +18,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import useMaterial from "../../hooks/useMaterial";
 import { Material } from "../../types/material";
 import { MaterialStackParamList } from "../../types/types";
+import useMaterialImageSource from "../../hooks/useMaterialImageSource";
 
 
 const MaterialList = () => {
@@ -28,11 +29,11 @@ const MaterialList = () => {
     error,
     fetchMaterials,
     refreshMaterials,
-    getMaterialImageSource,
   } = useMaterial();
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const navigation =
     useNavigation<NativeStackNavigationProp<MaterialStackParamList>>();
+  const { source: modalImageSource } = useMaterialImageSource(selectedMaterial?.fileImage);
 
   /** Gọi API khi component mount */
   useEffect(() => {
@@ -77,22 +78,7 @@ const MaterialList = () => {
            <RefreshControl refreshing={isRefreshing} onRefresh={refreshMaterials} />
         }
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => setSelectedMaterial(item)}>
-            <View style={styles.card}>
-               <Image
-                 source={getMaterialImageSource(item.fileImage)}
-                 style={styles.cardImage}
-                 resizeMode="cover"
-               />
-              <View style={styles.cardInfo}>
-                <Text style={styles.title}>{item.title}</Text>
-                <Text style={styles.desc}>{item.description}</Text>
-                <Text style={styles.meta}>
-                  {item.subjectName} • {item.authorName}
-                </Text>
-              </View>
-            </View>
-          </TouchableOpacity>
+          <MaterialCard material={item} onPress={() => setSelectedMaterial(item)} />
         )}
         ListEmptyComponent={
           <View style={styles.center}>
@@ -116,7 +102,7 @@ const MaterialList = () => {
               showsVerticalScrollIndicator={false}
             >
                <Image
-                 source={getMaterialImageSource(selectedMaterial?.fileImage)}
+                 source={modalImageSource}
                  style={styles.modalImage}
                  resizeMode="cover"
                />
@@ -156,6 +142,27 @@ const MaterialList = () => {
 };
 
 export default MaterialList;
+
+const MaterialCard: React.FC<{
+  material: Material;
+  onPress: () => void;
+}> = ({ material, onPress }) => {
+  const { source } = useMaterialImageSource(material.fileImage);
+  return (
+    <TouchableOpacity onPress={onPress}>
+      <View style={styles.card}>
+        <Image source={source} style={styles.cardImage} resizeMode="cover" />
+        <View style={styles.cardInfo}>
+          <Text style={styles.title}>{material.title}</Text>
+          <Text style={styles.desc}>{material.description}</Text>
+          <Text style={styles.meta}>
+            {material.subjectName} • {material.authorName}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 const styles = StyleSheet.create({
   center: {

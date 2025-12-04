@@ -1,9 +1,5 @@
 import { useCallback, useState } from 'react';
-import type {
-  Transaction,
-  MomoCreateRequest,
-  MomoCreateResponse,
-} from '../types/storeTypes';
+import type { Transaction, MomoCreateResponse } from '../types/storeTypes';
 import {
   getTransactionHistory,
   createMomoPayment,
@@ -37,11 +33,11 @@ export const useWallet = () => {
   }, []);
 
   const createTopupWithMomo = useCallback(
-    async (payload: MomoCreateRequest): Promise<MomoCreateResponse> => {
+    async (amount: number): Promise<MomoCreateResponse> => {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await createMomoPayment(payload);
+        const res = await createMomoPayment(amount);
         return res;
       } catch (err: any) {
         console.error('createTopupWithMomo error', err);
