@@ -95,7 +95,7 @@ export const useLesson = () => {
           learningMaterialId,
         );
         const responseData: LessonByMaterialResponse = response.data;
-        
+
         // Kiểm tra cấu trúc response - có thể là array trực tiếp hoặc PageInfo structure
         let lessonsArray: Lesson[] = [];
         if (Array.isArray(responseData.data)) {
@@ -106,7 +106,7 @@ export const useLesson = () => {
           const pageInfo = responseData.data as PageInfo<Lesson>;
           lessonsArray = pageInfo.items || pageInfo.content || [];
         }
-        
+
         // Map các field từ backend sang Lesson interface
         // Backend có thể trả về: file, url, name thay vì fileName, videoUrl, title
         const mappedLessons: Lesson[] = lessonsArray.map((lesson: any) => ({
@@ -115,10 +115,10 @@ export const useLesson = () => {
           videoUrl: lesson.videoUrl || lesson.url,
           title: lesson.title || lesson.name,
         }));
-        
+
         console.log('Fetched lessons count:', mappedLessons.length);
         console.log('Mapped lessons:', mappedLessons);
-        
+
         setLessons({
           items: mappedLessons,
           pageInfo: null,
@@ -190,8 +190,8 @@ export const useLesson = () => {
         url,
         headers: authToken
           ? {
-              Authorization: `Bearer ${authToken}`,
-            }
+            Authorization: `Bearer ${authToken}`,
+          }
           : undefined,
       };
     },
@@ -227,15 +227,15 @@ export const useLesson = () => {
       console.log('getVideos API response:', JSON.stringify(responseData, null, 2));
       console.log('Response data type:', typeof responseData.data);
       console.log('Response data:', responseData.data);
-      
+
       // Kiểm tra cấu trúc response - có thể là:
       // 1. ApiResponse<LessonVideo[]> -> responseData.data là array
       // 2. ApiResponse<string> -> responseData.data là URL string trực tiếp
       // 3. ApiResponse<LessonVideo> -> responseData.data là object
       // 4. Response trực tiếp là URL string (không có wrapper)
-      
+
       let videoUrl = null;
-      
+
       // Trường hợp 1: data là string URL trực tiếp
       if (typeof responseData.data === 'string') {
         videoUrl = responseData.data;
@@ -253,26 +253,26 @@ export const useLesson = () => {
       // Trường hợp 3: data là object
       else if (responseData.data && typeof responseData.data === 'object') {
         // Thử nhiều field khác nhau
-        videoUrl = responseData.data.url || 
-                   responseData.data.videoUrl || 
-                   responseData.data.uri ||
-                   responseData.data.videoUrl ||
-                   (responseData.data as any).video_url;
+        const dataObj = responseData.data as any;
+        videoUrl = dataObj.url ||
+          dataObj.videoUrl ||
+          dataObj.uri ||
+          dataObj.video_url;
         console.log('Extracted from object, video URL:', videoUrl);
-        console.log('Object keys:', Object.keys(responseData.data));
+        console.log('Object keys:', Object.keys(dataObj));
       }
-      
+
       // Nếu vẫn chưa có, thử xem responseData có phải là URL trực tiếp không
       if (!videoUrl && typeof responseData === 'string' && /^https?:\/\//i.test(responseData)) {
         videoUrl = responseData;
         console.log('ResponseData itself is URL:', videoUrl);
       }
-      
+
       if (videoUrl && /^https?:\/\//i.test(videoUrl)) {
         console.log('✅ Valid video URL found:', videoUrl);
         return videoUrl;
       }
-      
+
       console.log('❌ No valid video URL found in response');
       console.log('Response structure:', {
         hasData: !!responseData.data,

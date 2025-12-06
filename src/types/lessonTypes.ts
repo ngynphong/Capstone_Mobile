@@ -29,6 +29,8 @@ export interface LessonVideo {
   url: string;
   thumbnailUrl?: string;
   durationInSeconds?: number;
+  uri?: string;
+  videoUrl?: string;
 }
 
 /**

@@ -26,11 +26,10 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
       const page = reset ? 1 : currentPage;
       setIsLoading(reset);
 
-      const response = await getTransactionHistory(page, 10);
-
-      if (response.code === 200) {
-        const newTransactions = response.data.transactions;
-
+      const response = await getTransactionHistory(page, 10);  
+      console.log(response.data.transactions)
+      if (response.code === 1000) {
+        const newTransactions = response.data.transactions;       
         if (reset) {
           setTransactions(newTransactions);
         } else {

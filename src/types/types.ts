@@ -9,6 +9,7 @@ export type RootStackParamList = {
   ExamStack: undefined;
   MainTabs: undefined;
   ChatBot: undefined;
+  Onboarding: undefined;
 };
 
 export type HomeStackParamList = {

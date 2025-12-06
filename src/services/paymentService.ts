@@ -1,4 +1,4 @@
-import { publicAxios } from '../configs/axios';
+import axiosInstance from '../configs/axios';
 import {
   TokenPackage,
   SubscriptionPlan,
@@ -189,14 +189,24 @@ export const getTransactionHistory = async (
   limit: number = 10,
 ): Promise<TransactionHistoryResponse> => {
   try {
-    const response = await publicAxios.get<UserTokenTransactionsResponse>(
+    const response = await axiosInstance.get<UserTokenTransactionsResponse>(
       '/api/token-transaction/user',
     );
     const body = response.data;
-    const list: Transaction[] = Array.isArray(body.data) ? body.data : [];
+    const walletTransactions = Array.isArray(body.data) ? body.data : [];
+    const list: Transaction[] = walletTransactions.map((wt) => ({
+      id: wt.id,
+      type: (wt.type?.name === 'subscription' ? 'subscription' : wt.type?.name === 'refund' ? 'refund' : 'token_purchase') as Transaction['type'],
+      amount: wt.amount,
+      currency: 'VND', // Default currency for wallet transactions
+      description: wt.description ?? '',
+      status: (['pending', 'completed', 'failed', 'cancelled'].includes(wt.status) ? wt.status : 'pending') as Transaction['status'],
+      createdAt: wt.createdAt,
+      referenceId: wt.externalReference,
+    }));
 
     return {
-      code: body.code ?? 200,
+      code: body.code ?? 1000,
       message: body.message ?? 'OK',
       data: {
         transactions: list,
@@ -213,7 +223,7 @@ export const getTransactionHistory = async (
 
 // Lấy toàn bộ transactions (nếu cần cho admin / thống kê) - API /api/transactions
 export const getAllTransactions = async (): Promise<TransactionsResponse> => {
-  const response = await publicAxios.get<TransactionsResponse>('/api/transactions');
+  const response = await axiosInstance.get<TransactionsResponse>('/api/transactions');
   return response.data;
 };
 
@@ -221,7 +231,7 @@ export const getAllTransactions = async (): Promise<TransactionsResponse> => {
 export const createMomoPayment = async (
   amount: number,
 ): Promise<MomoCreateResponse> => {
-  const response = await publicAxios.post<MomoCreateResponse>(
+  const response = await axiosInstance.post<MomoCreateResponse>(
     '/payment/momo/create',
     null,
     { params: { amount } },
