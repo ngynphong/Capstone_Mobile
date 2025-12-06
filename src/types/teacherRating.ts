@@ -18,6 +18,7 @@ export interface TeacherRating {
   studentId: string;
   rating: number;
   comment?: string;
+  userFullName?: string;
   createdAt?: string;
   updatedAt?: string;
   isVerified: boolean;

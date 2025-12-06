@@ -199,7 +199,7 @@ const ChatBotScreen = () => {
             keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         >
             {/* Header */}
-            <View className="bg-white border-b border-gray-200 px-4 py-4">
+            <View className="bg-white border-b border-gray-200 px-4 py-6">
                 <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center mt-5">
                         <View className="w-10 h-10 rounded-full bg-backgroundColor items-center justify-center mr-3">

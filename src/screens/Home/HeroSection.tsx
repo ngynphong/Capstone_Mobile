@@ -2,8 +2,21 @@ import React from "react";
 import { View, Text, Image, StyleSheet } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 
+const getGreeting = (): string => {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) {
+    return "Good morning";
+  } else if (hour >= 12 && hour < 18) {
+    return "Good afternoon";
+  } else {
+    return "Good evening";
+  }
+};
+
 const HeroSection = () => {
   const { user } = useAuth();
+  const greeting = getGreeting();
+
   return (
     <View style={styles.container}>
       {/* Header user info */}
@@ -18,7 +31,7 @@ const HeroSection = () => {
             />
           </View>
           <View style={styles.textSection}>
-            <Text style={styles.greeting}>Good morning</Text>
+            <Text style={styles.greeting}>{greeting}</Text>
             <Text style={styles.name}>
               {user ? `${user.firstName} ${user.lastName}` : 'Guest'}
             </Text>
@@ -56,7 +69,7 @@ const styles = StyleSheet.create({
     height: 284,
     backgroundColor: "#3CBCB2",
     borderRadius: 10,
-    paddingTop: 17,
+    paddingTop: 35,
     overflow: "hidden",
   },
   headerRow: {

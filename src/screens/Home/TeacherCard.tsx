@@ -72,6 +72,7 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 3,
         alignItems: "center",
+        marginBottom: 12,
     },
     avatarContainer: {
         marginBottom: 10,

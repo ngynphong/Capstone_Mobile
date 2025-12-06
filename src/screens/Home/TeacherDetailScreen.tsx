@@ -18,6 +18,8 @@ import type { UserProfile } from "../../types/userTypes";
 // import type { TeacherRating } from "../../types/teacherRating";
 import { getUserProfileById } from "../../services/userService";
 import { useAppToast } from "../../utils/toast";
+import { TeacherRating } from "../../types/teacherRating";
+import useTeacherRatings from "../../hooks/useTeacherRatings";
 
 type TeacherDetailScreenRouteProp = RouteProp<HomeStackParamList, "TeacherDetail">;
 type TeacherDetailScreenNavigationProp = NativeStackNavigationProp<
@@ -31,11 +33,11 @@ const TeacherDetailScreen = () => {
     const { teacherId } = route.params;
 
     const { loading: userLoading } = useUsers();
-    // const {
-    //     ratings,
-    //     loading: ratingsLoading,
-    //     fetchRatingsByTeacher,
-    // } = useTeacherRatings();
+    const {
+        ratings,
+        loading: ratingsLoading,
+        fetchRatingsByTeacher,
+    } = useTeacherRatings();
 
     const [teacher, setTeacher] = useState<UserProfile | null>(null);
     const toast = useAppToast();
@@ -80,29 +82,41 @@ const TeacherDetailScreen = () => {
         return <View style={styles.starsRow}>{stars}</View>;
     };
 
-    // const renderRatingItem = (rating: TeacherRating) => (
-    //     <View key={rating.id} style={styles.ratingCard}>
-    //         <View style={styles.ratingHeader}>
-    //             <View style={styles.ratingStarsContainer}>
-    //                 {renderRatingStars(rating.rating)}
-    //             </View>
-    //             {rating.createdAt && (
-    //                 <Text style={styles.ratingDate}>
-    //                     {new Date(rating.createdAt).toLocaleDateString()}
-    //                 </Text>
-    //             )}
-    //         </View>
-    //         {rating.comment && (
-    //             <Text style={styles.ratingComment}>{rating.comment}</Text>
-    //         )}
-    //         {rating.learningMaterialTitle && (
-    //             <View style={styles.materialBadge}>
-    //                 <Ionicons name="book-outline" size={12} color="#3CBCB2" />
-    //                 <Text style={styles.materialText}>{rating.learningMaterialTitle}</Text>
-    //             </View>
-    //         )}
-    //     </View>
-    // );
+    useEffect(() => {
+        fetchRatingsByTeacher(teacherId);
+    }, [teacherId]);
+
+    const renderRatingItem = (rating: TeacherRating) => (
+        <View key={rating.id} style={styles.ratingCard}>
+            <View style={styles.ratingHeader}>
+                <View style={styles.ratingUserContainer}>
+                    <View style={styles.ratingCreatorContainer}>
+                        <Text style={styles.ratingUser}>{rating.userFullName}</Text>
+                        {rating.createdAt && (
+                            <Text style={styles.ratingDate}>
+                                {new Date(rating.createdAt).toLocaleDateString()}
+                            </Text>
+                        )}
+                    </View>
+                    <View style={styles.ratingStarsContainer}>
+                        {renderRatingStars(rating.rating)}
+                    </View>
+                </View>
+
+            </View>
+            {rating.comment ? (
+                <Text style={styles.ratingComment}>{rating.comment}</Text>
+            ) : (
+                <Text style={styles.ratingComment}>No comment</Text>
+            )}
+            {rating.learningMaterialTitle && (
+                <View style={styles.materialBadge}>
+                    <Ionicons name="book-outline" size={12} color="#3CBCB2" />
+                    <Text style={styles.materialText}>Course: {rating.learningMaterialTitle}</Text>
+                </View>
+            )}
+        </View>
+    );
 
     if (userLoading && !teacher) {
         return (
@@ -220,7 +234,7 @@ const TeacherDetailScreen = () => {
                 </View>
 
                 {/* Reviews Section */}
-                {/* <View style={styles.reviewsSection}>
+                <View style={styles.reviewsSection}>
                     <Text style={styles.sectionTitle}>Student Reviews</Text>
 
                     {ratingsLoading ? (
@@ -233,7 +247,7 @@ const TeacherDetailScreen = () => {
                             <Text style={styles.emptyText}>No reviews yet</Text>
                         </View>
                     )}
-                </View> */}
+                </View>
 
                 {/* Bottom Spacing */}
                 <View style={styles.bottomSpacer} />
@@ -415,7 +429,7 @@ const styles = StyleSheet.create({
     },
     ratingComment: {
         fontSize: 14,
-        color: "#333",
+        color: "#464545ff",
         lineHeight: 20,
         marginBottom: 8,
     },
@@ -483,5 +497,21 @@ const styles = StyleSheet.create({
     },
     bottomSpacer: {
         height: 40,
+    },
+    ratingUser: {
+        fontSize: 14,
+        color: "#333",
+        fontWeight: "500",
+    },
+    ratingUserContainer: {
+        flexDirection: "column",
+        alignItems: "flex-start",
+        gap: 8,
+    },
+    ratingCreatorContainer: {
+        width: "100%",
+        flexDirection: "row",
+        justifyContent: "space-between",
+        gap: 8,
     },
 });
