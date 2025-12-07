@@ -14,6 +14,7 @@ import TeacherCard from "./TeacherCard";
 import ChatBotBubble from "../../components/ChatBotCard";
 import { useBrowseExams } from "../../hooks/useExam";
 import { useUsers } from "../../hooks/useUser";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, "HomeMain">;
 

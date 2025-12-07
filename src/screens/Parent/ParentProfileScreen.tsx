@@ -23,71 +23,71 @@ const ParentProfileScreen = () => {
 
   const handleLogout = () => {
     Alert.alert(
-      'Đăng xuất',
-      'Bạn có chắc chắn muốn đăng xuất?',
+      'Logout',
+      'Are you sure you want to logout?',
       [
-        { text: 'Hủy', style: 'cancel' },
-        { text: 'Đăng xuất', style: 'destructive', onPress: logout },
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Logout', style: 'destructive', onPress: logout },
       ]
     );
   };
 
   const handleChangeAvatar = () => {
-    Alert.alert('Đổi ảnh đại diện', 'Chức năng thay đổi ảnh đại diện sẽ được phát triển sớm!');
+    Alert.alert('Change avatar', 'The change avatar feature will be developed soon!');
   };
 
   const handleSettings = () => {
-    Alert.alert('Cài đặt', 'Chức năng cài đặt sẽ được phát triển sớm!');
+    Alert.alert('Settings', 'The settings feature will be developed soon!');
   };
 
   const handleSubscription = () => {
-    Alert.alert('Gói đăng ký', 'Chức năng quản lý gói đăng ký sẽ được phát triển sớm!');
+    Alert.alert('Subscription', 'The subscription feature will be developed soon!');
   };
 
   const handleSupport = () => {
-    Alert.alert('Hỗ trợ', 'Chức năng hỗ trợ sẽ được phát triển sớm!');
+    Alert.alert('Support', 'The support feature will be developed soon!');
   };
 
   const menuItems = [
     {
       id: 'edit-profile',
-      title: 'Chỉnh sửa hồ sơ',
-      subtitle: 'Cập nhật nghề nghiệp',
+      title: 'Edit profile',
+      subtitle: 'Update your occupation',
       icon: '👤',
       onPress: () => setIsEditModalVisible(true),
     },
     {
       id: 'subscription',
-      title: 'Gói đăng ký',
-      subtitle: 'Quản lý gói đăng ký và thanh toán',
+      title: 'Subscription',
+      subtitle: 'Manage your subscription and payment',
       icon: '💎',
       onPress: handleSubscription,
     },
     {
       id: 'change-password',
-      title: 'Đổi mật khẩu',
-      subtitle: 'Cập nhật mật khẩu tài khoản',
+      title: 'Change password',
+      subtitle: 'Update your password',
       icon: '🔒',
       onPress: () => setIsChangePasswordModalVisible(true),
     },
     {
       id: 'support',
-      title: 'Hỗ trợ',
-      subtitle: 'Liên hệ hỗ trợ và trợ giúp',
+      title: 'Support',
+      subtitle: 'Contact support and help',
       icon: '📞',
       onPress: handleSupport,
     },
     {
       id: 'settings',
-      title: 'Cài đặt',
-      subtitle: 'Tùy chọn ứng dụng và thông báo',
+      title: 'Settings',
+      subtitle: 'App options and notifications',
       icon: '⚙️',
       onPress: handleSettings,
     },
     {
       id: 'logout',
-      title: 'Đăng xuất',
-      subtitle: 'Đăng xuất khỏi tài khoản',
+      title: 'Logout',
+      subtitle: 'Logout from account',
       icon: '🚪',
       onPress: handleLogout,
       variant: 'danger' as const,
@@ -99,7 +99,7 @@ const ParentProfileScreen = () => {
   if (!user) {
     return (
       <View className="flex-1 justify-center items-center bg-gray-50">
-        <Text className="text-gray-600 text-lg">Đang tải thông tin người dùng...</Text>
+        <Text className="text-gray-600 text-lg">Loading user information...</Text>
       </View>
     );
   }
@@ -126,20 +126,20 @@ const ParentProfileScreen = () => {
             {/* Date of Birth */}
             <View className="flex-row items-center mb-4">
               <Text className="text-sm font-semibold text-gray-600 flex-1">
-                Ngày sinh:
+                Date of Birth:
               </Text>
               <Text className="text-base font-medium text-gray-800">
-                {user?.dob || 'Chưa cập nhật'}
+                {user?.dob || 'Not updated'}
               </Text>
             </View>
 
             {/* Occupation */}
             <View className="flex-row items-center">
               <Text className="text-sm font-semibold text-gray-600 flex-1">
-                Nghề nghiệp:
+                Occupation:
               </Text>
               <Text className="text-base font-medium text-gray-800">
-                {user.parentProfile?.occupation || 'Chưa cập nhật'}
+                {user.parentProfile?.occupation || 'Not updated'}
               </Text>
             </View>
 

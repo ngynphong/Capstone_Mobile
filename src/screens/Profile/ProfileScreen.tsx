@@ -108,6 +108,13 @@ const ProfileScreen = () => {
       onPress: () => setIsChangePasswordModalVisible(true),
     },
     {
+      id: 'exam-stats',
+      title: 'Exam Statistics',
+      subtitle: 'View your exam performance and progress',
+      icon: '📊',
+      onPress: () => navigation.navigate('StudentExamStats'),
+    },
+    {
       id: 'exam',
       title: 'Exams',
       subtitle: 'Do Exams and view results',

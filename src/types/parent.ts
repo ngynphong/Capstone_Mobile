@@ -30,6 +30,7 @@ export interface ChildExamHistoryItem {
   endTime: string;
   status: string;
   rating: number;
+  title: string;
 }
 
 export interface LinkStudentPayload {

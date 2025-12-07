@@ -14,7 +14,7 @@ const TeacherCard: React.FC<TeacherCardProps> = ({ teacher, onPress }) => {
     const displayRole = teacher.roles.includes("TEACHER")
         ? "Teacher"
         : teacher.roles[0]?.replace("ROLE_", "") || "User";
-console.log("Teacher Profile:", teacher);
+        
     return (
         <TouchableOpacity
             style={styles.card}

@@ -41,9 +41,9 @@ const ParentDashboardScreen = () => {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Chào buổi sáng';
-    if (hour < 18) return 'Chào buổi chiều';
-    return 'Chào buổi tối';
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
   };
 
   const totalChildren = children.length;
@@ -59,25 +59,25 @@ const ParentDashboardScreen = () => {
   };
 
   const getPerformanceLevel = (score: number) => {
-    if (score >= 80) return 'Xuất sắc';
-    if (score >= 60) return 'Khá';
-    return 'Cần cố gắng';
+    if (score >= 80) return 'Excellent';
+    if (score >= 60) return 'Good';
+    return 'Need improvement';
   };
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 pb-20">
       {/* Header */}
-      <View style={{backgroundColor: '#3CBCB2'}} className="px-6 pt-4 pb-8 rounded-b-3xl shadow-lg">
+      <View style={{ backgroundColor: '#3CBCB2' }} className="px-6 pt-4 pb-8 rounded-b-3xl shadow-lg">
         <View className="flex-row items-start justify-between mb-4">
           <View className="flex-1 mr-4">
             <Text className="text-white/70 text-xs font-medium uppercase tracking-wider">
               {getGreeting()}
             </Text>
             <Text className="text-white text-3xl font-bold mt-2 mb-1">
-              {user?.firstName || 'Phụ huynh'}
+              {user?.firstName || 'Parent'}
             </Text>
             <Text className="text-white/80 text-sm leading-5">
-              Theo dõi tiến độ học tập{'\n'}của con bạn 📚
+              Follow your child's progress 📚
             </Text>
           </View>
 
@@ -102,17 +102,17 @@ const ParentDashboardScreen = () => {
         <View className="flex-row items-center justify-between bg-white/10 rounded-xl px-4 py-3 backdrop-blur">
           <View className="items-center flex-1">
             <Text className="text-white text-xl font-bold">{totalChildren}</Text>
-            <Text className="text-white/70 text-xs mt-0.5">Học sinh</Text>
+            <Text className="text-white/70 text-xs mt-0.5">Children</Text>
           </View>
           <View className="w-px h-8 bg-white/20" />
           <View className="items-center flex-1">
             <Text className="text-white text-xl font-bold">{totalExamsTaken}</Text>
-            <Text className="text-white/70 text-xs mt-0.5">Bài thi</Text>
+            <Text className="text-white/70 text-xs mt-0.5">Exams</Text>
           </View>
           <View className="w-px h-8 bg-white/20" />
           <View className="items-center flex-1">
             <Text className="text-white text-xl font-bold">{averageScore}%</Text>
-            <Text className="text-white/70 text-xs mt-0.5">Điểm TB</Text>
+            <Text className="text-white/70 text-xs mt-0.5">Average Score</Text>
           </View>
         </View>
       </View>
@@ -126,49 +126,49 @@ const ParentDashboardScreen = () => {
       >
         {/* Stats Cards */}
         <View className="px-6 py-6">
-          <Text className="text-lg font-bold text-gray-800 mb-4">📊 Tổng quan chi tiết</Text>
+          <Text className="text-lg font-bold text-gray-800 mb-4">📊 Detailed overview</Text>
           <View className="flex-row flex-wrap justify-between">
             {/* Children Count */}
             <View className="w-[48%] mb-4">
-              <View style={{backgroundColor: '#3B82F6'}} className="rounded-2xl p-4 shadow-md">
+              <View style={{ backgroundColor: '#3B82F6' }} className="rounded-2xl p-4 shadow-md">
                 <View className="w-10 h-10 bg-white/20 rounded-full items-center justify-center mb-3">
                   <Users size={20} color="white" />
                 </View>
                 <Text className="text-white text-3xl font-bold">{totalChildren}</Text>
-                <Text className="text-white/90 text-sm mt-1">Học sinh</Text>
+                <Text className="text-white/90 text-sm mt-1">Children</Text>
               </View>
             </View>
 
             {/* Average Score */}
             <View className="w-[48%] mb-4">
-              <View style={{backgroundColor: '#10B981'}} className="rounded-2xl p-4 shadow-md">
+              <View style={{ backgroundColor: '#10B981' }} className="rounded-2xl p-4 shadow-md">
                 <View className="w-10 h-10 bg-white/20 rounded-full items-center justify-center mb-3">
                   <Award size={20} color="white" />
                 </View>
                 <Text className="text-white text-3xl font-bold">{averageScore}%</Text>
-                <Text className="text-white/90 text-sm mt-1">Điểm TB</Text>
+                <Text className="text-white/90 text-sm mt-1">Average Score</Text>
               </View>
             </View>
 
             {/* Total Exams */}
             <View className="w-[48%] mb-4">
-              <View style={{backgroundColor: '#8B5CF6'}} className="rounded-2xl p-4 shadow-md">
+              <View style={{ backgroundColor: '#8B5CF6' }} className="rounded-2xl p-4 shadow-md">
                 <View className="w-10 h-10 bg-white/20 rounded-full items-center justify-center mb-3">
                   <BookOpen size={20} color="white" />
                 </View>
                 <Text className="text-white text-3xl font-bold">{totalExamsTaken}</Text>
-                <Text className="text-white/90 text-sm mt-1">Bài thi</Text>
+                <Text className="text-white/90 text-sm mt-1">Exams</Text>
               </View>
             </View>
 
             {/* Performance Trend */}
             <View className="w-[48%] mb-4">
-              <View style={{backgroundColor: '#F59E0B'}} className="rounded-2xl p-4 shadow-md">
+              <View style={{ backgroundColor: '#F59E0B' }} className="rounded-2xl p-4 shadow-md">
                 <View className="w-10 h-10 bg-white/20 rounded-full items-center justify-center mb-3">
                   <TrendingUp size={20} color="white" />
                 </View>
                 <Text className="text-white text-lg font-bold">{getPerformanceLevel(averageScore)}</Text>
-                <Text className="text-white/90 text-sm mt-1">Xếp loại</Text>
+                <Text className="text-white/90 text-sm mt-1">Performance</Text>
               </View>
             </View>
           </View>
@@ -178,11 +178,11 @@ const ParentDashboardScreen = () => {
         <View className="px-6 pb-6">
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-lg font-bold text-gray-800">
-              👨‍🎓 Học sinh của bạn ({totalChildren})
+              👨‍🎓 Your children ({totalChildren})
             </Text>
             {totalChildren > 3 && (
               <TouchableOpacity className="flex-row items-center">
-                <Text className="text-teal-600 font-medium mr-1">Xem tất cả</Text>
+                <Text className="text-teal-600 font-medium mr-1">See all</Text>
                 <ChevronRight size={16} color="#3CBCB2" />
               </TouchableOpacity>
             )}
@@ -190,7 +190,7 @@ const ParentDashboardScreen = () => {
 
           {loading ? (
             <View className="bg-white rounded-2xl p-8 items-center shadow-sm">
-              <Text className="text-gray-500">Đang tải...</Text>
+              <Text className="text-gray-500">Loading...</Text>
             </View>
           ) : children.length === 0 ? (
             <View className="bg-white rounded-2xl p-8 items-center shadow-sm">
@@ -198,10 +198,10 @@ const ParentDashboardScreen = () => {
                 <Users size={40} color="#3CBCB2" />
               </View>
               <Text className="text-gray-800 font-semibold text-lg mb-2">
-                Chưa có học sinh
+                No children
               </Text>
               <Text className="text-gray-500 text-center">
-                Chuyển đến tab "Quản lý" để{'\n'}liên kết với tài khoản học sinh
+                Go to "Manage" tab to{'\n'}link with student account
               </Text>
             </View>
           ) : (
@@ -238,7 +238,7 @@ const ParentDashboardScreen = () => {
                       <View className="flex-row items-center mt-1">
                         <View className="bg-gray-100 px-2 py-1 rounded-full mr-2">
                           <Text className="text-xs text-gray-600">
-                            {child.totalExamsTaken} bài thi
+                            {child.totalExamsTaken} exams
                           </Text>
                         </View>
                         <View
@@ -261,7 +261,7 @@ const ParentDashboardScreen = () => {
                       >
                         {child.averageScore}%
                       </Text>
-                      <Text className="text-xs text-gray-500 mt-1">Điểm TB</Text>
+                      <Text className="text-xs text-gray-500 mt-1">AVG Score</Text>
                     </View>
                   </View>
                 </TouchableOpacity>

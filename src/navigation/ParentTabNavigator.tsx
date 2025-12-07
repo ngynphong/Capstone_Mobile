@@ -2,19 +2,20 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Home, Users, FileText, User } from 'lucide-react-native';
+import { Home, Users, FileText, User, BarChart3 } from 'lucide-react-native';
 import { ParentTabParamList } from '../types/types';
 import { useScroll } from '../context/ScrollContext';
 import ParentDashboardScreen from '../screens/Parent/ParentDashboardScreen';
 import ChildManagementScreen from '../screens/Parent/ChildManagementScreen';
 import ChildProgressScreen from '../screens/Parent/ChildProgressScreen';
+import ParentExamStatsScreen from '../screens/Parent/ParentExamStatsScreen';
 import ParentProfileScreen from '../screens/Parent/ParentProfileScreen';
 
 const Tab = createBottomTabNavigator<ParentTabParamList>();
 
 const { width } = Dimensions.get('window');
 const TAB_BAR_WIDTH = width * 0.9;
-const TAB_WIDTH = TAB_BAR_WIDTH / 4; // 4 tabs for parents
+const TAB_WIDTH = TAB_BAR_WIDTH / 5; // 5 tabs for parents now
 
 interface CustomTabBarProps {
   state: any;
@@ -51,13 +52,15 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
     Dashboard: Home,
     Children: Users,
     Reports: FileText,
+    ExamStats: BarChart3,
     Profile: User,
   };
 
   const labelMap = {
-    Dashboard: 'Dashboard',
+    Dashboard: 'Home',
     Children: 'Children',
     Reports: 'Reports',
+    ExamStats: 'Stats',
     Profile: 'Profile',
   };
 
@@ -169,9 +172,11 @@ const ParentTabNavigator = () => {
       <Tab.Screen name="Dashboard" component={ParentDashboardScreen} />
       <Tab.Screen name="Children" component={ChildManagementScreen} />
       <Tab.Screen name="Reports" component={ChildProgressScreen} />
+      <Tab.Screen name="ExamStats" component={ParentExamStatsScreen} />
       <Tab.Screen name="Profile" component={ParentProfileScreen} />
     </Tab.Navigator>
   );
 };
 
 export default ParentTabNavigator;
+

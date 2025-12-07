@@ -49,7 +49,7 @@ const ChildManagementScreen = () => {
 
   const handleLinkStudent = async () => {
     if (!studentEmail.trim() || !connectionCode.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ email và mã kết nối');
+      Alert.alert('Error', 'Please enter both email and connection code');
       return;
     }
 
@@ -69,12 +69,12 @@ const ChildManagementScreen = () => {
 
   const handleUnlinkStudent = (email: string, studentName: string) => {
     Alert.alert(
-      'Xác nhận hủy liên kết',
-      `Bạn có chắc muốn hủy liên kết với học sinh ${studentName}?`,
+      'Confirm unlink',
+      `Are you sure you want to unlink ${studentName}?`,
       [
-        { text: 'Hủy', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Xác nhận',
+          text: 'Confirm',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -100,18 +100,18 @@ const ChildManagementScreen = () => {
       {/* Header with Gradient */}
       <View
         style={{ backgroundColor: '#3CBCB2' }}
-        className="px-6 pt-4 pb-6 rounded-b-3xl shadow-lg"
+        className="px-6 pt-10 pb-6 rounded-b-3xl shadow-lg"
       >
         <View className="flex-row items-center justify-between">
           <View className="flex-1 mr-4">
             <Text className="text-white/70 text-xs font-medium uppercase tracking-wider">
-              Quản lý
+              Manage
             </Text>
             <Text className="text-white text-3xl font-bold mt-2 mb-1">
-              Học sinh
+              Students
             </Text>
             <Text className="text-white/80 text-sm leading-5">
-              Liên kết và quản lý{'\n'}tài khoản học sinh
+              Link and manage{'\n'}student accounts
             </Text>
           </View>
           <TouchableOpacity
@@ -119,7 +119,7 @@ const ChildManagementScreen = () => {
             onPress={() => setLinkingModalVisible(true)}
           >
             <Plus size={20} color="#3CBCB2" />
-            <Text className="text-teal-600 font-bold ml-2">Liên kết</Text>
+            <Text className="text-teal-600 font-bold ml-2">Link</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -131,7 +131,7 @@ const ChildManagementScreen = () => {
         {loading ? (
           <View className="items-center py-12">
             <ActivityIndicator size="large" color="#3CBCB2" />
-            <Text className="text-gray-500 mt-4">Đang tải...</Text>
+            <Text className="text-gray-500 mt-4">Loading...</Text>
           </View>
         ) : children.length === 0 ? (
           <View className="items-center py-12">
@@ -144,23 +144,23 @@ const ChildManagementScreen = () => {
               <Users size={48} color="white" />
             </LinearGradient>
             <Text className="text-xl font-bold text-gray-800 text-center mb-2">
-              Chưa có học sinh nào
+              No students linked
             </Text>
             <Text className="text-gray-600 text-center mb-6 px-8">
-              Bắt đầu bằng cách nhấn nút "Liên kết" để kết nối với tài khoản học sinh của con bạn.
+              Start by pressing the "Link" button to connect with your child's student account.
             </Text>
             <TouchableOpacity
               className="bg-teal-500 px-6 py-3 rounded-xl flex-row items-center shadow-md"
               onPress={() => setLinkingModalVisible(true)}
             >
               <Plus size={20} color="white" />
-              <Text className="text-white font-semibold ml-2">Liên kết học sinh</Text>
+              <Text className="text-white font-semibold ml-2">Link student</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View className="py-6">
             <Text className="text-lg font-bold text-gray-800 mb-4">
-              📚 Học sinh đã liên kết ({children.length})
+              📚 Students linked ({children.length})
             </Text>
             <View className="space-y-4">
               {children.map((child) => (
@@ -182,7 +182,7 @@ const ChildManagementScreen = () => {
                           <View className="bg-blue-50 px-2 py-1 rounded-full flex-row items-center">
                             <BookOpen size={12} color="#3B82F6" />
                             <Text className="text-xs text-blue-600 ml-1 font-medium">
-                              {child.totalExamsTaken} bài
+                              {child.totalExamsTaken} exams
                             </Text>
                           </View>
                           <View
@@ -231,10 +231,10 @@ const ChildManagementScreen = () => {
               <View className="flex-row items-center justify-between mb-6">
                 <View className="flex-1">
                   <Text className="text-2xl font-bold text-gray-800">
-                    Liên kết học sinh 🔗
+                    Link student 🔗
                   </Text>
                   <Text className="text-gray-600 mt-1">
-                    Nhập thông tin để kết nối
+                    Enter information to connect
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -249,14 +249,14 @@ const ChildManagementScreen = () => {
               <View className="bg-teal-50 border border-teal-200 rounded-xl p-3 mb-6 flex-row">
                 <Info size={20} color="#3CBCB2" />
                 <Text className="text-sm text-teal-700 ml-2 flex-1">
-                  Học sinh cần chia sẻ mã kết nối từ cài đặt tài khoản của họ
+                  Student needs to share the connection code from their account settings
                 </Text>
               </View>
 
               {/* Email Input */}
               <View className="mb-4">
                 <Text className="text-sm font-semibold text-gray-700 mb-2">
-                  Email học sinh *
+                  Student email *
                 </Text>
                 <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
                   <Mail size={20} color="#9CA3AF" />
@@ -274,13 +274,13 @@ const ChildManagementScreen = () => {
               {/* Connection Code Input */}
               <View className="mb-6">
                 <Text className="text-sm font-semibold text-gray-700 mb-2">
-                  Mã kết nối *
+                  Connection code *
                 </Text>
                 <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
                   <Key size={20} color="#9CA3AF" />
                   <TextInput
                     className="flex-1 ml-3 text-base font-mono"
-                    placeholder="Nhập mã kết nối"
+                    placeholder="Enter connection code"
                     value={connectionCode}
                     onChangeText={setConnectionCode}
                     autoCapitalize="characters"
@@ -295,7 +295,7 @@ const ChildManagementScreen = () => {
                   onPress={() => setLinkingModalVisible(false)}
                   disabled={linkingLoading}
                 >
-                  <Text className="text-gray-700 font-semibold">Hủy</Text>
+                  <Text className="text-gray-700 font-semibold">Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   className="flex-1 py-4 rounded-xl items-center flex-row justify-center"
@@ -308,7 +308,7 @@ const ChildManagementScreen = () => {
                   ) : (
                     <>
                       <Check size={20} color="white" />
-                      <Text className="text-white font-semibold ml-2">Liên kết</Text>
+                      <Text className="text-white font-semibold ml-2">Link</Text>
                     </>
                   )}
                 </TouchableOpacity>

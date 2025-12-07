@@ -35,6 +35,7 @@ export type ParentTabParamList = {
   Dashboard: undefined;
   Children: undefined;
   Reports: undefined;
+  ExamStats: undefined;
   Profile: undefined;
 };
 
@@ -43,6 +44,7 @@ export type ProfileStackParamList = {
   ExamResults: undefined;
   ExamResultDetail: { attempt: MockAttempt };
   Store: undefined;
+  StudentExamStats: undefined;
 };
 
 
