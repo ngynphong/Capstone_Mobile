@@ -1,20 +1,20 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import type { UserProfile } from "../../types/userTypes";
+import type { TeacherListItem } from "../../types/userTypes";
 
 interface TeacherCardProps {
-    teacher: UserProfile;
+    teacher: TeacherListItem;
     onPress?: () => void;
 }
 
 const TeacherCard: React.FC<TeacherCardProps> = ({ teacher, onPress }) => {
     const fullName = `${teacher.firstName} ${teacher.lastName}`.trim();
-    const avatarUrl = teacher.avatar || teacher.imgUrl;
+    const avatarUrl = teacher.imgUrl;
     const displayRole = teacher.roles.includes("TEACHER")
         ? "Teacher"
         : teacher.roles[0]?.replace("ROLE_", "") || "User";
-        
+
     return (
         <TouchableOpacity
             style={styles.card}

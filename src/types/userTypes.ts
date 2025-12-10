@@ -26,6 +26,7 @@ export interface StudentProfile {
     schoolName: string;
     emergencyContact: string;
     parentPhone: string;
+    goal: string;
 }
 export interface ParentProfile {
     id: string;
@@ -53,6 +54,7 @@ export interface UpdateStudentProfileRequest {
     schoolName: string;
     parentPhone: string;
     emergencyContact: string;
+    goal: string;
 }
 
 export interface UpdateStudentProfileResponse {
@@ -103,3 +105,36 @@ export interface UserResponse {
     data: UserPaginationData;
 }
 
+export interface TeacherListItem {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    imgUrl: string;
+    dob: string;
+    roles: string[];
+    studentProfile?: StudentProfile;
+    parentProfile?: ParentProfile;
+    teacherProfile?: TeacherProfile;
+}
+
+export interface TeacherListPaginationData {
+    pageNo: number;
+    pageSize: number;
+    totalPage: number;
+    totalElement: number;
+    sortBy: string[];
+    items: TeacherListItem[];
+}
+
+export interface TeacherListResponse {
+    code: number;
+    message: string;
+    data: TeacherListPaginationData;
+}
+
+export interface TeacherListQueryParams {
+    pageNo?: number;
+    pageSize?: number;
+    sorts?: string[];
+}

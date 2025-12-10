@@ -13,9 +13,18 @@ const getGreeting = (): string => {
   }
 };
 
+
+
 const HeroSection = () => {
   const { user } = useAuth();
   const greeting = getGreeting();
+
+  const getUserInitials = () => {
+    const first = user?.firstName?.[0] || '';
+    const last = user?.lastName?.[0] || '';
+    const initials = (first + last).toUpperCase() || 'U';
+    return initials;
+  };
 
   return (
     <View style={styles.container}>
@@ -23,12 +32,15 @@ const HeroSection = () => {
       <View style={styles.headerRow}>
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
-            <Image
-              source={{
-                uri: user?.avatar || user?.imgUrl || "https://placehold.co/50x50"
-              }}
-              style={styles.avatar}
-            />
+            {user?.avatar || user?.imgUrl ? (
+              <Image
+                source={{ uri: user.avatar || user.imgUrl }}
+                style={styles.avatar}
+              />
+            ) : (
+              <Text className="text-center text-white text-2xl font-bold">{getUserInitials()}</Text>
+            )}
+
           </View>
           <View style={styles.textSection}>
             <Text style={styles.greeting}>{greeting}</Text>
@@ -89,7 +101,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     overflow: "hidden",
     borderWidth: 0.5,
-    borderColor: "#B2B2B2",
+    borderColor: "white",
   },
   avatar: {
     width: "100%",

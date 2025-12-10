@@ -13,7 +13,7 @@ import ExamCard from "./ExamCard";
 import TeacherCard from "./TeacherCard";
 import ChatBotBubble from "../../components/ChatBotCard";
 import { useBrowseExams } from "../../hooks/useExam";
-import { useUsers } from "../../hooks/useUser";
+import { useTeachersList } from "../../hooks/useTeachersList";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, "HomeMain">;
@@ -23,12 +23,7 @@ const HomeScreen = () => {
 
   // Fetch exams and teachers
   const { templates: exams, loading: examsLoading } = useBrowseExams({ pageSize: 10 });
-  const { users: teachers, loading: teachersLoading } = useUsers();
-
-  // Filter teachers to only show users with ROLE_TEACHER
-  const teacherUsers = teachers.filter((user) =>
-    user.roles.includes("TEACHER")
-  );
+  const { teachers, loading: teachersLoading } = useTeachersList({ pageSize: 10 });
 
   return (
     <View style={styles.mainContainer}>
@@ -147,14 +142,14 @@ const HomeScreen = () => {
           </View>
           {teachersLoading ? (
             <ActivityIndicator size="small" color="#3CBCB2" style={styles.loader} />
-          ) : teacherUsers.length > 0 ? (
+          ) : teachers.length > 0 ? (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               style={styles.horizontalScroll}
               contentContainerStyle={styles.horizontalScrollContent}
             >
-              {teacherUsers.map((teacher) => (
+              {teachers.map((teacher) => (
                 <TeacherCard
                   key={teacher.id}
                   teacher={teacher}

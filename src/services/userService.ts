@@ -8,6 +8,8 @@ import {
   ChangePasswordResponse,
   UserQueryParams,
   UserResponse,
+  TeacherListQueryParams,
+  TeacherListResponse,
 } from '../types/userTypes';
 
 interface SingleUserResponse {
@@ -84,5 +86,15 @@ export const getUserProfileById = async (userId: string): Promise < SingleUserRe
     return response.data;
   } catch(err) {
     throw err;
+  }
+}
+
+// GET /users/teachers: Lấy danh sách giáo viên
+export const getTeachers = async (params ?: TeacherListQueryParams): Promise < TeacherListResponse > => {
+  try {
+    const response = await api.get<TeacherListResponse>("/users/teachers", { params });
+    return response.data;
+  } catch (error: unknown) {
+    return handleApiError(error, 'Failed to fetch teachers');
   }
 }

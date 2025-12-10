@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Alert, Modal, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, ScrollView, Alert, Modal, TouchableOpacity, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useScroll } from '../../context/ScrollContext';
 import { useNavigation } from '@react-navigation/native';
@@ -29,6 +29,7 @@ const ProfileScreen = () => {
   const [studentSchoolName, setStudentSchoolName] = useState('');
   const [studentEmergencyContact, setStudentEmergencyContact] = useState('');
   const [studentParentPhone, setStudentParentPhone] = useState('');
+  const [studentGoal, setStudentGoal] = useState('');
 
   const handleProfileUpdated = async () => {
     try {
@@ -69,6 +70,7 @@ const ProfileScreen = () => {
         schoolName: studentSchoolName,
         emergencyContact: studentEmergencyContact,
         parentPhone: studentParentPhone,
+        goal: studentGoal,
       });
       await refreshUser();
       setIsStudentProfileModalVisible(false);
@@ -82,6 +84,7 @@ const ProfileScreen = () => {
       setStudentSchoolName(user.studentProfile.schoolName);
       setStudentEmergencyContact(user.studentProfile.emergencyContact);
       setStudentParentPhone(user.studentProfile.parentPhone);
+      setStudentGoal(user.studentProfile.goal);
     }
   }, [isStudentProfileModalVisible, user?.studentProfile]);
 
@@ -181,20 +184,28 @@ const ProfileScreen = () => {
         {user.studentProfile && (
           <View className="mx-6 mt-4 mb-2">
             <View className="bg-white rounded-2xl p-6 shadow-lg">
-              <Text className="text-lg font-bold text-gray-800 mb-4">👨‍🎓 Thông tin học sinh</Text>
+              <Text className="text-lg font-bold text-gray-800 mb-4">👨‍🎓 Student Profile</Text>
 
               <View className="space-y-3">
                 <View className="flex-row items-center py-2">
-                  <Text className="text-gray-600 flex-1">🏫 Trường học</Text>
+                  <Text className="text-gray-600 flex-1">🏫 School Name</Text>
                   <Text className="text-gray-800 font-medium">{user.studentProfile.schoolName}</Text>
                 </View>
                 <View className="flex-row items-center py-2">
-                  <Text className="text-gray-600 flex-1">📞 Liên hệ khẩn cấp</Text>
+                  <Text className="text-gray-600 flex-1">📞 Emergency Contact</Text>
                   <Text className="text-gray-800 font-medium">{user.studentProfile.emergencyContact}</Text>
                 </View>
                 <View className="flex-row items-center py-2">
-                  <Text className="text-gray-600 flex-1">📱 Số điện thoại phụ huynh</Text>
+                  <Text className="text-gray-600 flex-1">📱 Parent Phone</Text>
                   <Text className="text-gray-800 font-medium">{user.studentProfile.parentPhone}</Text>
+                </View>
+                <View className="flex-row items-center py-2">
+                  <Text className="text-gray-600 flex-1">🎯 Goal</Text>
+                  {user.studentProfile.goal ? (
+                    <Text className="text-gray-800 font-medium">{user.studentProfile.goal}</Text>
+                  ) : (
+                    <Text className="text-gray-600">What result do you want to achieve ?</Text>
+                  )}
                 </View>
               </View>
 
@@ -202,7 +213,7 @@ const ProfileScreen = () => {
                 className="bg-teal-500 py-3 px-4 rounded-xl items-center mt-4"
                 onPress={() => setIsStudentProfileModalVisible(true)}
               >
-                <Text className="text-white font-semibold">Chỉnh sửa thông tin</Text>
+                <Text className="text-white font-semibold">Edit Information</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -219,62 +230,80 @@ const ProfileScreen = () => {
         animationType="slide"
         onRequestClose={() => setIsStudentProfileModalVisible(false)}
       >
-        <View className="flex-1 bg-black/50 justify-center px-6">
-          <View className="bg-white rounded-xl p-6">
-            <Text className="text-xl font-bold text-gray-800 mb-6 text-center">
-              Chỉnh sửa thông tin học sinh
-            </Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1"
+        >
+          <View className="flex-1 bg-black/50 justify-center px-6">
+            <View className="bg-white rounded-xl p-6 max-h-[85%]">
+              <Text className="text-xl font-bold text-gray-800 mb-6 text-center">
+                Edit Student Profile
+              </Text>
 
-            {/* Form fields will go here */}
-            <View className="mb-6">
-              <Text className="text-sm font-medium text-gray-700 mb-2">Trường học</Text>
-              <TextInput
-                className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base"
-                placeholder="Nhập tên trường học"
-                value={studentSchoolName}
-                onChangeText={setStudentSchoolName}
-              />
-
-              <Text className="text-sm font-medium text-gray-700 mb-2 mt-4">Liên hệ khẩn cấp</Text>
-              <TextInput
-                className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base"
-                placeholder="Nhập số điện thoại khẩn cấp"
-                value={studentEmergencyContact}
-                onChangeText={setStudentEmergencyContact}
-                keyboardType="phone-pad"
-              />
-
-              <Text className="text-sm font-medium text-gray-700 mb-2 mt-4">Số điện thoại phụ huynh</Text>
-              <TextInput
-                className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base"
-                placeholder="Nhập số điện thoại phụ huynh"
-                value={studentParentPhone}
-                onChangeText={setStudentParentPhone}
-                keyboardType="phone-pad"
-              />
-            </View>
-
-            <View className="flex-row gap-3">
-              <TouchableOpacity
-                className="flex-1 bg-gray-200 py-3 rounded-xl items-center"
-                onPress={() => setIsStudentProfileModalVisible(false)}
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
               >
-                <Text className="text-gray-700 font-medium">Hủy</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="flex-1 bg-teal-500 py-3 rounded-xl items-center"
-                onPress={handleSaveStudentProfile}
-                disabled={studentLoading}
-              >
-                {studentLoading ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <Text className="text-white font-medium">Lưu thay đổi</Text>
-                )}
-              </TouchableOpacity>
+                {/* Form fields will go here */}
+                <View className="mb-6">
+                  <Text className="text-sm font-medium text-gray-700 mb-2">School Name</Text>
+                  <TextInput
+                    className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base"
+                    placeholder="Enter school name"
+                    value={studentSchoolName}
+                    onChangeText={setStudentSchoolName}
+                  />
+
+                  <Text className="text-sm font-medium text-gray-700 mb-2 mt-4">Emergency Contact</Text>
+                  <TextInput
+                    className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base"
+                    placeholder="Enter emergency contact"
+                    value={studentEmergencyContact}
+                    onChangeText={setStudentEmergencyContact}
+                  // keyboardType="number-pad"
+                  />
+
+                  <Text className="text-sm font-medium text-gray-700 mb-2 mt-4">Parent Phone</Text>
+                  <TextInput
+                    className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base"
+                    placeholder="Enter parent phone"
+                    value={studentParentPhone}
+                    onChangeText={setStudentParentPhone}
+                  // keyboardType="phone-pad"
+                  />
+
+                  <Text className="text-sm font-medium text-gray-700 mb-2 mt-4">Goal</Text>
+                  <TextInput
+                    className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base"
+                    placeholder="Enter goal"
+                    value={studentGoal}
+                    onChangeText={setStudentGoal}
+                  />
+                </View>
+
+                <View className="flex-row gap-3">
+                  <TouchableOpacity
+                    className="flex-1 bg-gray-200 py-3 rounded-xl items-center"
+                    onPress={() => setIsStudentProfileModalVisible(false)}
+                  >
+                    <Text className="text-gray-700 font-medium">Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="flex-1 bg-teal-500 py-3 rounded-xl items-center"
+                    onPress={handleSaveStudentProfile}
+                    disabled={studentLoading}
+                  >
+                    {studentLoading ? (
+                      <ActivityIndicator size="small" color="white" />
+                    ) : (
+                      <Text className="text-white font-medium">Save Changes</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Modals */}
