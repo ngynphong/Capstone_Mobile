@@ -120,7 +120,7 @@ const ParentProfileScreen = () => {
         />
 
         {/* Additional Profile Info */}
-        <View className="px-6 pb-6">
+        <View className="px-6 pb-6 mt-4">
           <View className="bg-white rounded-2xl p-6 shadow-sm">
 
             {/* Date of Birth */}

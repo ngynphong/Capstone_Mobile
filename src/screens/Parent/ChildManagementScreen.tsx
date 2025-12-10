@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -27,7 +27,7 @@ import {
   Award,
   BookOpen,
 } from 'lucide-react-native';
-import { useAppToast } from '../../utils/toast';
+import { useFocusEffect } from '@react-navigation/native';
 
 const ChildManagementScreen = () => {
   const {
@@ -41,11 +41,12 @@ const ChildManagementScreen = () => {
   const [studentEmail, setStudentEmail] = useState('');
   const [connectionCode, setConnectionCode] = useState('');
   const [linkingLoading, setLinkingLoading] = useState(false);
-  const toast = useAppToast();
 
-  useEffect(() => {
-    fetchChildren();
-  }, [fetchChildren]);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchChildren();
+    }, [fetchChildren])
+  );
 
   const handleLinkStudent = async () => {
     if (!studentEmail.trim() || !connectionCode.trim()) {
@@ -167,12 +168,12 @@ const ChildManagementScreen = () => {
                 <View
                   key={child.studentId}
                  
-                  className="bg-white rounded-2xl p-4 shadow-md"
+                  className="bg-white rounded-2xl p-4 shadow-md mb-4"
                 >
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center flex-1">
                       <Image
-                        source={{ uri: child.avatarUrl || 'https://via.placeholder.com/100' }}
+                        source={{ uri: child.avatarUrl || 'https://ui-avatars.com/api/?name=User&background=random' }}
                         className="w-14 h-14 rounded-full mr-3"
                       />
                       <View className="flex-1">

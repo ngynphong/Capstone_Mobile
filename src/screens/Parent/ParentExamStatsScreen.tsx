@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -25,6 +25,7 @@ import {
     ChevronDown,
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
@@ -36,21 +37,23 @@ const ParentExamStatsScreen = () => {
     const [refreshing, setRefreshing] = useState(false);
     const fadeAnim = new Animated.Value(0);
 
-    useEffect(() => {
-        fetchChildren();
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 800,
+    useFocusEffect(
+        React.useCallback(() => {
+            fetchChildren();
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 800,
             useNativeDriver: true,
         }).start();
-    }, []);
+    }, []));
 
-    useEffect(() => {
+    useFocusEffect(
+        React.useCallback(() => {
         // Auto-select first child if available
         if (children.length > 0 && !selectedChild) {
             setSelectedChild(children[0]);
         }
-    }, [children]);
+    }, [children]));
 
     const onRefresh = async () => {
         setRefreshing(true);
@@ -148,7 +151,7 @@ const ParentExamStatsScreen = () => {
                     {selectedChild ? (
                         <View className="flex-row items-center flex-1">
                             <Image
-                                source={{ uri: selectedChild.avatarUrl || 'https://via.placeholder.com/100' }}
+                                source={{ uri: selectedChild.avatarUrl || 'https://ui-avatars.com/api/?name=User&background=random' }}
                                 className="w-10 h-10 rounded-full mr-3"
                             />
                             <View className="flex-1">
@@ -176,7 +179,7 @@ const ParentExamStatsScreen = () => {
                                 onPress={() => handleSelectChild(child)}
                             >
                                 <Image
-                                    source={{ uri: child.avatarUrl || 'https://via.placeholder.com/100' }}
+                                    source={{ uri: child.avatarUrl || 'https://ui-avatars.com/api/?name=User&background=random' }}
                                     className="w-10 h-10 rounded-full mr-3"
                                 />
                                 <View className="flex-1">
@@ -300,7 +303,7 @@ const ParentExamStatsScreen = () => {
                                         <View className="w-10 h-10 bg-white/20 rounded-full items-center justify-center mb-3">
                                             <Target size={20} color="white" />
                                         </View>
-                                        <Text className="text-white text-base font-bold" numberOfLines={2}>
+                                        <Text className="text-white text-lg font-bold" numberOfLines={2}>
                                             {stats?.recommendedTopic || 'None'}
                                         </Text>
                                         <Text className="text-white/90 text-sm mt-1">Recommended topic</Text>

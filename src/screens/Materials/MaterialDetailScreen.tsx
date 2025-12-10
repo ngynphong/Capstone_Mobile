@@ -35,7 +35,7 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
   const navigation = useNavigation<DetailNavProp>();
   const { material } = route.params;
   const learningMaterialId = material.learningMaterialId || material.id;
-  
+
   const {
     lessons: derivedLessons,
     isLoading,
@@ -79,7 +79,7 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
 
         const blob = await response.blob();
         const blobUrl = URL.createObjectURL(blob);
-        window.open(blobUrl, '_blank');
+        Linking.openURL(blobUrl);
         return;
       }
 
@@ -93,8 +93,8 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
         targetPath,
         headers
           ? {
-              headers,
-            }
+            headers,
+          }
           : undefined,
       );
 
@@ -195,27 +195,27 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
                 webStyle={{ width: '100%', height: '100%' }}
                 onError={(error) => {
                   console.error('Video playback error:', error);
-                  
+
                   // Xử lý error object - có thể là error.error hoặc error trực tiếp
-                  const errorObj = (error && typeof error === 'object' && 'error' in error) 
-                    ? (error as any).error 
+                  const errorObj = (error && typeof error === 'object' && 'error' in error)
+                    ? (error as any).error
                     : error;
                   const errorCode = (errorObj && typeof errorObj === 'object' && 'code' in errorObj)
                     ? (errorObj as any).code
                     : (error && typeof error === 'object' && 'code' in error)
-                    ? (error as any).code
-                    : undefined;
+                      ? (error as any).code
+                      : undefined;
                   const errorMessage = (errorObj && typeof errorObj === 'object')
                     ? (errorObj as any).localizedDescription || (errorObj as any).message
                     : (error && typeof error === 'object' && 'message' in error)
-                    ? (error as any).message
-                    : undefined;
-                  
+                      ? (error as any).message
+                      : undefined;
+
                   console.error('Error code:', errorCode);
                   console.error('Error message:', errorMessage);
                   console.error('Full error:', JSON.stringify(error, null, 2));
                   console.error('Video source:', JSON.stringify(videoSource, null, 2));
-                  
+
                   // Error handling đã được xử lý trong hook
                   // Chỉ log để debug
                   console.error('Video playback error:', {

@@ -1,17 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, ActivityIndicator, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useParent } from '../../hooks/useParent';
 import { ChildInfo } from '../../types/parent';
 import { UserMinus } from 'lucide-react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 const ChildProgressScreen = () => {
   const { children, loading, fetchChildren, examHistory, loadingHistory, fetchChildExamHistory, unlinkStudent } = useParent();
   const [selectedChild, setSelectedChild] = useState<ChildInfo | null>(null);
 
-  useEffect(() => {
-    fetchChildren();
-  }, [fetchChildren]);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchChildren();
+    }, [fetchChildren])
+  );
 
   const handleChildSelect = (child: ChildInfo) => {
     setSelectedChild(child);
@@ -88,7 +91,7 @@ const ChildProgressScreen = () => {
                 >
                   <View className="flex-row items-center">
                     <Image
-                      source={{ uri: child.avatarUrl || 'https://via.placeholder.com/100' }}
+                      source={{ uri: child.avatarUrl || 'https://ui-avatars.com/api/?name=User&background=random' }}
                       className="w-12 h-12 rounded-full mr-4"
                     />
                     <View className="flex-1">

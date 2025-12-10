@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -13,8 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '../../context/AuthContext';
 import { useParent } from '../../hooks/useParent';
-import { ChildInfo } from '../../types/parent';
 import { TrendingUp, Users, BookOpen, Award, ChevronRight, Star } from 'lucide-react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
@@ -24,14 +24,16 @@ const ParentDashboardScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const fadeAnim = new Animated.Value(0);
 
-  useEffect(() => {
-    fetchChildren();
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 800,
-      useNativeDriver: true,
-    }).start();
-  }, [fetchChildren]);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchChildren();
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }).start();
+    }, [fetchChildren])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -61,7 +63,7 @@ const ParentDashboardScreen = () => {
   const getPerformanceLevel = (score: number) => {
     if (score >= 80) return 'Excellent';
     if (score >= 60) return 'Good';
-    return 'Need improvement';
+    return 'Average';
   };
 
   return (
@@ -167,7 +169,7 @@ const ParentDashboardScreen = () => {
                 <View className="w-10 h-10 bg-white/20 rounded-full items-center justify-center mb-3">
                   <TrendingUp size={20} color="white" />
                 </View>
-                <Text className="text-white text-lg font-bold">{getPerformanceLevel(averageScore)}</Text>
+                <Text className="text-white text-3xl font-bold">{getPerformanceLevel(averageScore)}</Text>
                 <Text className="text-white/90 text-sm mt-1">Performance</Text>
               </View>
             </View>
@@ -206,10 +208,10 @@ const ParentDashboardScreen = () => {
             </View>
           ) : (
             <View className="space-y-3">
-              {children.slice(0, 3).map((child, index) => (
+              {children.map((child, index) => (
                 <TouchableOpacity
                   key={child.studentId}
-                  className="bg-white rounded-2xl p-4 shadow-sm"
+                  className="bg-white rounded-2xl p-4 shadow-sm mb-2"
                   style={{
                     transform: [{ scale: 1 }],
                   }}
@@ -218,7 +220,7 @@ const ParentDashboardScreen = () => {
                   <View className="flex-row items-center">
                     <View className="relative">
                       <Image
-                        source={{ uri: child.avatarUrl || 'https://via.placeholder.com/100' }}
+                        source={{ uri: child.avatarUrl || 'https://ui-avatars.com/api/?name=User&background=random' }}
                         className="w-14 h-14 rounded-full"
                       />
                       <View
