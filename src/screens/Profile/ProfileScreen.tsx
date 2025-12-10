@@ -115,6 +115,13 @@ const ProfileScreen = () => {
       onPress: () => navigation.navigate('StudentExamStats'),
     },
     {
+      id: 'financial-stats',
+      title: 'Financial Statistics',
+      subtitle: 'View your spending and purchase history',
+      icon: '💰',
+      onPress: () => navigation.navigate('StudentFinancialStats'),
+    },
+    {
       id: 'exam',
       title: 'Exams',
       subtitle: 'Do Exams and view results',

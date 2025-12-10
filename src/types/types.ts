@@ -45,6 +45,7 @@ export type ProfileStackParamList = {
   ExamResultDetail: { attempt: MockAttempt };
   Store: undefined;
   StudentExamStats: undefined;
+  StudentFinancialStats: undefined;
 };
 
 

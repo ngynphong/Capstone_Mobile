@@ -4,6 +4,7 @@ import ProfileScreen from '../screens/Profile/ProfileScreen';
 import ExamResultsScreen from '../screens/Profile/ExamResultsScreen';
 import ExamResultDetailScreen from '../screens/Profile/ExamResultDetailScreen';
 import StudentExamStatsScreen from '../screens/Profile/StudentExamStatsScreen';
+import StudentFinancialStatsScreen from '../screens/Profile/StudentFinancialStatsScreen';
 import StoreScreen from '../screens/Store/StoreScreen';
 import { ProfileStackParamList } from '../types/types';
 
@@ -20,6 +21,7 @@ const ProfileStack = () => {
       <Stack.Screen name="ExamResults" component={ExamResultsScreen} />
       <Stack.Screen name="ExamResultDetail" component={ExamResultDetailScreen} />
       <Stack.Screen name="StudentExamStats" component={StudentExamStatsScreen} />
+      <Stack.Screen name="StudentFinancialStats" component={StudentFinancialStatsScreen} />
       <Stack.Screen name="Store" component={StoreScreen} />
     </Stack.Navigator>
   );

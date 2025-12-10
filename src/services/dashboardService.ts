@@ -1,5 +1,5 @@
 import axiosInstance from "../configs/axios";
-import { ParentExamStatsResponse, StudentExamStatsResponse } from "../types/dashboard";
+import { ParentExamStatsResponse, StudentExamStatsResponse, StudentFinancialStatsResponse } from "../types/dashboard";
 
 const DashboardService = {
 
@@ -12,6 +12,12 @@ const DashboardService = {
     // GET /parent/dashboard/exam-stats/{childrenId}
     async getParentExamStats(childrenId: string): Promise<ParentExamStatsResponse> {
         const response = await axiosInstance.get<ParentExamStatsResponse>(`/parent/dashboard/exam-stats/${childrenId}`);
+        return response.data;
+    },
+
+    // GET /student/dashboard/financial-stats
+    async getStudentFinancialStats(): Promise<StudentFinancialStatsResponse> {
+        const response = await axiosInstance.get<StudentFinancialStatsResponse>("/student/dashboard/financial-stats");
         return response.data;
     },
 
