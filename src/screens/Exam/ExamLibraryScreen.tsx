@@ -44,6 +44,7 @@ const ExamLibraryScreen = () => {
   const [isWaitingForGrading, setIsWaitingForGrading] = useState(false);
   const [gradingResult, setGradingResult] = useState<any>(null);
   const [gradingError, setGradingError] = useState<string | null>(null);
+  const [gradingStatus, setGradingStatus] = useState<string>('Waiting for AI grading...');
   const { subscribeAttemptResult } = useExamAttempt();
 
   const { templates, loading, applyFilters, fetchTemplates, filters } = useBrowseExams({ pageSize: 100 });
@@ -72,12 +73,21 @@ const ExamLibraryScreen = () => {
       setIsWaitingForGrading(true);
       setGradingResult(null);
       setGradingError(null);
+      setGradingStatus('Connecting to grading service...');
 
       // Clear the navigation params
       navigation.setParams({ gradingAttemptId: undefined, showGradingModal: undefined });
 
-      // Subscribe to grading result with 30 second timeout
-      subscribeAttemptResult(gradingAttemptId, 30000)
+      // Subscribe to grading result with 60 second timeout and status updates
+      subscribeAttemptResult(
+        gradingAttemptId,
+        60000, // 60 seconds timeout
+        (status) => {
+          // Real-time status update from SSE
+          console.log('[Grading Status]:', status);
+          setGradingStatus(status);
+        }
+      )
         .then((result) => {
           if (result) {
             setGradingResult(result);
@@ -444,7 +454,7 @@ const ExamLibraryScreen = () => {
               <View className="items-center py-4">
                 <ActivityIndicator size="large" color="#3CBCB2" />
                 <Text className="text-gray-600 text-center mt-4">
-                  Waiting for AI grading...
+                  {gradingStatus}
                 </Text>
                 <Text className="text-gray-400 text-sm text-center mt-2">
                   Please wait a moment
@@ -500,14 +510,24 @@ const ExamLibraryScreen = () => {
                     {gradingResult.passed ? '✅ Passed' : gradingResult.passed === false ? '❌ Failed' : 'Grading completed'}
                   </Text>
                 </View>
+                <View className="flex flex-row justify-center gap-2">
                 <TouchableOpacity
                   onPress={() => setShowGradingModal(false)}
-                  className="bg-teal-500 py-3 rounded-xl"
+                  className="bg-teal-500 p-3 rounded-xl"
                 >
                   <Text className="text-white text-center font-semibold">
                     Done
                   </Text>
                 </TouchableOpacity>
+                <TouchableOpacity
+                    onPress={() => {navigation.navigate('Profile', { screen: 'ExamResults' }); setShowGradingModal(false)}}
+                  className="bg-teal-500 p-3 rounded-xl"
+                >
+                  <Text className="text-white text-center font-semibold">
+                    View Exam History
+                  </Text>
+                </TouchableOpacity>
+                </View>
               </View>
             )}
           </View>

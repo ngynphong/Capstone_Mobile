@@ -123,8 +123,8 @@ const ExamQuestionResultItem: React.FC<QuestionItemProps> = ({ questionItem, ind
                                 fontSize={14}
                             />
                         )}
-                        {questionItem.studentAnswer.feedback && (                          
-                            <Text className="text-sm text-blue-700 mt-1">                             
+                        {questionItem.studentAnswer.feedback && (
+                            <Text className="text-sm text-blue-700 mt-1">
                                 Feedback: {questionItem.studentAnswer.feedback}
                             </Text>
                         )}

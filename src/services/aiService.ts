@@ -13,16 +13,14 @@ export const askAiExamQuestion = async (
         await axiosInstance.post('/ai/exam-ask', payload, {
             responseType: 'text',
             onDownloadProgress: (progressEvent) => {
-                const response = progressEvent.event.currentTarget.response;
+                // Safely access the response, handling null cases in React Native
+                const response = progressEvent.event?.currentTarget?.response;
+                if (!response) return;
+
                 const newContent = response.slice(lastProcessedIndex);
                 lastProcessedIndex = response.length;
 
                 // Process SSE format (data: prefix)
-                // Note: This simple split might break if a "data:" line is split across two chunks.
-                // For a robust implementation, we should buffer incomplete lines.
-                // However, for this task, we'll assume lines come in reasonably complete or accept minor glitches.
-                // To be safer, we can check for newlines.
-
                 const lines = newContent.split('\n');
                 for (const line of lines) {
                     if (line.startsWith('data:')) {
