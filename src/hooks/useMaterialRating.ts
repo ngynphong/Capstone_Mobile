@@ -22,7 +22,11 @@ export const useMaterialRating = () => {
 
       try {
         const response = await MaterialService.createMaterialRating(payload);
-        const newRating = response.data.data[0];
+        const responseData = response.data.data;
+        // Xử lý cả trường hợp data là object hoặc array
+        const newRating = Array.isArray(responseData) 
+          ? responseData[0] 
+          : responseData;
         return newRating;
       } catch (err: any) {
         const message =
@@ -48,7 +52,11 @@ export const useMaterialRating = () => {
 
       try {
         const response = await MaterialService.getRatingsByUser(userId);
-        const ratingsList = response.data.data;
+        const responseData = response.data.data;
+        // Xử lý cả trường hợp data là object hoặc array
+        const ratingsList = Array.isArray(responseData) 
+          ? responseData 
+          : [responseData];
         setRatings(ratingsList);
         return ratingsList;
       } catch (err: any) {
@@ -75,7 +83,11 @@ export const useMaterialRating = () => {
 
       try {
         const response = await MaterialService.getRatingsByMaterial(materialId);
-        const ratingsList = response.data.data;
+        const responseData = response.data.data;
+        // Xử lý cả trường hợp data là object hoặc array
+        const ratingsList = Array.isArray(responseData) 
+          ? responseData 
+          : [responseData];
         setRatings(ratingsList);
         return ratingsList;
       } catch (err: any) {
@@ -108,9 +120,18 @@ export const useMaterialRating = () => {
           materialId,
           userId,
         );
-        const ratingsList = response.data.data;
-        return ratingsList.length > 0 ? ratingsList[0] : null;
+        const responseData = response.data.data;
+        // Xử lý cả trường hợp data là object hoặc array
+        if (Array.isArray(responseData)) {
+          return responseData.length > 0 ? responseData[0] : null;
+        }
+        // Nếu là object thì trả về luôn
+        return responseData || null;
       } catch (err: any) {
+        // Nếu API trả về 404 hoặc không tìm thấy, coi như chưa đánh giá
+        if (err?.response?.status === 404 || err?.response?.data?.code === 1001) {
+          return null;
+        }
         const message =
           err instanceof Error
             ? err.message

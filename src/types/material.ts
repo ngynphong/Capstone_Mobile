@@ -33,7 +33,7 @@ export interface MaterialResponse {
 
 // Learning Material Rating Types
 export interface MaterialRatingPayload {
-  materialId: string;
+  learningMaterialId: string;
   userId: string;
   rating: number;
   comment?: string;
@@ -62,7 +62,7 @@ export interface MaterialRatingStatistics {
 export interface MaterialRatingsResponse {
   code: number;
   message: string;
-  data: MaterialRating[];
+  data: MaterialRating | MaterialRating[];
 }
 
 export interface MaterialRatingStatisticsResponse {
