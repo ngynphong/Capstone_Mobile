@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppToast } from '../utils/toast'; // Import toast của mobile
 import ExamService from '../services/examService'; // Import service tổng của mobile
 import type {
@@ -201,51 +202,166 @@ export const useExamAttempt = () => {
   }, []);
 
   /**
-   * Lấy kết quả chi tiết của một lần thi (subscribe).
-   * @param attemptId - ID của attempt
-   * @param timeoutMs - Timeout in milliseconds (default: 30000ms = 30s)
+   * Subscribe to grading result via SSE (Server-Sent Events) using fetch with streaming.
+   * Adapted from web implementation for React Native.
+   * @param attemptId - The attempt ID to subscribe to
+   * @param onStatusUpdate - Callback for status updates (e.g., "Waiting for grading...")
+   * @param timeoutMs - Timeout in milliseconds (default: 60000ms = 60s)
+   * @returns Promise that resolves with the result when grading is complete
    */
-  const subscribeAttemptResult = useCallback(async (attemptId: string, timeoutMs: number = 30000) => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Create a timeout promise
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('GRADING_TIMEOUT'));
-        }, timeoutMs);
-      });
+  const subscribeAttemptResult = useCallback(
+    async (
+      attemptId: string,
+      timeoutMs: number = 60000,
+      onStatusUpdate?: (status: string) => void
+    ): Promise<AttemptResultDetail | null> => {
+      setLoading(true);
+      setError(null);
 
-      // Race between the API call and timeout
-      const res = await Promise.race([
-        ExamService.subscribe(attemptId),
-        timeoutPromise
-      ]);
+      const API_URL = process.env.EXPO_PUBLIC_API_URL;
+      const token = await AsyncStorage.getItem('accessToken');
+      const sseUrl = `${API_URL}/exam-attempts/${attemptId}/subscribe`;
 
-      if (res.data.code === 0 || res.data.code === 1000) {
-        setAttemptResultDetail(res.data.data);
-        return res.data.data;
-      } else {
-        throw new Error(res.data.message || 'Không thể tải kết quả chi tiết');
+      // Create timeout controller
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, timeoutMs);
+
+      try {
+        console.log('[SSE] Connecting to:', sseUrl);
+
+        const response = await fetch(sseUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'text/event-stream',
+            'Authorization': `Bearer ${token}`,
+          },
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error('Failed to get response reader');
+        }
+
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+
+          if (done) {
+            console.log('[SSE] Stream closed by server');
+            break;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+
+          // Parse SSE format: "event:xxx\ndata:yyy\n\n"
+          const lines = buffer.split('\n');
+          buffer = ''; // Reset buffer
+
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+
+            if (line === '') continue;
+
+            // Handle event line
+            if (line.startsWith('event:')) {
+              const eventType = line.substring(6).trim();
+              console.log('[SSE] Event type:', eventType);
+              continue;
+            }
+
+            // Handle data line
+            if (line.startsWith('data:')) {
+              const data = line.substring(5).trim();
+              console.log('[SSE] Received data:', data);
+
+              // Check if it's a status update (waiting message)
+              if (data.includes('Waiting') || data.includes('grading') || data.includes('Processing')) {
+                onStatusUpdate?.(data);
+                continue;
+              }
+
+              // Try to parse as JSON (final result)
+              try {
+                const result = JSON.parse(data);
+
+                // Check if result contains attemptId (indicates final result)
+                if (result && (result.attemptId || result.data?.attemptId)) {
+                  const finalResult = result.data || result;
+                  console.log('[SSE] Grading completed:', finalResult);
+
+                  clearTimeout(timeoutId);
+                  reader.cancel();
+                  setLoading(false);
+                  setAttemptResultDetail(finalResult as AttemptResultDetail);
+                  toast.success('Result details are ready!');
+                  return finalResult as AttemptResultDetail;
+                }
+              } catch {
+                // Not JSON, treat as status message
+                onStatusUpdate?.(data);
+              }
+            } else {
+              // Keep unparsed line in buffer for next iteration
+              buffer = lines.slice(i).join('\n');
+              break;
+            }
+          }
+        }
+
+        // Stream ended without result - try to fetch directly
+        console.log('[SSE] Stream ended, fetching result directly...');
+        clearTimeout(timeoutId);
+        const res = await ExamService.getResult(attemptId);
+        if (res.data.code === 0 || res.data.code === 1000) {
+          setLoading(false);
+          setAttemptResultDetail(res.data.data);
+          toast.success('Result details are ready!');
+          return res.data.data;
+        }
+
+        setLoading(false);
+        setError('Failed to get grading result');
+        return null;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        const error = err as Error;
+
+        // Handle timeout
+        if (error.name === 'AbortError') {
+          setLoading(false);
+          setError('GRADING_TIMEOUT');
+          throw new Error('GRADING_TIMEOUT');
+        }
+
+        setLoading(false);
+        setError('Failed to connect to grading service');
+
+        // Fallback: try to fetch result directly
+        try {
+          const res = await ExamService.getResult(attemptId);
+          if (res.data.code === 0 || res.data.code === 1000) {
+            setAttemptResultDetail(res.data.data);
+            toast.success('Result details are ready!');
+            return res.data.data;
+          }
+        } catch {
+          // Ignore fallback error
+        }
+
+        return null;
       }
-    } catch (err) {
-      const error = err as Error;
-      if (error.message === 'GRADING_TIMEOUT') {
-        // Don't show toast for timeout - let the caller handle it
-        setError('GRADING_TIMEOUT');
-        throw error;
-      }
-      if (error.message === 'GRADING_IN_PROGRESS') {
-        // AI is still grading - let the caller handle it
-        setError('GRADING_IN_PROGRESS');
-        throw error;
-      }
-      handleError(err, 'Không thể tải kết quả chi tiết');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   /**
   * Lưu tiến độ làm bài (thường dùng cho Auto-save hoặc nút "Lưu tạm").

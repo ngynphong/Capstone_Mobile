@@ -87,20 +87,20 @@ export const useAutoSave = (
     try {
       const payload = createPayload();
       const success = await saveProgress(attemptId, payload);
-
+      console.log(success)
       if (success && isMountedRef.current) {
         setLastSaved(new Date());
         lastSavedAnswersRef.current = JSON.stringify(answers);
         console.log('Auto-save: Đã lưu thành công lúc', new Date().toLocaleTimeString());
       } else if (isMountedRef.current) {
         setError('Không thể lưu tự động');
-        console.error('Auto-save: Lỗi khi lưu');
+        // console.error('Auto-save: Lỗi khi lưu');
       }
     } catch (err) {
       if (isMountedRef.current) {
         const errorMessage = err instanceof Error ? err.message : 'Lỗi không xác định';
         setError(errorMessage);
-        console.error('Auto-save error:', err);
+        // console.error('Auto-save error:', err);
       }
     } finally {
       if (isMountedRef.current) {
