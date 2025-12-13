@@ -130,7 +130,7 @@ const MaterialList = () => {
                 <Text style={styles.secondaryText}>Close</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.primaryBtn} onPress={handleEnroll}>
-                <Text style={styles.primaryText}>Enroll Now</Text>
+                <Text style={styles.primaryText}>Register</Text>
               </TouchableOpacity>
             </View>
             </View>

@@ -43,6 +43,19 @@ const MaterialService = {
     const safeName = encodeURIComponent(fileName.trim());
     return `${API_BASE_URL}/${safeName}/materials`;
   },
+
+  /**
+   * POST /learning-materials/register/{learningMaterialId}
+   * Đăng ký học liệu cho học sinh.
+   * Tạo permission với tiêu đề học liệu và cấp quyền cho học sinh.
+   */
+  registerMaterial(
+    learningMaterialId: string,
+  ): Promise<AxiosResponse<unknown>> {
+    return axiosInstance.post(
+      `/learning-materials/register/${learningMaterialId}`,
+    );
+  },
 };
 
 export default MaterialService;
