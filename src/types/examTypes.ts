@@ -19,9 +19,9 @@ export interface ApiResponse<T> {
   data: T;
 }
 
-export interface GetAllExamsResponse extends ApiResponse<Exam[]> {}
+export interface GetAllExamsResponse extends ApiResponse<Exam[]> { }
 
-export interface GetExamByIdResponse extends ApiResponse<Exam> {}
+export interface GetExamByIdResponse extends ApiResponse<Exam> { }
 
 // API Request Types
 export interface GetExamByIdParams {
@@ -108,6 +108,8 @@ export interface ActiveExam {
   belongTo: string;
   questions: ActiveExamQuestion[];
   savedAnswer: SaveProgressPayload | null; // Đáp án đã lưu (null nếu thi lần đầu)
+  attemptSessionToken: string; // Token for save/submit verification
+  startTime?: string; // Thời gian bắt đầu bài thi (ISO string)
 }
 
 // 2. Types cho API /exam-test/submit/{attemptId}
@@ -126,6 +128,7 @@ export interface ExamSubmissionAnswer {
  */
 export interface SubmitExamPayload {
   answers: ExamSubmissionAnswer[];
+  attemptSessionToken: string;
 }
 
 /**
@@ -281,4 +284,42 @@ export interface SaveProgressPayload {
     selectedAnswerId?: string | null; // Dùng cho MCQ
     frqAnswerText?: string | null;    // Dùng cho FRQ
   }[];
+  attemptSessionToken: string;
+}
+
+export interface ExamRatingUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  imgUrl: string;
+  dob: string;
+}
+
+export interface ExamRatingItem {
+  rating: number;
+  comment: string;
+  rateBy: ExamRatingUser;
+  ratingTime: string;
+}
+
+export interface ExamRatingsPaginationData {
+  pageNo: number;
+  pageSize: number;
+  totalPage: number;
+  totalElement: number;
+  sortBy: string[];
+  items: ExamRatingItem[];
+}
+
+export interface ExamRatingsResponse {
+  code: number;
+  message: string;
+  data: ExamRatingsPaginationData;
+}
+
+export interface ExamRatingsQueryParams {
+  pageNo?: number;
+  pageSize?: number;
+  sorts?: string[];
 }

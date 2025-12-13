@@ -6,14 +6,16 @@ import {
     ScrollView,
     ActivityIndicator,
     Alert,
+    Image,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { ArrowLeft, Clock, BookOpen, Play, FileText } from 'lucide-react-native';
+import { ArrowLeft, Clock, BookOpen, Play, FileText, Star } from 'lucide-react-native';
 
 import { useScroll } from '../../context/ScrollContext';
 import { useAppToast } from '../../utils/toast';
 import { useExamDetails } from '../../hooks/useExam';
 import { useExamAttempt } from '../../hooks/useExamAttempt';
+import { useExamTemplateRatings } from '../../hooks/useExamTemplateRatings';
 
 const ExamDetailScreen = () => {
     const navigation = useNavigation<any>();
@@ -25,6 +27,7 @@ const ExamDetailScreen = () => {
 
     const { exam, loading, error } = useExamDetails(examId);
     const { startSingleAttempt, loading: attemptLoading } = useExamAttempt();
+    const { ratings, loading: ratingsLoading, pagination } = useExamTemplateRatings(examId);
     const [isStartingTest, setIsStartingTest] = useState(false);
 
     useEffect(() => {
@@ -34,11 +37,7 @@ const ExamDetailScreen = () => {
         }
     }, [error, toast, navigation]);
 
-    const handlePracticeMode = () => {
-        if (exam) {
-            navigation.navigate('PracticeMode', { examId: exam.id });
-        }
-    };
+
 
     const handleFullTest = () => {
         if (exam) {
@@ -163,50 +162,11 @@ const ExamDetailScreen = () => {
                 </View>
 
                 {/* Main Content */}
-                <View className="flex-1 px-6">
-                    <Text className="text-lg font-semibold text-gray-900 mb-4">
-                        Chọn hình thức luyện tập phù hợp với bạn
-                    </Text>
+                <View className="flex-1 px-6 gap-2">
 
-                    {/* Practice Mode Card */}
-                    <TouchableOpacity
-                        onPress={handlePracticeMode}
-                        className="bg-white rounded-2xl p-6 mb-4 border border-gray-100"
-                        style={{
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: 2 },
-                            shadowOpacity: 0.1,
-                            shadowRadius: 4,
-                            elevation: 3,
-                        }}
-                    >
-                        <View className="flex-row items-center mb-4">
-                            <View className="w-12 h-12 bg-teal-100 rounded-xl items-center justify-center mr-4">
-                                <Play size={24} color="#3CBCB2" />
-                            </View>
-                            <View className="flex-1">
-                                <Text className="text-lg font-semibold text-gray-900 mb-1">
-                                    Practice
-                                </Text>
-                                <Text className="text-gray-600">
-                                    Choose specific question types to practice
-                                </Text>
-                            </View>
-                        </View>
-
-                        <View className="bg-teal-50 rounded-xl p-4">
-                            <Text className="text-sm text-gray-600 mb-2">
-                                • Multiple Choice (MCQ) - Trắc nghiệm{'\n'}
-                                • Free Response (FRQ) - Tự luận{'\n'}
-                                • Flash cards and quiz modes available
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* Full Test Mode Card */}
                     <TouchableOpacity
                         onPress={handleFullTest}
-                        className="bg-white rounded-2xl p-6 mb-8 border border-gray-100"
+                        className="bg-white rounded-2xl p-6 mt-4 border border-gray-100"
                         style={{
                             shadowColor: '#000',
                             shadowOffset: { width: 0, height: 2 },
@@ -238,6 +198,97 @@ const ExamDetailScreen = () => {
                             </Text>
                         </View>
                     </TouchableOpacity>
+
+                    {/* Reviews Section */}
+                    <View className="bg-white rounded-2xl p-6 mb-4 border border-gray-100"
+                        style={{
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 4,
+                            elevation: 3,
+                        }}
+                    >
+                        <View className="flex-row items-center justify-between mb-4">
+                            <View className="flex-row items-center">
+                                <View className="w-10 h-10 bg-yellow-100 rounded-xl items-center justify-center mr-3">
+                                    <Star size={20} color="#F59E0B" fill="#F59E0B" />
+                                </View>
+                                <View>
+                                    <Text className="text-lg font-semibold text-gray-900">
+                                        Đánh giá
+                                    </Text>
+                                    <Text className="text-sm text-gray-500">
+                                        {pagination?.totalElement || 0} đánh giá
+                                    </Text>
+                                </View>
+                            </View>
+                            <View className="flex-row items-center bg-yellow-50 px-3 py-1.5 rounded-full">
+                                <Star size={14} color="#F59E0B" fill="#F59E0B" />
+                                <Text className="text-sm font-semibold text-yellow-700 ml-1">
+                                    {exam.averageRating?.toFixed(1) || 'N/A'}
+                                </Text>
+                            </View>
+                        </View>
+
+                        {ratingsLoading ? (
+                            <View className="py-4 items-center">
+                                <ActivityIndicator size="small" color="#3CBCB2" />
+                            </View>
+                        ) : ratings.length === 0 ? (
+                            <View className="py-4 items-center">
+                                <Text className="text-gray-500">Chưa có đánh giá nào</Text>
+                            </View>
+                        ) : (
+                            <View>
+                                {ratings.slice(0, 3).map((rating, index) => (
+                                    <View key={index} className="border-t border-gray-100 pt-3 mt-3">
+                                        <View className="flex-row items-start">
+                                            <Image
+                                                source={{ uri: rating.rateBy.imgUrl || 'https://via.placeholder.com/40' }}
+                                                className="w-10 h-10 rounded-full bg-gray-200"
+                                            />
+                                            <View className="flex-1 ml-3">
+                                                <View className="flex-row items-center justify-between">
+                                                    <Text className="text-sm font-medium text-gray-900">
+                                                        {rating.rateBy.firstName} {rating.rateBy.lastName}
+                                                    </Text>
+                                                    <View className="flex-row items-center">
+                                                        {[1, 2, 3, 4, 5].map((star) => (
+                                                            <Star
+                                                                key={star}
+                                                                size={12}
+                                                                color="#F59E0B"
+                                                                fill={star <= rating.rating ? "#F59E0B" : "none"}
+                                                            />
+                                                        ))}
+                                                    </View>
+                                                </View>
+                                                {rating.comment && (
+                                                    <Text className="text-sm text-gray-600 mt-1">
+                                                        {rating.comment}
+                                                    </Text>
+                                                )}
+                                                <Text className="text-xs text-gray-400 mt-1">
+                                                    {new Date(rating.ratingTime).toLocaleDateString('vi-VN')}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </View>
+                                ))}
+                                {ratings.length > 3 && (
+                                    <TouchableOpacity className="mt-4 py-2">
+                                        <Text className="text-center text-teal-600 font-medium">
+                                            Xem tất cả {pagination?.totalElement} đánh giá
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        )}
+                    </View>
+
+                    {/* Full Test Mode Card */}
+
 
                     {/* Tips */}
                     <View className="bg-blue-50 rounded-xl p-4 mb-8">

@@ -202,13 +202,26 @@ export const useExamAttempt = () => {
 
   /**
    * Lấy kết quả chi tiết của một lần thi (subscribe).
+   * @param attemptId - ID của attempt
+   * @param timeoutMs - Timeout in milliseconds (default: 30000ms = 30s)
    */
-  const subscribeAttemptResult = useCallback(async (attemptId: string) => {
+  const subscribeAttemptResult = useCallback(async (attemptId: string, timeoutMs: number = 30000) => {
     setLoading(true);
     setError(null);
     try {
-      // Tên hàm khớp: ExamService.subscribe
-      const res = await ExamService.subscribe(attemptId);
+      // Create a timeout promise
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('GRADING_TIMEOUT'));
+        }, timeoutMs);
+      });
+
+      // Race between the API call and timeout
+      const res = await Promise.race([
+        ExamService.subscribe(attemptId),
+        timeoutPromise
+      ]);
+
       if (res.data.code === 0 || res.data.code === 1000) {
         setAttemptResultDetail(res.data.data);
         return res.data.data;
@@ -216,6 +229,17 @@ export const useExamAttempt = () => {
         throw new Error(res.data.message || 'Không thể tải kết quả chi tiết');
       }
     } catch (err) {
+      const error = err as Error;
+      if (error.message === 'GRADING_TIMEOUT') {
+        // Don't show toast for timeout - let the caller handle it
+        setError('GRADING_TIMEOUT');
+        throw error;
+      }
+      if (error.message === 'GRADING_IN_PROGRESS') {
+        // AI is still grading - let the caller handle it
+        setError('GRADING_IN_PROGRESS');
+        throw error;
+      }
       handleError(err, 'Không thể tải kết quả chi tiết');
       return null;
     } finally {
@@ -270,9 +294,9 @@ export const useExamAttempt = () => {
    */
   const hasSavedAnswers = useCallback(
     (activeExam: ActiveExam | null) => {
-      return activeExam?.savedAnswer !== null && 
-             activeExam?.savedAnswer?.answers !== undefined && 
-             activeExam.savedAnswer.answers.length > 0;
+      return activeExam?.savedAnswer !== null &&
+        activeExam?.savedAnswer?.answers !== undefined &&
+        activeExam.savedAnswer.answers.length > 0;
     },
     []
   );

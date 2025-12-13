@@ -4,6 +4,7 @@ import { CheckCircle, Sparkles, Send } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useAiExamAsk } from '../../hooks/useAiExamAsk';
 import Markdown from 'react-native-markdown-display';
+import LatexText from '../common/LatexText';
 
 interface QuestionItemProps {
     questionItem: any;
@@ -62,9 +63,7 @@ const ExamQuestionResultItem: React.FC<QuestionItemProps> = ({ questionItem, ind
                 </View>
             </View>
 
-            <Text className="text-gray-800 leading-6 mb-4">
-                {questionItem.question.content}
-            </Text>
+            <LatexText content={questionItem.question.content} fontSize={15} />
 
             {/* Answers */}
             {questionItem.question.answers && questionItem.question.answers.length > 0 && (
@@ -89,12 +88,16 @@ const ExamQuestionResultItem: React.FC<QuestionItemProps> = ({ questionItem, ind
                                         {String.fromCharCode(65 + answerIndex)}
                                     </Text>
                                 </View>
-                                <Text className={`flex-1 text-sm ${isCorrect ? 'text-green-800 font-medium' :
-                                    isSelected && !isCorrect ? 'text-red-800' :
-                                        'text-gray-700'
-                                    }`}>
-                                    {answer.content}
-                                </Text>
+                                <View className="flex-1">
+                                    <LatexText
+                                        content={answer.content}
+                                        fontSize={14}
+                                        textStyle={{
+                                            color: isCorrect ? '#166534' : (isSelected && !isCorrect) ? '#991B1B' : '#374151',
+                                            fontWeight: isCorrect ? '500' : 'normal'
+                                        }}
+                                    />
+                                </View>
                                 {isCorrect && (
                                     <CheckCircle size={16} color="#10B981" />
                                 )}
@@ -110,16 +113,18 @@ const ExamQuestionResultItem: React.FC<QuestionItemProps> = ({ questionItem, ind
                 {questionItem.studentAnswer ? (
                     <View>
                         {questionItem.question.type === 'mcq' ? (
-                            <Text className="text-sm text-gray-700">
-                                Selected: {questionItem.question.answers?.find((a: any) => a.id === questionItem.studentAnswer?.selectedAnswerId)?.content || 'N/A'}
-                            </Text>
+                            <LatexText
+                                content={questionItem.question.answers?.find((a: any) => a.id === questionItem.studentAnswer?.selectedAnswerId)?.content || 'N/A'}
+                                fontSize={14}
+                            />
                         ) : (
-                            <Text className="text-sm text-gray-700">
-                                {questionItem.studentAnswer.frqAnswerText || 'No answer provided'}
-                            </Text>
+                            <LatexText
+                                content={questionItem.studentAnswer.frqAnswerText || 'No answer provided'}
+                                fontSize={14}
+                            />
                         )}
-                        {questionItem.studentAnswer.feedback && (
-                            <Text className="text-sm text-blue-700 mt-1">
+                        {questionItem.studentAnswer.feedback && (                          
+                            <Text className="text-sm text-blue-700 mt-1">                             
                                 Feedback: {questionItem.studentAnswer.feedback}
                             </Text>
                         )}
