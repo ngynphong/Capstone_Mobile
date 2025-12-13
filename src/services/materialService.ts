@@ -64,6 +64,19 @@ const MaterialService = {
   },
 
   /**
+   * GET /learning-materials/registered
+   * Lấy danh sách học liệu đã đăng ký của học sinh hiện tại.
+   */
+  getRegisteredMaterials(
+    pageNo: number = 0,
+    pageSize: number = 100,
+  ): Promise<AxiosResponse<MaterialResponse>> {
+    return axiosInstance.get('/learning-materials/registered', {
+      params: { pageNo, pageSize },
+    });
+  },
+
+  /**
    * POST /api/learning-material-ratings
    * Tạo đánh giá cho học liệu.
    */

@@ -14,6 +14,7 @@ import {
   Pressable,
   Alert,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import useMaterial from "../../hooks/useMaterial";
@@ -21,6 +22,9 @@ import { Material } from "../../types/material";
 import { MaterialStackParamList } from "../../types/types";
 import useMaterialImageSource from "../../hooks/useMaterialImageSource";
 import useMaterialRegister from "../../hooks/useMaterialRegister";
+import MaterialService from "../../services/materialService";
+
+const REGISTERED_MATERIALS_KEY = '@registered_materials';
 
 
 const MaterialList = () => {
@@ -40,8 +44,52 @@ const MaterialList = () => {
   const { source: modalImageSource } = useMaterialImageSource(selectedMaterial?.fileImage);
   const { registerMaterial, isLoading: isRegistering, error: registerError } = useMaterialRegister();
 
-  /** Gọi API khi component mount */
+  // Hàm lưu danh sách đã đăng ký vào AsyncStorage
+  const saveRegisteredMaterials = async (materials: Set<string>) => {
+    try {
+      const materialsArray = Array.from(materials);
+      await AsyncStorage.setItem(REGISTERED_MATERIALS_KEY, JSON.stringify(materialsArray));
+      console.log('Saved registered materials to storage:', materialsArray);
+    } catch (error) {
+      console.error('Error saving registered materials:', error);
+    }
+  };
+
+  // Load danh sách đã đăng ký từ API khi component mount
   useEffect(() => {
+    const loadRegisteredMaterials = async () => {
+      try {
+        // Gọi API để lấy danh sách đã đăng ký
+        const response = await MaterialService.getRegisteredMaterials(0, 100);
+        const registeredList = response.data.data.items || [];
+        
+        // Tạo Set từ danh sách ID của materials đã đăng ký
+        const registeredIds = new Set(
+          registeredList.map((material: Material) => material.id || material.learningMaterialId).filter(Boolean)
+        );
+        
+        setRegisteredMaterials(registeredIds);
+        console.log('Loaded registered materials from API:', Array.from(registeredIds));
+        
+        // Lưu vào AsyncStorage để cache
+        await saveRegisteredMaterials(registeredIds);
+      } catch (error) {
+        console.error('Error loading registered materials from API:', error);
+        // Fallback: Load từ AsyncStorage nếu API fail
+        try {
+          const stored = await AsyncStorage.getItem(REGISTERED_MATERIALS_KEY);
+          if (stored) {
+            const materialsArray = JSON.parse(stored);
+            setRegisteredMaterials(new Set(materialsArray));
+            console.log('Loaded registered materials from storage (fallback):', materialsArray);
+          }
+        } catch (storageError) {
+          console.error('Error loading from storage:', storageError);
+        }
+      }
+    };
+
+    loadRegisteredMaterials();
     fetchMaterials();
   }, [fetchMaterials]);
 
@@ -87,8 +135,12 @@ const MaterialList = () => {
       await registerMaterial(selectedMaterial.id);
       console.log('Register material success');
       
-      // Đánh dấu đã đăng ký
-      setRegisteredMaterials(prev => new Set(prev).add(selectedMaterial.id));
+      // Đánh dấu đã đăng ký và lưu vào storage
+      setRegisteredMaterials(prev => {
+        const newSet = new Set(prev).add(selectedMaterial.id);
+        saveRegisteredMaterials(newSet);
+        return newSet;
+      });
       
       // Đóng modal xác nhận
       setShowConfirmModal(false);
@@ -114,11 +166,18 @@ const MaterialList = () => {
       const errorCode = error?.response?.data?.code;
       const errorMessage = error?.response?.data?.message || error?.message || registerError;
       
-      if (errorCode === 1055 || errorMessage?.includes('already registered')) {
-        // Đánh dấu đã đăng ký
-        setRegisteredMaterials(prev => new Set(prev).add(selectedMaterial.id));
+      if (errorCode === 1055 || errorMessage?.includes('already registered') || errorMessage?.includes('đã đăng ký')) {
+        // Đánh dấu đã đăng ký ngay lập tức và lưu vào storage
+        setRegisteredMaterials(prev => {
+          const newSet = new Set(prev).add(selectedMaterial.id);
+          saveRegisteredMaterials(newSet);
+          return newSet;
+        });
+        console.log('Material already registered, marking as registered:', selectedMaterial.id);
+        
         // Đóng modal xác nhận
         setShowConfirmModal(false);
+        
         // Điều hướng trực tiếp
         closeModal();
         navigation.navigate("MaterialDetail", { material: selectedMaterial });
