@@ -30,3 +30,43 @@ export interface MaterialResponse {
   message: string;
   data: MaterialPagination;
 }
+
+// Learning Material Rating Types
+export interface MaterialRatingPayload {
+  materialId: string;
+  userId: string;
+  rating: number;
+  comment?: string;
+  [key: string]: unknown;
+}
+
+export interface MaterialRating {
+  id?: string;
+  materialId: string;
+  userId: string;
+  rating: number;
+  comment?: string;
+  userFullName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: unknown;
+}
+
+export interface MaterialRatingStatistics {
+  materialId: string;
+  averageRating: number;
+  totalRatings: number;
+  [key: string]: unknown;
+}
+
+export interface MaterialRatingsResponse {
+  code: number;
+  message: string;
+  data: MaterialRating[];
+}
+
+export interface MaterialRatingStatisticsResponse {
+  code: number;
+  message: string;
+  data: MaterialRatingStatistics;
+}
