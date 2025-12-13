@@ -8,9 +8,10 @@ import {
   ActivityIndicator,
   ScrollView,
   Alert,
+  Modal,
 } from 'react-native';
-import { BookOpen, Clock, Users, Star } from 'lucide-react-native';
-import { useNavigation } from '@react-navigation/native';
+import { BookOpen, Clock, Users, Star, CheckCircle } from 'lucide-react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 import { ExamTemplate } from '../../types/examTypes';
 import { useScroll } from '../../context/ScrollContext';
@@ -31,6 +32,15 @@ const ExamLibraryScreen = () => {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('all');
   const [refreshing, setRefreshing] = useState(false);
 
+  // AI Grading modal state
+  const route = useRoute();
+  const { gradingAttemptId, showGradingModal: shouldShowModal } = (route.params as any) || {};
+  const [showGradingModal, setShowGradingModal] = useState(false);
+  const [isWaitingForGrading, setIsWaitingForGrading] = useState(false);
+  const [gradingResult, setGradingResult] = useState<any>(null);
+  const [gradingError, setGradingError] = useState<string | null>(null);
+  const { subscribeAttemptResult } = useExamAttempt();
+
   const { templates, loading, applyFilters, fetchTemplates, filters } = useBrowseExams({ pageSize: 100 });
 
   // Load subjects data
@@ -46,6 +56,36 @@ const ExamLibraryScreen = () => {
       applyFilters({ subject: selectedSubjectId });
     }
   }, [selectedSubjectId, applyFilters]);
+
+  // Handle grading modal from navigation params
+  useEffect(() => {
+    if (shouldShowModal && gradingAttemptId) {
+      setShowGradingModal(true);
+      setIsWaitingForGrading(true);
+      setGradingResult(null);
+      setGradingError(null);
+
+      // Clear the navigation params
+      navigation.setParams({ gradingAttemptId: undefined, showGradingModal: undefined });
+
+      // Subscribe to grading result
+      subscribeAttemptResult(gradingAttemptId)
+        .then((result) => {
+          if (result) {
+            setGradingResult(result);
+          } else {
+            setGradingError('Không thể lấy kết quả. Vui lòng thử lại sau.');
+          }
+        })
+        .catch((err) => {
+          console.error('Error getting grading result:', err);
+          setGradingError('Chấm điểm AI đang gặp sự cố. Kết quả sẽ được cập nhật sau.');
+        })
+        .finally(() => {
+          setIsWaitingForGrading(false);
+        });
+    }
+  }, [shouldShowModal, gradingAttemptId]);
 
   // Handle pull to refresh
   const handleRefresh = async () => {
@@ -130,7 +170,7 @@ const ExamLibraryScreen = () => {
             <Text className="text-sm font-medium text-gray-700">Token Cost:</Text>
             <Text className="text-sm text-gray-600 ml-2">{item.tokenCost ? item.tokenCost : 'Free'} 💰</Text>
           </View>
-        </View> 
+        </View>
 
         <View className="flex-row items-center mt-3">
           <Text className="text-sm font-medium text-gray-700">Status:</Text>
@@ -250,15 +290,13 @@ const ExamLibraryScreen = () => {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
             <TouchableOpacity
               onPress={() => setSelectedSubjectId('all')}
-              className={`mr-3 px-4 py-2 rounded-full border ${
-                selectedSubjectId === 'all'
-                  ? 'bg-teal-400 border-teal-400'
-                  : 'bg-white border-gray-300'
-              }`}
+              className={`mr-3 px-4 py-2 rounded-full border ${selectedSubjectId === 'all'
+                ? 'bg-teal-400 border-teal-400'
+                : 'bg-white border-gray-300'
+                }`}
             >
-              <Text className={`text-sm font-medium ${
-                selectedSubjectId === 'all' ? 'text-white' : 'text-gray-700'
-              }`}>
+              <Text className={`text-sm font-medium ${selectedSubjectId === 'all' ? 'text-white' : 'text-gray-700'
+                }`}>
                 Tất cả môn
               </Text>
             </TouchableOpacity>
@@ -267,15 +305,13 @@ const ExamLibraryScreen = () => {
               <TouchableOpacity
                 key={subject.id}
                 onPress={() => setSelectedSubjectId(subject.id)}
-                className={`mr-3 px-4 py-2 rounded-full border ${
-                  selectedSubjectId === subject.id
-                    ? 'bg-teal-400 border-teal-400'
-                    : 'bg-white border-gray-300'
-                }`}
+                className={`mr-3 px-4 py-2 rounded-full border ${selectedSubjectId === subject.id
+                  ? 'bg-teal-400 border-teal-400'
+                  : 'bg-white border-gray-300'
+                  }`}
               >
-                <Text className={`text-sm font-medium ${
-                  selectedSubjectId === subject.id ? 'text-white' : 'text-gray-700'
-                }`}>
+                <Text className={`text-sm font-medium ${selectedSubjectId === subject.id ? 'text-white' : 'text-gray-700'
+                  }`}>
                   {subject.name}
                 </Text>
               </TouchableOpacity>
@@ -320,6 +356,92 @@ const ExamLibraryScreen = () => {
           onStartAutoTest={handleStartAutoCombinedTest}
         />
       )}
+
+      {/* AI Grading Modal */}
+      <Modal
+        visible={showGradingModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowGradingModal(false)}
+      >
+        <View style={{
+          flex: 1,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 20,
+        }}>
+          <View style={{
+            backgroundColor: 'white',
+            borderRadius: 20,
+            padding: 24,
+            width: '100%',
+            maxWidth: 350,
+          }}>
+            {/* Header */}
+            <View className="items-center mb-4">
+              <View className="w-16 h-16 bg-teal-100 rounded-full items-center justify-center mb-3">
+                <CheckCircle size={36} color="#3CBCB2" />
+              </View>
+              <Text className="text-xl font-bold text-gray-900 text-center">
+                Nộp bài thành công!
+              </Text>
+            </View>
+
+            {/* Loading state */}
+            {isWaitingForGrading && (
+              <View className="items-center py-4">
+                <ActivityIndicator size="large" color="#3CBCB2" />
+                <Text className="text-gray-600 text-center mt-4">
+                  Đang chờ AI chấm điểm...
+                </Text>
+                <Text className="text-gray-400 text-sm text-center mt-2">
+                  Vui lòng đợi trong giây lát
+                </Text>
+              </View>
+            )}
+
+            {/* Error state */}
+            {gradingError && !isWaitingForGrading && (
+              <View>
+                <Text className="text-red-500 text-center mb-4">
+                  {gradingError}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setShowGradingModal(false)}
+                  className="bg-teal-500 py-3 rounded-xl"
+                >
+                  <Text className="text-white text-center font-semibold">
+                    Đóng
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Result display */}
+            {gradingResult && !isWaitingForGrading && (
+              <View>
+                <View className="bg-green-50 rounded-xl p-4 mb-4">
+                  <Text className="text-green-800 text-center text-lg font-bold mb-2">
+                    Điểm: {gradingResult.totalScore ?? gradingResult.score ?? 'N/A'} / {gradingResult.maxScore ?? '100'}
+                  </Text>
+                  <Text className="text-green-600 text-center">
+                    {gradingResult.passed ? '✅ Đạt' : gradingResult.passed === false ? '❌ Chưa đạt' : 'Đã chấm xong'}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setShowGradingModal(false)}
+                  className="bg-teal-500 py-3 rounded-xl"
+                >
+                  <Text className="text-white text-center font-semibold">
+                    Hoàn tất
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

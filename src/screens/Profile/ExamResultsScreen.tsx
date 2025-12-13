@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { useScroll } from '../../context/ScrollContext';
 import { useNavigation } from '@react-navigation/native';
 import { useExamAttemptHistory } from '../../hooks/useExamAttempt';
-import { ChevronLeft, Clock, CheckCircle, Target } from 'lucide-react-native';
+import { ChevronLeft, Clock, CheckCircle, Target, ArrowUpDown, AlertCircle } from 'lucide-react-native';
 
 interface ExamResultsScreenProps {
   navigation: any;
@@ -17,6 +17,26 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
+  const [sortBy, setSortBy] = useState<'startTime:desc' | 'startTime:asc' | 'endTime:desc' | 'endTime:asc'>('startTime:desc');
+
+  // Sort options
+  const sortOptions = [
+    { value: 'startTime:desc', label: 'Newest (start)' },
+    { value: 'startTime:asc', label: 'Oldest (start)' },
+    { value: 'endTime:desc', label: 'Newest (end)' },
+    { value: 'endTime:asc', label: 'Oldest (end)' },
+  ];
+
+  // Sorted history
+  const sortedHistory = useMemo(() => {
+    if (!allHistory.length) return [];
+    return [...allHistory].sort((a, b) => {
+      const [field, order] = sortBy.split(':');
+      const dateA = new Date(a[field] || 0).getTime();
+      const dateB = new Date(b[field] || 0).getTime();
+      return order === 'desc' ? dateB - dateA : dateA - dateB;
+    });
+  }, [allHistory, sortBy]);
 
   // Accumulate history data
   useEffect(() => {
@@ -110,10 +130,19 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
           </View>
 
           <View className="flex-row items-center">
-            <CheckCircle size={16} color="#10B981" />
-            <Text className="text-sm text-green-600 ml-1">
-              {attempt.endTime ? 'Completed' : 'In Progress'}
-            </Text>
+            {attempt.isLate ? (
+              <>
+                <AlertCircle size={16} color="#EF4444" />
+                <Text className="text-sm text-red-600 ml-1">Late</Text>
+              </>
+            ) : (
+              <>
+                <CheckCircle size={16} color={attempt.status === 'COMPLETED' ? '#10B981' : '#6B7280'} />
+                <Text className={`text-sm ml-2 ${attempt.status === 'COMPLETED' ? 'text-green-600' : 'text-gray-600'}`}>
+                  {attempt.status}
+                </Text>
+              </>
+            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -132,15 +161,41 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
     <View className="flex-1 bg-gray-50">
       {/* Header */}
       <View className="bg-white pt-12 pb-4 px-6 shadow-sm">
-        <View className="flex-row items-center">
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            className="mr-4"
-          >
-            <ChevronLeft size={24} color="#374151" />
-          </TouchableOpacity>
-          <Text className="text-xl font-bold text-gray-900">Exam Results</Text>
+        <View className="flex-row items-center justify-between mb-3">
+          <View className="flex-row items-center">
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              className="mr-4"
+            >
+              <ChevronLeft size={24} color="#374151" />
+            </TouchableOpacity>
+            <Text className="text-xl font-bold text-gray-900">Exam Results</Text>
+          </View>
         </View>
+
+        {/* Sort Options */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View className="flex-row">
+            {sortOptions.map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                onPress={() => setSortBy(option.value as any)}
+                className={`mr-2 px-3 py-2 rounded-full border ${sortBy === option.value
+                  ? 'bg-teal-400 border-teal-400'
+                  : 'bg-white border-gray-300'
+                  }`}
+              >
+                <View className="flex-row items-center">
+                  {sortBy === option.value && <ArrowUpDown size={12} color="#fff" />}
+                  <Text className={`text-xs font-medium ml-1 ${sortBy === option.value ? 'text-white' : 'text-gray-700'
+                    }`}>
+                    {option.label}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
       </View>
 
       {/* Content */}
@@ -198,7 +253,7 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
               <Text className="text-lg font-semibold text-gray-900 mb-3">
                 Recent Results
               </Text>
-              {allHistory.map((attempt: any, index: number) => renderExamResult(attempt, index))}
+              {sortedHistory.map((attempt: any, index: number) => renderExamResult(attempt, index))}
 
               {/* Load More Button */}
               {hasMorePages && (

@@ -11,6 +11,7 @@ import {
   Platform,
   Animated,
   Easing,
+  Modal,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Clock, BookOpen, CheckCircle, Circle, Save } from 'lucide-react-native';
@@ -20,6 +21,8 @@ import { ActiveExam } from '../../types/examTypes';
 import { useScroll } from '../../context/ScrollContext';
 import { useExamAttempt } from '../../hooks/useExamAttempt';
 import { useAutoSave } from '../../hooks/useAutoSave';
+import LatexText from '../../components/common/LatexText';
+import MathKeyboard from '../../components/common/MathKeyboard';
 
 const FullTestScreen = () => {
   const navigation = useNavigation<any>();
@@ -27,20 +30,27 @@ const FullTestScreen = () => {
   const { attempt } = route.params as { attempt: ActiveExam };
 
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
-  const [answers, setAnswers] = useState<{[key: string]: {selectedAnswerId?: string, frqAnswerText?: string}}>({});
+  const [answers, setAnswers] = useState<{ [key: string]: { selectedAnswerId?: string, frqAnswerText?: string } }>({});
   const [currentSection, setCurrentSection] = useState<'mcq' | 'frq'>('mcq');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
   const { handleScroll } = useScroll();
-  const { submitAttempt, saveProgress } = useExamAttempt();
+  const { submitAttempt, saveProgress, subscribeAttemptResult } = useExamAttempt();
+
+  // AI Grading modal state
+  const [showGradingModal, setShowGradingModal] = useState<boolean>(false);
+  const [isWaitingForGrading, setIsWaitingForGrading] = useState<boolean>(false);
+  const [gradingResult, setGradingResult] = useState<any>(null);
+  const [gradingError, setGradingError] = useState<string | null>(null);
 
   // Auto-save hook
   const { lastSaved, isSaving, saveNow } = useAutoSave(
     attempt?.examAttemptId || null,
+    attempt?.attemptSessionToken || null,
     saveProgress,
     answers,
     true, // enabled
-    30000 // 30 seconds
+    1000 // 1 second debounce
   );
 
   // Animation values
@@ -69,8 +79,8 @@ const FullTestScreen = () => {
   useEffect(() => {
     if (attempt?.questions) {
       console.log('Khôi phục đáp án đã lưu từ questions');
-      const savedAnswers: {[key: string]: {selectedAnswerId?: string, frqAnswerText?: string}} = {};
-      
+      const savedAnswers: { [key: string]: { selectedAnswerId?: string, frqAnswerText?: string } } = {};
+
       attempt.questions.forEach(question => {
         if (question.savedAnswer && question.savedAnswer !== null) {
           // savedAnswer có thể là object với selectedAnswerId hoặc frqAnswerText
@@ -87,7 +97,7 @@ const FullTestScreen = () => {
           }
         }
       });
-      
+
       setAnswers(savedAnswers);
       console.log('Đã khôi phục answers:', savedAnswers);
     }
@@ -167,7 +177,10 @@ const FullTestScreen = () => {
         frqAnswerText: answers[question.examQuestionId]?.frqAnswerText || null,
       }));
 
-      await submitAttempt(attempt.examAttemptId, { answers: submissionAnswers });
+      await submitAttempt(attempt.examAttemptId, {
+        answers: submissionAnswers,
+        attemptSessionToken: attempt.attemptSessionToken
+      });
 
       // Reset button animation
       Animated.timing(submitButtonScale, {
@@ -178,28 +191,12 @@ const FullTestScreen = () => {
       }).start();
 
       setIsSubmitting(false);
-      setShowSuccess(true);
 
-      // Animate success message
-      Animated.parallel([
-        Animated.timing(successOpacity, {
-          toValue: 1,
-          duration: 500,
-          easing: Easing.ease,
-          useNativeDriver: true,
-        }),
-        Animated.spring(successScale, {
-          toValue: 1,
-          friction: 8,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      // Auto navigate back after showing success
-      setTimeout(() => {
-        navigation.goBack();
-      }, 2000);
+      // Navigate back to ExamLibrary with grading params to show modal there
+      navigation.navigate('ExamLibrary', {
+        gradingAttemptId: attempt.examAttemptId,
+        showGradingModal: true
+      });
 
     } catch (error) {
       console.error('Error submitting test:', error);
@@ -215,6 +212,51 @@ const FullTestScreen = () => {
 
       Alert.alert('Error', 'Failed to submit test. Please try again.');
     }
+  };
+
+  // Handle waiting for AI grading result
+  const handleWaitForGrading = async () => {
+    setIsWaitingForGrading(true);
+    setGradingError(null);
+    try {
+      const result = await subscribeAttemptResult(attempt.examAttemptId);
+      if (result) {
+        setGradingResult(result);
+      } else {
+        setGradingError('Không thể lấy kết quả. Vui lòng thử lại sau.');
+      }
+    } catch (error) {
+      console.error('Error getting grading result:', error);
+      setGradingError('Chấm điểm AI đang gặp sự cố. Kết quả sẽ được cập nhật sau.');
+    } finally {
+      setIsWaitingForGrading(false);
+    }
+  };
+
+  // Handle skip waiting and go back
+  const handleSkipGrading = () => {
+    setShowGradingModal(false);
+    setShowSuccess(true);
+
+    // Animate success message
+    Animated.parallel([
+      Animated.timing(successOpacity, {
+        toValue: 1,
+        duration: 500,
+        easing: Easing.ease,
+        useNativeDriver: true,
+      }),
+      Animated.spring(successScale, {
+        toValue: 1,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    setTimeout(() => {
+      navigation.goBack();
+    }, 2000);
   };
 
   // Handle answer selection
@@ -361,7 +403,7 @@ const FullTestScreen = () => {
                 <Text className="text-xs text-gray-500">Chưa lưu</Text>
               )}
             </View>
-            
+
             <TouchableOpacity
               onPress={saveNow}
               disabled={isSaving}
@@ -396,8 +438,8 @@ const FullTestScreen = () => {
       {/* Question Content */}
       <ScrollView className="flex-1 px-6"
         showsVerticalScrollIndicator={false}
-        // onScroll={handleScroll}
-        // scrollEventThrottle={16}
+      // onScroll={handleScroll}
+      // scrollEventThrottle={16}
       >
         <View className="bg-white rounded-2xl p-6 my-6 shadow-sm border border-gray-100">
           <Text className="text-xl font-bold text-gray-900 mb-6">
@@ -413,9 +455,10 @@ const FullTestScreen = () => {
                     <Text className="text-lg font-semibold text-gray-900 mb-3">
                       Câu {index + 1}:
                     </Text>
-                    <Text className="text-gray-700 leading-6 mb-4">
-                      {question.question.content}
-                    </Text>
+                    <LatexText
+                      content={question.question.content}
+                      textStyle={{ fontSize: 16, lineHeight: 24, color: '#374151' }}
+                    />
                     {question.question.answers && question.question.answers.length > 0 && (
                       <View className="flex flex-col gap-2">
                         {question.question.answers.map((answer, answerIndex) => {
@@ -424,18 +467,18 @@ const FullTestScreen = () => {
                             <TouchableOpacity
                               key={answer.id}
                               onPress={() => handleAnswerSelect(question.examQuestionId, answer.id)}
-                              className={`flex-row items-center p-3 rounded-lg border ${
-                                isSelected ? 'bg-teal-100 border-teal-400' : 'bg-white border-gray-300'
-                              }`}
+                              className={`flex-row items-center p-3 rounded-lg border ${isSelected ? 'bg-teal-100 border-teal-400' : 'bg-white border-gray-300'
+                                }`}
                             >
                               {isSelected ? (
                                 <CheckCircle size={20} color="#3CBCB2" />
                               ) : (
                                 <Circle size={20} color="#6B7280" />
                               )}
-                              <Text className={`ml-3 text-base ${isSelected ? 'text-teal-800 font-medium' : 'text-gray-700'}`}>
-                                {String.fromCharCode(65 + answerIndex)}. {answer.content}
-                              </Text>
+                              <LatexText
+                                content={`${String.fromCharCode(65 + answerIndex)}. ${answer.content}`}
+                                textStyle={{ marginLeft: 12, fontSize: 16, color: isSelected ? '#115e59' : '#374151', fontWeight: isSelected ? '500' : '400' }}
+                              />
                             </TouchableOpacity>
                           );
                         })}
@@ -458,17 +501,14 @@ const FullTestScreen = () => {
                     <Text className="text-lg font-semibold text-gray-900 mb-3">
                       Câu {mcqQuestions.length + index + 1}:
                     </Text>
-                    <Text className="text-gray-700 leading-6 mb-4">
-                      {question.question.content}
-                    </Text>
-                    <TextInput
-                      multiline
-                      numberOfLines={4}
-                      placeholder="Nhập câu trả lời của bạn..."
+                    <LatexText
+                      content={question.question.content}
+                      textStyle={{ fontSize: 16, lineHeight: 24, color: '#374151' }}
+                    />
+                    <MathKeyboard
                       value={answers[question.examQuestionId]?.frqAnswerText || ''}
                       onChangeText={(text) => handleFRQInput(question.examQuestionId, text)}
-                      className="bg-white border border-gray-300 rounded-lg p-3 text-gray-700 min-h-[100px]"
-                      textAlignVertical="top"
+                      placeholder="Nhập câu trả lời của bạn. Sử dụng bàn phím toán để thêm công thức..."
                     />
                   </View>
                 ))}
@@ -491,9 +531,8 @@ const FullTestScreen = () => {
             <TouchableOpacity
               onPress={submitTest}
               disabled={isSubmitting}
-              className={`px-6 py-4 rounded-xl items-center ${
-                isSubmitting ? 'bg-teal-300' : 'bg-teal-400'
-              }`}
+              className={`px-6 py-4 rounded-xl items-center ${isSubmitting ? 'bg-teal-300' : 'bg-teal-400'
+                }`}
             >
               {isSubmitting ? (
                 <View className="flex-row items-center">
@@ -521,6 +560,133 @@ const FullTestScreen = () => {
           </Text>
         </View>
       </ScrollView>
+
+      {/* AI Grading Modal */}
+      <Modal
+        visible={showGradingModal}
+        transparent
+        animationType="fade"
+        onRequestClose={handleSkipGrading}
+      >
+        <View style={{
+          flex: 1,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 20,
+        }}>
+          <View style={{
+            backgroundColor: 'white',
+            borderRadius: 20,
+            padding: 24,
+            width: '100%',
+            maxWidth: 350,
+          }}>
+            {/* Header */}
+            <View className="items-center mb-4">
+              <View className="w-16 h-16 bg-teal-100 rounded-full items-center justify-center mb-3">
+                <CheckCircle size={36} color="#3CBCB2" />
+              </View>
+              <Text className="text-xl font-bold text-gray-900 text-center">
+                Nộp bài thành công!
+              </Text>
+            </View>
+
+            {/* Content based on state */}
+            {!isWaitingForGrading && !gradingResult && !gradingError && (
+              <View>
+                <Text className="text-gray-600 text-center mb-4">
+                  AI đang chấm điểm bài làm của bạn. Bạn có muốn đợi kết quả không?
+                </Text>
+                <Text className="text-gray-500 text-sm text-center mb-6">
+                  (Đôi khi việc chấm điểm có thể mất vài phút hoặc cần chấm tay)
+                </Text>
+
+                <TouchableOpacity
+                  onPress={handleWaitForGrading}
+                  className="bg-teal-500 py-3 rounded-xl mb-3"
+                >
+                  <Text className="text-white text-center font-semibold">
+                    Đợi kết quả
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={handleSkipGrading}
+                  className="bg-gray-100 py-3 rounded-xl"
+                >
+                  <Text className="text-gray-700 text-center font-medium">
+                    Xem sau
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Loading state */}
+            {isWaitingForGrading && (
+              <View className="items-center py-4">
+                <ActivityIndicator size="large" color="#3CBCB2" />
+                <Text className="text-gray-600 text-center mt-4">
+                  Đang chờ AI chấm điểm...
+                </Text>
+                <Text className="text-gray-400 text-sm text-center mt-2">
+                  Vui lòng đợi trong giây lát
+                </Text>
+              </View>
+            )}
+
+            {/* Error state */}
+            {gradingError && (
+              <View>
+                <Text className="text-red-500 text-center mb-4">
+                  {gradingError}
+                </Text>
+                <TouchableOpacity
+                  onPress={handleWaitForGrading}
+                  className="bg-teal-500 py-3 rounded-xl mb-3"
+                >
+                  <Text className="text-white text-center font-semibold">
+                    Thử lại
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleSkipGrading}
+                  className="bg-gray-100 py-3 rounded-xl"
+                >
+                  <Text className="text-gray-700 text-center font-medium">
+                    Xem sau
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Result display */}
+            {gradingResult && (
+              <View>
+                <View className="bg-green-50 rounded-xl p-4 mb-4">
+                  <Text className="text-green-800 text-center text-lg font-bold mb-2">
+                    Điểm: {gradingResult.totalScore ?? gradingResult.score ?? 'N/A'} / {gradingResult.maxScore ?? attempt.passingScore ?? '100'}
+                  </Text>
+                  <Text className="text-green-600 text-center">
+                    {gradingResult.passed ? '✅ Đạt' : gradingResult.passed === false ? '❌ Chưa đạt' : 'Đã chấm xong'}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowGradingModal(false);
+                    navigation.goBack();
+                  }}
+                  className="bg-teal-500 py-3 rounded-xl"
+                >
+                  <Text className="text-white text-center font-semibold">
+                    Hoàn tất
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
 
       {/* Success Animation Overlay */}
       {showSuccess && (
