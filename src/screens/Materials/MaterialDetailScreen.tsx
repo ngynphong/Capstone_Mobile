@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,15 +11,19 @@ import {
   Linking,
   ImageBackground,
   Platform,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { RouteProp, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ResizeMode, Video } from 'expo-av';
+import { ResizeMode, Video, AVPlaybackStatus } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import type { MaterialStackParamList } from '../../types/types';
 import type { Lesson } from '../../types/lessonTypes';
 import { useMaterialDetail } from '../../hooks/useMaterialDetail';
+import useMaterialRating from '../../hooks/useMaterialRating';
+import { useAuth } from '../../context/AuthContext';
 
 type DetailRouteProp = RouteProp<MaterialStackParamList, 'MaterialDetail'>;
 type DetailNavProp = NativeStackNavigationProp<
@@ -35,6 +39,7 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
   const navigation = useNavigation<DetailNavProp>();
   const { material } = route.params;
   const learningMaterialId = material.learningMaterialId || material.id;
+  const { user } = useAuth();
 
   const {
     lessons: derivedLessons,
@@ -48,6 +53,204 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
   } = useMaterialDetail({ material, learningMaterialId });
 
   const [downloadingLessonId, setDownloadingLessonId] = useState<string | null>(null);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [hasRated, setHasRated] = useState(false);
+  const [isCheckingRating, setIsCheckingRating] = useState(false);
+  const videoRef = useRef<Video>(null);
+  const { 
+    createRating, 
+    fetchRatingByMaterialAndUser,
+    isLoading: isSubmittingRating 
+  } = useMaterialRating();
+
+  // Kiểm tra xem user đã đánh giá chưa khi component mount
+  useEffect(() => {
+    const checkExistingRating = async () => {
+      if (!user || !learningMaterialId) return;
+      
+      try {
+        setIsCheckingRating(true);
+        const existingRating = await fetchRatingByMaterialAndUser(
+          learningMaterialId,
+          user.id
+        );
+        if (existingRating) {
+          setHasRated(true);
+          // Đảm bảo modal không hiển thị nếu đã đánh giá
+          setShowRatingModal(false);
+        }
+      } catch (error: any) {
+        // Nếu không tìm thấy rating (404), coi như chưa đánh giá
+        if (error?.response?.status === 404 || error?.response?.data?.code === 1001) {
+          setHasRated(false);
+        } else {
+          // Lỗi khác, vẫn coi như chưa đánh giá
+          console.log('Error checking rating:', error);
+          setHasRated(false);
+        }
+      } finally {
+        setIsCheckingRating(false);
+      }
+    };
+
+    checkExistingRating();
+  }, [user, learningMaterialId, fetchRatingByMaterialAndUser]);
+
+  // Kiểm tra xem đây có phải là lesson cuối cùng không
+  const isLastLesson = () => {
+    if (!displayLesson || derivedLessons.length === 0) return false;
+    const lastLesson = derivedLessons[derivedLessons.length - 1];
+    return displayLesson.id === lastLesson.id;
+  };
+
+  // Xử lý khi video kết thúc
+  const handlePlaybackStatusUpdate = async (status: AVPlaybackStatus) => {
+    if (!status.isLoaded) return;
+
+    // Kiểm tra nếu video đã kết thúc và đây là lesson cuối cùng
+    if (status.didJustFinish && isLastLesson()) {
+      // Kiểm tra lại xem đã đánh giá chưa trước khi hiển thị modal
+      if (!user || !learningMaterialId) return;
+      
+      // Nếu đã biết là đã đánh giá rồi, không cần kiểm tra lại
+      if (hasRated) {
+        console.log('Already rated, skipping modal');
+        return;
+      }
+      
+      try {
+        console.log('Checking if user has rated:', { learningMaterialId, userId: user.id });
+        const existingRating = await fetchRatingByMaterialAndUser(
+          learningMaterialId,
+          user.id
+        );
+        
+        console.log('Rating check result:', existingRating);
+        
+        // Chỉ hiển thị modal nếu chưa đánh giá
+        if (!existingRating) {
+          console.log('No rating found, showing modal');
+          setShowRatingModal(true);
+        } else {
+          // Đánh dấu đã đánh giá và KHÔNG hiển thị modal
+          setHasRated(true);
+          console.log('User has already rated this material, NOT showing modal');
+        }
+      } catch (error: any) {
+        // Nếu lỗi là 404 hoặc không tìm thấy, hiển thị modal
+        if (error?.response?.status === 404 || error?.response?.data?.code === 1001) {
+          console.log('Rating not found (404), showing modal');
+          setShowRatingModal(true);
+        } else {
+          // Lỗi khác, vẫn hiển thị modal để user có thể đánh giá
+          console.log('Error checking rating, showing modal:', error);
+          setShowRatingModal(true);
+        }
+      }
+    }
+  };
+
+  // Xử lý submit rating
+  const handleSubmitRating = async () => {
+    console.log('handleSubmitRating called', { user, learningMaterialId, rating, hasRated });
+    
+    if (!user || !learningMaterialId) {
+      console.log('Missing user or learningMaterialId');
+      Alert.alert('Lỗi', 'Vui lòng đăng nhập để đánh giá.');
+      return;
+    }
+
+    // Kiểm tra xem đã đánh giá chưa trước khi submit
+    if (hasRated) {
+      console.log('Already rated, showing alert');
+      Alert.alert(
+        'Thông báo',
+        'You have already rated this learning material',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    try {
+      console.log('Submitting rating...', {
+        learningMaterialId,
+        userId: user.id,
+        rating,
+        comment: comment.trim() || undefined,
+      });
+
+      const result = await createRating({
+        learningMaterialId: learningMaterialId,
+        userId: user.id,
+        rating,
+        comment: comment.trim() || undefined,
+      });
+
+      console.log('Rating submitted successfully:', result);
+
+      // Đánh dấu đã đánh giá ngay lập tức
+      setHasRated(true);
+      
+      // Đóng modal trước khi hiển thị Alert
+      setShowRatingModal(false);
+      
+      // Reset form
+      setComment('');
+      setRating(5);
+      
+      // Hiển thị thông báo thành công sau khi đóng modal
+      setTimeout(() => {
+        Alert.alert('Thành công', 'Cảm ơn bạn đã đánh giá học liệu này!', [
+          { text: 'OK' },
+        ]);
+      }, 300);
+    } catch (error: any) {
+      console.error('Error submitting rating:', error);
+      console.error('Error details:', {
+        status: error?.response?.status,
+        data: error?.response?.data,
+        message: error?.message,
+      });
+      
+      // Kiểm tra nếu lỗi là "đã đánh giá rồi"
+      const errorMessage = error?.response?.data?.message || error?.message || '';
+      const errorCode = error?.response?.data?.code;
+      const statusCode = error?.response?.status;
+      
+      console.log('Error info:', { errorMessage, errorCode, statusCode });
+      
+      if (
+        errorMessage.includes('already rated') ||
+        errorMessage.includes('You have already rated') ||
+        errorMessage.includes('đã đánh giá') ||
+        statusCode === 409 ||
+        errorCode === 1055
+      ) {
+        setHasRated(true);
+        Alert.alert(
+          'Thông báo',
+          'You have already rated this learning material',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setShowRatingModal(false);
+                setComment('');
+                setRating(5);
+              },
+            },
+          ]
+        );
+      } else {
+        // Hiển thị lỗi
+        const displayMessage = errorMessage || 'Không thể gửi đánh giá. Vui lòng thử lại.';
+        console.log('Showing error alert:', displayMessage);
+        Alert.alert('Lỗi', displayMessage, [{ text: 'OK' }]);
+      }
+    }
+  };
 
   const handleOpenPdf = async (lesson: Lesson) => {
     if (lesson.documentUrl) {
@@ -187,12 +390,14 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
               <ActivityIndicator color="#3CBCB2" size="large" />
             ) : videoSource ? (
               <Video
+                ref={videoRef}
                 source={videoSource}
                 style={styles.videoPlayer}
                 useNativeControls
                 resizeMode={ResizeMode.CONTAIN}
                 // @ts-ignore - expo-av Video works on web but has deprecation warning
                 webStyle={{ width: '100%', height: '100%' }}
+                onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
                 onError={(error) => {
                   console.error('Video playback error:', error);
 
@@ -280,6 +485,77 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
           )}
         </View>
       </ScrollView>
+
+      {/* Rating Modal */}
+      <Modal
+        transparent
+        visible={showRatingModal}
+        animationType="fade"
+        onRequestClose={() => setShowRatingModal(false)}
+      >
+        <View style={styles.ratingModalOverlay}>
+          <View style={styles.ratingModalContent}>
+            <Text style={styles.ratingModalTitle}>Đánh giá học liệu</Text>
+            <Text style={styles.ratingModalSubtitle}>
+              Bạn đã hoàn thành học liệu "{material.title}". Hãy chia sẻ đánh giá của bạn!
+            </Text>
+
+            {/* Star Rating */}
+            <View style={styles.starRatingContainer}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity
+                  key={star}
+                  onPress={() => setRating(star)}
+                  style={styles.starButton}
+                >
+                  <Text style={styles.starIcon}>
+                    {star <= rating ? '⭐' : '☆'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={styles.ratingText}>{rating} sao</Text>
+
+            {/* Comment Input */}
+            <TextInput
+              style={styles.commentInput}
+              placeholder="Chia sẻ nhận xét của bạn (tùy chọn)..."
+              placeholderTextColor="#9CA3AF"
+              multiline
+              numberOfLines={4}
+              value={comment}
+              onChangeText={setComment}
+              textAlignVertical="top"
+            />
+
+            {/* Action Buttons */}
+            <View style={styles.ratingModalActions}>
+              <TouchableOpacity
+                style={styles.ratingSecondaryBtn}
+                onPress={() => {
+                  setShowRatingModal(false);
+                  setComment('');
+                  setRating(5);
+                }}
+                disabled={isSubmittingRating}
+              >
+                <Text style={styles.ratingSecondaryText}>Bỏ qua</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.ratingPrimaryBtn, isSubmittingRating && styles.primaryBtnDisabled]}
+                onPress={handleSubmitRating}
+                disabled={isSubmittingRating}
+              >
+                {isSubmittingRating ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.ratingPrimaryText}>Gửi đánh giá</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -454,6 +730,95 @@ const styles = StyleSheet.create({
   },
   disabledButtonText: {
     color: '#6B7280',
+  },
+  ratingModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ratingModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    width: '85%',
+    maxWidth: 400,
+  },
+  ratingModalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  ratingModalSubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  starRatingContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  starButton: {
+    padding: 4,
+  },
+  starIcon: {
+    fontSize: 32,
+  },
+  ratingText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#3CBCB2',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  commentInput: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 14,
+    color: '#111827',
+    minHeight: 100,
+    marginBottom: 20,
+    backgroundColor: '#F9FAFB',
+  },
+  ratingModalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  ratingSecondaryBtn: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  ratingSecondaryText: {
+    color: '#111827',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  ratingPrimaryBtn: {
+    flex: 1,
+    backgroundColor: '#3CBCB2',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  ratingPrimaryText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  primaryBtnDisabled: {
+    opacity: 0.6,
   },
 });
 

@@ -5,14 +5,24 @@ import { useScroll } from '../../context/ScrollContext';
 import TokenBalanceCard from '../../components/Store/TokenBalanceCard';
 import TokenPackages from '../../components/Store/TokenPackages';
 import TransactionHistory from '../../components/Store/TransactionHistory';
+import usePayments from '../../hooks/usePayments';
 
 const StoreScreen = () => {
   const { user, refreshUser } = useAuth();
   const { handleScroll } = useScroll();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const { payments, isLoading: isLoadingPayments, fetchPaymentsByUser } = usePayments();
 
-  const tokenBalance = user?.tokenBalance || 0;
+  // Ưu tiên sử dụng amount từ API payments, fallback về user tokenBalance
+  const tokenBalance = payments?.amount ?? user?.tokenBalance ?? 0;
+
+  // Gọi API payments khi component mount
+  useEffect(() => {
+    fetchPaymentsByUser().catch((error) => {
+      console.error('Failed to fetch payments:', error);
+    });
+  }, [fetchPaymentsByUser]);
 
   const handleTokenPurchased = (tokens: number) => {
     // Update user token balance (simulate)
@@ -26,7 +36,10 @@ const StoreScreen = () => {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refreshUser();
+      await Promise.all([
+        refreshUser(),
+        fetchPaymentsByUser(),
+      ]);
       setRefreshTrigger(prev => prev + 1);
     } catch (error) {
       console.error('Failed to refresh store data:', error);
@@ -68,7 +81,7 @@ const StoreScreen = () => {
           {/* Token Balance Card */}
           <TokenBalanceCard
             tokenBalance={tokenBalance}
-            isLoading={isRefreshing}
+            isLoading={isRefreshing || isLoadingPayments}
           />
 
           {/* Quick actions */}

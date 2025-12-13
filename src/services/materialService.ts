@@ -1,6 +1,12 @@
 import type { AxiosResponse } from 'axios';
 import axiosInstance from '../configs/axios';
-import type { MaterialResponse } from '../types/material';
+import type {
+  MaterialResponse,
+  MaterialRatingPayload,
+  MaterialRating,
+  MaterialRatingsResponse,
+  MaterialRatingStatisticsResponse,
+} from '../types/material';
 
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || '').replace(/\/$/, '');
 const PLACEHOLDER_IMAGE =
@@ -42,6 +48,89 @@ const MaterialService = {
     }
     const safeName = encodeURIComponent(fileName.trim());
     return `${API_BASE_URL}/${safeName}/materials`;
+  },
+
+  /**
+   * POST /learning-materials/register/{learningMaterialId}
+   * Đăng ký học liệu cho học sinh.
+   * Tạo permission với tiêu đề học liệu và cấp quyền cho học sinh.
+   */
+  registerMaterial(
+    learningMaterialId: string,
+  ): Promise<AxiosResponse<unknown>> {
+    return axiosInstance.post(
+      `/learning-materials/register/${learningMaterialId}`,
+    );
+  },
+
+  /**
+   * GET /learning-materials/registered
+   * Lấy danh sách học liệu đã đăng ký của học sinh hiện tại.
+   */
+  getRegisteredMaterials(
+    pageNo: number = 0,
+    pageSize: number = 100,
+  ): Promise<AxiosResponse<MaterialResponse>> {
+    return axiosInstance.get('/learning-materials/registered', {
+      params: { pageNo, pageSize },
+    });
+  },
+
+  /**
+   * POST /api/learning-material-ratings
+   * Tạo đánh giá cho học liệu.
+   */
+  createMaterialRating(
+    payload: MaterialRatingPayload,
+  ): Promise<AxiosResponse<MaterialRatingsResponse>> {
+    return axiosInstance.post('/api/learning-material-ratings', payload);
+  },
+
+  /**
+   * GET /api/learning-material-ratings/user/{userId}
+   * Lấy tất cả đánh giá của một user.
+   */
+  getRatingsByUser(
+    userId: string,
+  ): Promise<AxiosResponse<MaterialRatingsResponse>> {
+    return axiosInstance.get(`/api/learning-material-ratings/user/${userId}`);
+  },
+
+  /**
+   * GET /api/learning-material-ratings/material/{materialId}
+   * Lấy tất cả đánh giá của một học liệu.
+   */
+  getRatingsByMaterial(
+    materialId: string,
+  ): Promise<AxiosResponse<MaterialRatingsResponse>> {
+    return axiosInstance.get(
+      `/api/learning-material-ratings/material/${materialId}`,
+    );
+  },
+
+  /**
+   * GET /api/learning-material-ratings/material/{materialId}/user/{userId}
+   * Lấy đánh giá của một user cho một học liệu cụ thể.
+   */
+  getRatingByMaterialAndUser(
+    materialId: string,
+    userId: string,
+  ): Promise<AxiosResponse<MaterialRatingsResponse>> {
+    return axiosInstance.get(
+      `/api/learning-material-ratings/material/${materialId}/user/${userId}`,
+    );
+  },
+
+  /**
+   * GET /api/learning-material-ratings/material/{materialId}/statistics
+   * Lấy thống kê đánh giá của một học liệu.
+   */
+  getMaterialRatingStatistics(
+    materialId: string,
+  ): Promise<AxiosResponse<MaterialRatingStatisticsResponse>> {
+    return axiosInstance.get(
+      `/api/learning-material-ratings/material/${materialId}/statistics`,
+    );
   },
 };
 

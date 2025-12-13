@@ -12,13 +12,19 @@ import {
   ScrollView,
   Image,
   Pressable,
+  Alert,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import useMaterial from "../../hooks/useMaterial";
 import { Material } from "../../types/material";
 import { MaterialStackParamList } from "../../types/types";
 import useMaterialImageSource from "../../hooks/useMaterialImageSource";
+import useMaterialRegister from "../../hooks/useMaterialRegister";
+import MaterialService from "../../services/materialService";
+
+const REGISTERED_MATERIALS_KEY = '@registered_materials';
 
 
 const MaterialList = () => {
@@ -31,12 +37,59 @@ const MaterialList = () => {
     refreshMaterials,
   } = useMaterial();
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [registeredMaterials, setRegisteredMaterials] = useState<Set<string>>(new Set());
   const navigation =
     useNavigation<NativeStackNavigationProp<MaterialStackParamList>>();
   const { source: modalImageSource } = useMaterialImageSource(selectedMaterial?.fileImage);
+  const { registerMaterial, isLoading: isRegistering, error: registerError } = useMaterialRegister();
 
-  /** Gọi API khi component mount */
+  // Hàm lưu danh sách đã đăng ký vào AsyncStorage
+  const saveRegisteredMaterials = async (materials: Set<string>) => {
+    try {
+      const materialsArray = Array.from(materials);
+      await AsyncStorage.setItem(REGISTERED_MATERIALS_KEY, JSON.stringify(materialsArray));
+      console.log('Saved registered materials to storage:', materialsArray);
+    } catch (error) {
+      console.error('Error saving registered materials:', error);
+    }
+  };
+
+  // Load danh sách đã đăng ký từ API khi component mount
   useEffect(() => {
+    const loadRegisteredMaterials = async () => {
+      try {
+        // Gọi API để lấy danh sách đã đăng ký
+        const response = await MaterialService.getRegisteredMaterials(0, 100);
+        const registeredList = response.data.data.items || [];
+        
+        // Tạo Set từ danh sách ID của materials đã đăng ký
+        const registeredIds = new Set(
+          registeredList.map((material: Material) => material.id || material.learningMaterialId).filter(Boolean)
+        );
+        
+        setRegisteredMaterials(registeredIds);
+        console.log('Loaded registered materials from API:', Array.from(registeredIds));
+        
+        // Lưu vào AsyncStorage để cache
+        await saveRegisteredMaterials(registeredIds);
+      } catch (error) {
+        console.error('Error loading registered materials from API:', error);
+        // Fallback: Load từ AsyncStorage nếu API fail
+        try {
+          const stored = await AsyncStorage.getItem(REGISTERED_MATERIALS_KEY);
+          if (stored) {
+            const materialsArray = JSON.parse(stored);
+            setRegisteredMaterials(new Set(materialsArray));
+            console.log('Loaded registered materials from storage (fallback):', materialsArray);
+          }
+        } catch (storageError) {
+          console.error('Error loading from storage:', storageError);
+        }
+      }
+    };
+
+    loadRegisteredMaterials();
     fetchMaterials();
   }, [fetchMaterials]);
 
@@ -61,12 +114,88 @@ const MaterialList = () => {
 
   const handleEnroll = () => {
     if (!selectedMaterial) return;
-    const material = selectedMaterial;
-    closeModal();
-    navigation.navigate("MaterialDetail", { material });
+    
+    // Nếu đã đăng ký rồi, điều hướng trực tiếp
+    if (registeredMaterials.has(selectedMaterial.id)) {
+      closeModal();
+      navigation.navigate("MaterialDetail", { material: selectedMaterial });
+      return;
+    }
+    
+    // Hiển thị modal xác nhận
+    setShowConfirmModal(true);
   };
 
-  const closeModal = () => setSelectedMaterial(null);
+  const handleConfirmRegister = async () => {
+    if (!selectedMaterial) return;
+    
+    try {
+      // Gọi API đăng ký học liệu
+      console.log('Calling registerMaterial API with ID:', selectedMaterial.id);
+      await registerMaterial(selectedMaterial.id);
+      console.log('Register material success');
+      
+      // Đánh dấu đã đăng ký và lưu vào storage
+      setRegisteredMaterials(prev => {
+        const newSet = new Set(prev).add(selectedMaterial.id);
+        saveRegisteredMaterials(newSet);
+        return newSet;
+      });
+      
+      // Đóng modal xác nhận
+      setShowConfirmModal(false);
+      
+      // Thành công
+      Alert.alert(
+        "Thành công",
+        `Bạn đã đăng ký học liệu "${selectedMaterial.title}" thành công!`,
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              closeModal();
+              navigation.navigate("MaterialDetail", { material: selectedMaterial });
+            },
+          },
+        ]
+      );
+    } catch (error: any) {
+      console.error('Register material error:', error);
+      
+      // Kiểm tra nếu lỗi là "đã đăng ký rồi" (code 1055)
+      const errorCode = error?.response?.data?.code;
+      const errorMessage = error?.response?.data?.message || error?.message || registerError;
+      
+      if (errorCode === 1055 || errorMessage?.includes('already registered') || errorMessage?.includes('đã đăng ký')) {
+        // Đánh dấu đã đăng ký ngay lập tức và lưu vào storage
+        setRegisteredMaterials(prev => {
+          const newSet = new Set(prev).add(selectedMaterial.id);
+          saveRegisteredMaterials(newSet);
+          return newSet;
+        });
+        console.log('Material already registered, marking as registered:', selectedMaterial.id);
+        
+        // Đóng modal xác nhận
+        setShowConfirmModal(false);
+        
+        // Điều hướng trực tiếp
+        closeModal();
+        navigation.navigate("MaterialDetail", { material: selectedMaterial });
+        return;
+      }
+      
+      // Đóng modal xác nhận khi có lỗi khác
+      setShowConfirmModal(false);
+      
+      // Hiển thị thông báo lỗi
+      Alert.alert("Lỗi", errorMessage || "Không thể đăng ký học liệu. Vui lòng thử lại.", [{ text: "OK" }]);
+    }
+  };
+
+  const closeModal = () => {
+    setSelectedMaterial(null);
+    setShowConfirmModal(false);
+  };
 
   /** Khi có dữ liệu */
   return (
@@ -95,8 +224,7 @@ const MaterialList = () => {
         onRequestClose={closeModal}
       >
         <Pressable style={styles.modalOverlay} onPress={closeModal}>
-          <TouchableWithoutFeedback>
-            <View style={styles.modalContent}>
+          <View style={styles.modalContent}>
             <ScrollView
               contentContainerStyle={{ paddingBottom: 24 }}
               showsVerticalScrollIndicator={false}
@@ -126,16 +254,73 @@ const MaterialList = () => {
             </ScrollView>
 
             <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.secondaryBtn} onPress={closeModal}>
+              <TouchableOpacity 
+                style={styles.secondaryBtn} 
+                onPress={closeModal}
+                disabled={isRegistering}
+              >
                 <Text style={styles.secondaryText}>Close</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.primaryBtn} onPress={handleEnroll}>
-                <Text style={styles.primaryText}>Enroll Now</Text>
+              <TouchableOpacity 
+                style={[styles.primaryBtn, isRegistering && styles.primaryBtnDisabled]} 
+                onPress={handleEnroll}
+                disabled={isRegistering}
+              >
+                {isRegistering ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.primaryText}>
+                    {selectedMaterial && registeredMaterials.has(selectedMaterial.id) 
+                      ? 'Continue' 
+                      : 'Register'}
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
-            </View>
-          </TouchableWithoutFeedback>
+          </View>
         </Pressable>
+      </Modal>
+
+      {/* Confirmation Modal */}
+      <Modal
+        transparent
+        visible={showConfirmModal}
+        animationType="fade"
+        onRequestClose={() => setShowConfirmModal(false)}
+      >
+        <View style={styles.confirmModalOverlay}>
+          <View style={styles.confirmModalContent}>
+            <Text style={styles.confirmModalTitle}>Xác nhận đăng ký</Text>
+            <Text style={styles.confirmModalMessage}>
+              Bạn có chắc chắn muốn đăng ký học liệu "{selectedMaterial?.title}"?
+            </Text>
+            {selectedMaterial?.typeName === 'TOKEN' && (
+              <Text style={styles.confirmModalWarning}>
+                ⚠️ Học liệu này yêu cầu thanh toán bằng TOKEN. Số dư của bạn sẽ bị trừ khi đăng ký.
+              </Text>
+            )}
+            <View style={styles.confirmModalActions}>
+              <TouchableOpacity
+                style={styles.confirmSecondaryBtn}
+                onPress={() => setShowConfirmModal(false)}
+                disabled={isRegistering}
+              >
+                <Text style={styles.confirmSecondaryText}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmPrimaryBtn, isRegistering && styles.primaryBtnDisabled]}
+                onPress={handleConfirmRegister}
+                disabled={isRegistering}
+              >
+                {isRegistering ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.confirmPrimaryText}>Đăng ký</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </Modal>
     </>
   );
@@ -270,6 +455,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: "center",
   },
+  primaryBtnDisabled: {
+    opacity: 0.6,
+  },
   primaryText: {
     color: "#fff",
     fontWeight: "600",
@@ -284,6 +472,69 @@ const styles = StyleSheet.create({
   },
   secondaryText: {
     color: "#111827",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  confirmModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  confirmModalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 24,
+    width: "85%",
+    maxWidth: 400,
+  },
+  confirmModalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#111",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  confirmModalMessage: {
+    fontSize: 16,
+    color: "#374151",
+    lineHeight: 22,
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  confirmModalWarning: {
+    fontSize: 14,
+    color: "#DC2626",
+    lineHeight: 20,
+    marginBottom: 24,
+    textAlign: "center",
+    fontWeight: "500",
+  },
+  confirmModalActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  confirmSecondaryBtn: {
+    flex: 1,
+    backgroundColor: "#F3F4F6",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  confirmSecondaryText: {
+    color: "#111827",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  confirmPrimaryBtn: {
+    flex: 1,
+    backgroundColor: "#3CBCB2",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  confirmPrimaryText: {
+    color: "#fff",
     fontWeight: "600",
     fontSize: 16,
   },
