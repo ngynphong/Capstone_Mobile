@@ -10,6 +10,7 @@ import {
   TransactionsResponse,
   UserTokenTransactionsResponse,
   MomoCreateResponse,
+  PaymentsByUserResponse,
 } from '../types/storeTypes';
 
 // Mock data for development - replace with actual API calls
@@ -237,4 +238,17 @@ export const createMomoPayment = async (
     { params: { amount } },
   );
   return response.data;
+};
+
+// Lấy payments theo user hiện tại - API GET /payments/by-user
+export const getPaymentsByUser = async (): Promise<PaymentsByUserResponse> => {
+  try {
+    const response = await axiosInstance.get<PaymentsByUserResponse>(
+      '/payments/by-user',
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch payments by user:', error);
+    throw error;
+  }
 };

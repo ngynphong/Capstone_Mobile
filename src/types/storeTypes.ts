@@ -106,6 +106,13 @@ export interface UserTokenTransactionsResponse {
 // API /payment/momo/create - tạo giao dịch thanh toán MoMo (query: amount)
 export type MomoCreateResponse = Record<string, unknown>;
 
+// API /payments/by-user - lấy payments theo user
+export interface PaymentsByUserResponse {
+  code: number;
+  message: string;
+  data: Record<string, unknown>;
+}
+
 // Store Screen State
 export interface StoreState {
   tokenBalance: number;
