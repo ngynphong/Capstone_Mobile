@@ -107,10 +107,21 @@ export interface UserTokenTransactionsResponse {
 export type MomoCreateResponse = Record<string, unknown>;
 
 // API /payments/by-user - lấy payments theo user
+export interface PaymentData {
+  id: string;
+  paymentNumber: string;
+  userId: string;
+  amount: number;
+  status: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PaymentsByUserResponse {
   code: number;
   message: string;
-  data: Record<string, unknown>;
+  data: PaymentData;
 }
 
 // Store Screen State

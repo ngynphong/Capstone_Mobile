@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
 import { getPaymentsByUser } from '../services/paymentService';
-import type { PaymentsByUserResponse } from '../types/storeTypes';
+import type { PaymentsByUserResponse, PaymentData } from '../types/storeTypes';
 
 export const usePayments = () => {
-  const [payments, setPayments] = useState<Record<string, unknown> | null>(null);
+  const [payments, setPayments] = useState<PaymentData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
