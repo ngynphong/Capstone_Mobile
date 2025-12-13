@@ -12,6 +12,8 @@ import type {
   RateAttemptPayload,
   AttemptResultDetail,
   SaveProgressPayload,
+  ExamRatingsQueryParams,
+  ExamRatingsResponse,
 } from '../types/examTypes';
 import type { AxiosResponse } from 'axios';
 
@@ -126,11 +128,35 @@ const ExamService = {
   /**
    * 🔹 Lấy kết quả chi tiết của một lần thi (subscribe).
    * (GET /exam-attempts/{attemptId}/subscribe)
+   * This is an SSE endpoint - may return "Waiting for grading..." if not ready
    */
-  subscribe: (
+  subscribe: async (
     attemptId: string,
   ): Promise<AxiosResponse<ApiResponse<AttemptResultDetail>>> => {
-    return axiosInstance.get(`/exam-attempts/${attemptId}/subscribe`);
+    const response = await axiosInstance.get(`/exam-attempts/${attemptId}/subscribe`, {
+      responseType: 'text', // Handle SSE text response
+    });
+
+    // Check if response is SSE text indicating grading is in progress
+    const responseText = typeof response.data === 'string' ? response.data : '';
+    if (responseText.includes('Waiting for grading') || responseText.includes('event:subscribed')) {
+      // Grading is still in progress
+      const error = new Error('GRADING_IN_PROGRESS');
+      throw error;
+    }
+
+    // Try to parse as JSON if it's a valid result
+    if (typeof response.data === 'string') {
+      try {
+        response.data = JSON.parse(response.data);
+      } catch (e) {
+        // If cannot parse, it's likely still waiting
+        const error = new Error('GRADING_IN_PROGRESS');
+        throw error;
+      }
+    }
+
+    return response;
   },
 
   /**
@@ -142,6 +168,13 @@ const ExamService = {
     data: SaveProgressPayload
   ): Promise<AxiosResponse<ApiResponse<string>>> { // Giả sử data trả về là string hoặc object đơn giản
     return axiosInstance.post(`/exam-attempts/${attemptId}/save-progress`, data);
+  },
+
+  getTemplateRatings(
+    templateId: string,
+    params?: ExamRatingsQueryParams
+  ): Promise<AxiosResponse<ExamRatingsResponse>> {
+    return axiosInstance.get(`/exam-templates/ratings/${templateId}`, { params });
   },
 };
 

@@ -10,7 +10,7 @@ import {
   Alert,
   Modal,
 } from 'react-native';
-import { BookOpen, Clock, Users, Star, CheckCircle } from 'lucide-react-native';
+import { BookOpen, Clock, Users, Star, CheckCircle, AlertCircle } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 
 import { ExamTemplate } from '../../types/examTypes';
@@ -19,6 +19,7 @@ import { useSubject } from '../../hooks/useSubject';
 import { useBrowseExams } from '../../hooks/useExam';
 import { useExamAttempt } from '../../hooks/useExamAttempt';
 import { useAppToast } from '../../utils/toast';
+import { useTeachersList } from '../../hooks/useTeachersList';
 import CombinedTestBuilder from '../../components/Exam/CombinedTestBuilder';
 
 const ExamLibraryScreen = () => {
@@ -30,7 +31,11 @@ const ExamLibraryScreen = () => {
 
   const [mode, setMode] = useState<'individual' | 'combined'>('individual');
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('all');
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string>('all');
   const [refreshing, setRefreshing] = useState(false);
+
+  // Teachers list
+  const { teachers } = useTeachersList({ pageSize: 50 });
 
   // AI Grading modal state
   const route = useRoute();
@@ -48,14 +53,17 @@ const ExamLibraryScreen = () => {
     fetchAllSubjects();
   }, [fetchAllSubjects]);
 
-  // Filter exams based on selected subject
+  // Filter exams based on selected subject and teacher
   useEffect(() => {
-    if (selectedSubjectId === 'all') {
-      applyFilters({});
-    } else {
-      applyFilters({ subject: selectedSubjectId });
+    const filters: { subject?: string; teacherId?: string } = {};
+    if (selectedSubjectId !== 'all') {
+      filters.subject = selectedSubjectId;
     }
-  }, [selectedSubjectId, applyFilters]);
+    if (selectedTeacherId !== 'all') {
+      filters.teacherId = selectedTeacherId;
+    }
+    applyFilters(filters);
+  }, [selectedSubjectId, selectedTeacherId, applyFilters]);
 
   // Handle grading modal from navigation params
   useEffect(() => {
@@ -68,18 +76,26 @@ const ExamLibraryScreen = () => {
       // Clear the navigation params
       navigation.setParams({ gradingAttemptId: undefined, showGradingModal: undefined });
 
-      // Subscribe to grading result
-      subscribeAttemptResult(gradingAttemptId)
+      // Subscribe to grading result with 30 second timeout
+      subscribeAttemptResult(gradingAttemptId, 30000)
         .then((result) => {
           if (result) {
             setGradingResult(result);
           } else {
-            setGradingError('Không thể lấy kết quả. Vui lòng thử lại sau.');
+            setGradingError('Failed to get results. Please try again later.');
           }
         })
         .catch((err) => {
           console.error('Error getting grading result:', err);
-          setGradingError('Chấm điểm AI đang gặp sự cố. Kết quả sẽ được cập nhật sau.');
+          if (err.message === 'GRADING_TIMEOUT') {
+            // Timeout - show friendly message
+            setGradingError('AI is grading your exam. Results will be updated in "Exam History" when completed.');
+          } else if (err.message === 'GRADING_IN_PROGRESS') {
+            // AI is still processing - show waiting message
+            setGradingError('AI is processing your exam. Results will be updated in "Exam History" when completed.');
+          } else {
+            setGradingError('AI grading encountered an issue. Results will be updated in "Exam History".');
+          }
         })
         .finally(() => {
           setIsWaitingForGrading(false);
@@ -245,7 +261,7 @@ const ExamLibraryScreen = () => {
 
       // Handle specific 400 error for subjects with no exams
       if (error?.response?.status === 400) {
-        toast.error('Môn thi bạn chọn chưa có bài thi');
+        toast.error('No exams available for the selected subjects');
       } else {
         Alert.alert('Error', 'Failed to start auto combined test. Please try again.');
       }
@@ -258,9 +274,9 @@ const ExamLibraryScreen = () => {
       <View className="bg-white pt-12 pb-4 px-6 shadow-sm">
         <View className="flex-row justify-between items-center mb-4">
           <View>
-            <Text className="text-2xl font-bold text-gray-900">Thư viện bài thi</Text>
+            <Text className="text-2xl font-bold text-gray-900">Exam Library</Text>
             <Text className="text-gray-600 text-sm mt-1">
-              {mode === 'individual' ? `${templates.length} bài thi có sẵn` : 'Tạo bộ đề tổ hợp'}
+              {mode === 'individual' ? `${templates.length} exams available` : 'Create combined test'}
             </Text>
           </View>
         </View>
@@ -272,7 +288,7 @@ const ExamLibraryScreen = () => {
             className={`flex-1 py-2 rounded-lg ${mode === 'individual' ? 'bg-teal-400' : ''}`}
           >
             <Text className={`font-semibold text-center text-sm ${mode === 'individual' ? 'text-white' : 'text-gray-600'}`}>
-              Thi lẻ
+              Individual
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -280,43 +296,78 @@ const ExamLibraryScreen = () => {
             className={`flex-1 py-2 rounded-lg ${mode === 'combined' ? 'bg-teal-400' : ''}`}
           >
             <Text className={`font-semibold text-center text-sm ${mode === 'combined' ? 'text-white' : 'text-gray-600'}`}>
-              Thi tổ hợp
+              Combined
             </Text>
           </TouchableOpacity>
         </View>
 
         {/* Subject Filter - Only show for individual mode */}
         {mode === 'individual' && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
-            <TouchableOpacity
-              onPress={() => setSelectedSubjectId('all')}
-              className={`mr-3 px-4 py-2 rounded-full border ${selectedSubjectId === 'all'
-                ? 'bg-teal-400 border-teal-400'
-                : 'bg-white border-gray-300'
-                }`}
-            >
-              <Text className={`text-sm font-medium ${selectedSubjectId === 'all' ? 'text-white' : 'text-gray-700'
-                }`}>
-                Tất cả môn
-              </Text>
-            </TouchableOpacity>
-
-            {subjects && subjects.map((subject) => (
+          <View>
+            {/* Subject row */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2">
               <TouchableOpacity
-                key={subject.id}
-                onPress={() => setSelectedSubjectId(subject.id)}
-                className={`mr-3 px-4 py-2 rounded-full border ${selectedSubjectId === subject.id
+                onPress={() => setSelectedSubjectId('all')}
+                className={`mr-3 px-4 py-2 rounded-full border ${selectedSubjectId === 'all'
                   ? 'bg-teal-400 border-teal-400'
                   : 'bg-white border-gray-300'
                   }`}
               >
-                <Text className={`text-sm font-medium ${selectedSubjectId === subject.id ? 'text-white' : 'text-gray-700'
+                <Text className={`text-sm font-medium ${selectedSubjectId === 'all' ? 'text-white' : 'text-gray-700'
                   }`}>
-                  {subject.name}
+                  All Subjects
                 </Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
+
+              {subjects && subjects.map((subject) => (
+                <TouchableOpacity
+                  key={subject.id}
+                  onPress={() => setSelectedSubjectId(subject.id)}
+                  className={`mr-3 px-4 py-2 rounded-full border ${selectedSubjectId === subject.id
+                    ? 'bg-teal-400 border-teal-400'
+                    : 'bg-white border-gray-300'
+                    }`}
+                >
+                  <Text className={`text-sm font-medium ${selectedSubjectId === subject.id ? 'text-white' : 'text-gray-700'
+                    }`}>
+                    {subject.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Teacher row */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2">
+              <TouchableOpacity
+                onPress={() => setSelectedTeacherId('all')}
+                className={`mr-3 px-3 py-2 rounded-full border ${selectedTeacherId === 'all'
+                  ? 'bg-teal-400 border-teal-400'
+                  : 'bg-white border-gray-300'
+                  }`}
+              >
+                <Text className={`text-xs font-medium ${selectedTeacherId === 'all' ? 'text-white' : 'text-gray-700'
+                  }`}>
+                  All Teachers
+                </Text>
+              </TouchableOpacity>
+
+              {teachers && teachers.map((teacher) => (
+                <TouchableOpacity
+                  key={teacher.id}
+                  onPress={() => setSelectedTeacherId(teacher.id)}
+                  className={`mr-3 px-3 py-2 rounded-full border ${selectedTeacherId === teacher.id
+                    ? 'bg-teal-400 border-teal-400'
+                    : 'bg-white border-gray-300'
+                    }`}
+                >
+                  <Text className={`text-xs font-medium ${selectedTeacherId === teacher.id ? 'text-white' : 'text-gray-700'
+                    }`}>
+                    {teacher.firstName} {teacher.lastName}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
         )}
       </View>
 
@@ -384,7 +435,7 @@ const ExamLibraryScreen = () => {
                 <CheckCircle size={36} color="#3CBCB2" />
               </View>
               <Text className="text-xl font-bold text-gray-900 text-center">
-                Nộp bài thành công!
+                Submitted Successfully!
               </Text>
             </View>
 
@@ -393,26 +444,46 @@ const ExamLibraryScreen = () => {
               <View className="items-center py-4">
                 <ActivityIndicator size="large" color="#3CBCB2" />
                 <Text className="text-gray-600 text-center mt-4">
-                  Đang chờ AI chấm điểm...
+                  Waiting for AI grading...
                 </Text>
                 <Text className="text-gray-400 text-sm text-center mt-2">
-                  Vui lòng đợi trong giây lát
+                  Please wait a moment
                 </Text>
               </View>
             )}
 
-            {/* Error state */}
+            {/* Error/Timeout/In-Progress state */}
             {gradingError && !isWaitingForGrading && (
               <View>
-                <Text className="text-red-500 text-center mb-4">
+                {/* Icon based on error type */}
+                <View className="items-center mb-3">
+                  {gradingError.includes('is grading') || gradingError.includes('is processing') ? (
+                    <View className="w-12 h-12 bg-amber-100 rounded-full items-center justify-center">
+                      <Clock size={24} color="#F59E0B" />
+                    </View>
+                  ) : (
+                    <View className="w-12 h-12 bg-red-100 rounded-full items-center justify-center">
+                      <AlertCircle size={24} color="#EF4444" />
+                    </View>
+                  )}
+                </View>
+
+                <Text className={`text-center mb-4 ${gradingError.includes('is grading') || gradingError.includes('is processing') ? 'text-amber-700' : 'text-red-500'}`}>
                   {gradingError}
                 </Text>
+
                 <TouchableOpacity
-                  onPress={() => setShowGradingModal(false)}
+                  onPress={() => {
+                    setShowGradingModal(false);
+                    // Navigate to exam history if it's a timeout or in-progress
+                    if (gradingError.includes('Exam History')) {
+                      navigation.navigate('Profile', { screen: 'ExamResults' });
+                    }
+                  }}
                   className="bg-teal-500 py-3 rounded-xl"
                 >
                   <Text className="text-white text-center font-semibold">
-                    Đóng
+                    {gradingError.includes('Exam History') ? 'View Exam History' : 'Close'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -423,10 +494,10 @@ const ExamLibraryScreen = () => {
               <View>
                 <View className="bg-green-50 rounded-xl p-4 mb-4">
                   <Text className="text-green-800 text-center text-lg font-bold mb-2">
-                    Điểm: {gradingResult.totalScore ?? gradingResult.score ?? 'N/A'} / {gradingResult.maxScore ?? '100'}
+                    Score: {gradingResult.totalScore ?? gradingResult.score ?? 'N/A'} / {gradingResult.maxScore ?? '100'}
                   </Text>
                   <Text className="text-green-600 text-center">
-                    {gradingResult.passed ? '✅ Đạt' : gradingResult.passed === false ? '❌ Chưa đạt' : 'Đã chấm xong'}
+                    {gradingResult.passed ? '✅ Passed' : gradingResult.passed === false ? '❌ Failed' : 'Grading completed'}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -434,7 +505,7 @@ const ExamLibraryScreen = () => {
                   className="bg-teal-500 py-3 rounded-xl"
                 >
                   <Text className="text-white text-center font-semibold">
-                    Hoàn tất
+                    Done
                   </Text>
                 </TouchableOpacity>
               </View>
