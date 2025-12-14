@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, Modal } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { ChevronLeft, Calendar, Clock, CheckCircle, Target, Award, TrendingUp, Star } from 'lucide-react-native';
+import { ChevronLeft, Calendar, Clock, CheckCircle, Target, Award, TrendingUp, Star, RefreshCw, X } from 'lucide-react-native';
 
 import { useScroll } from '../../context/ScrollContext';
 import { useExamAttempt } from '../../hooks/useExamAttempt';
@@ -13,11 +13,14 @@ const ExamResultDetailScreen = () => {
   const { attemptId } = route.params as { attemptId: string };
 
   const { handleScroll } = useScroll();
-  const { fetchAttemptResult, rateAttempt, attemptResultDetail, loading } = useExamAttempt();
+  const { fetchAttemptResult, rateAttempt, requestReview, attemptResultDetail, loading } = useExamAttempt();
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [showRating, setShowRating] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewReason, setReviewReason] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     if (attemptId) {
@@ -51,6 +54,27 @@ const ExamResultDetailScreen = () => {
     }
   };
 
+  const handleRequestReview = async () => {
+    if (!reviewReason.trim()) {
+      Alert.alert('Error', 'Please provide a reason for the re-grade request.');
+      return;
+    }
+
+    setSubmittingReview(true);
+    try {
+      const success = await requestReview(attemptId, { reason: reviewReason });
+      if (success) {
+        Alert.alert('Success', 'Your re-grade request has been submitted to the teacher.');
+        setShowReviewModal(false);
+        setReviewReason('');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to submit re-grade request. Please try again.');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   const formatTimeSpent = (startTime: string, endTime: string) => {
     const start = new Date(startTime);
     const end = new Date(endTime);
@@ -60,17 +84,13 @@ const ExamResultDetailScreen = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-green-600';
-    if (score >= 80) return 'text-blue-600';
-    if (score >= 70) return 'text-yellow-600';
+  const getScoreColor = (score: number, passingScore: number) => {
+    if (score >= passingScore) return 'text-green-600';
     return 'text-red-600';
   };
 
-  const getScoreBgColor = (score: number) => {
-    if (score >= 90) return 'bg-green-50 border-green-200';
-    if (score >= 80) return 'bg-blue-50 border-blue-200';
-    if (score >= 70) return 'bg-yellow-50 border-yellow-200';
+  const getScoreBgColor = (score: number, passingScore: number) => {
+    if (score >= passingScore) return 'bg-green-50 border-green-200';
     return 'bg-red-50 border-red-200';
   };
 
@@ -152,7 +172,7 @@ const ExamResultDetailScreen = () => {
             </View>
             <View className="items-end">
               <Text className="text-sm text-gray-600">Your Score</Text>
-              <Text className={`text-2xl font-bold ${getScoreColor(attempt.score)}`}>
+              <Text className={`text-2xl font-bold ${getScoreColor(attempt.score, attempt.passingScore)}`}>
                 {attempt.score}%
               </Text>
             </View>
@@ -160,12 +180,12 @@ const ExamResultDetailScreen = () => {
         </View>
 
         {/* Score Overview */}
-        <View className={`bg-white rounded-xl p-6 mb-4 border ${getScoreBgColor(attempt.score)}`}>
+        <View className={`bg-white rounded-xl p-6 mb-4 border ${getScoreBgColor(attempt.score, attempt.passingScore)}`}>
           <View className="items-center mb-4">
-            <View className={`w-20 h-20 rounded-full items-center justify-center mb-3 ${getScoreBgColor(attempt.score)}`}>
+            <View className={`w-20 h-20 rounded-full items-center justify-center mb-3 ${getScoreBgColor(attempt.score, attempt.passingScore)}`}>
               <Award size={32} color={attempt.score >= attempt.passingScore ? '#10B981' : '#EF4444'} />
             </View>
-            <Text className={`text-3xl font-bold ${getScoreColor(attempt.score)}`}>
+            <Text className={`text-3xl font-bold ${getScoreColor(attempt.score, attempt.passingScore)}`}>
               {attempt.score >= attempt.passingScore ? 'PASSED' : 'FAILED'}
             </Text>
             <Text className="text-gray-600 text-center mt-1">
@@ -318,6 +338,25 @@ const ExamResultDetailScreen = () => {
           )}
         </View>
 
+        {/* Request Re-grade Section - Only show when status is COMPLETED */}
+        {attempt.status === 'COMPLETED' && (
+          <View className="bg-white rounded-xl p-6 mb-4">
+            <Text className="text-lg font-semibold text-gray-900 mb-4">Request Re-grade</Text>
+            <TouchableOpacity
+              onPress={() => setShowReviewModal(true)}
+              className="bg-orange-50 border-2 border-dashed border-orange-200 rounded-xl p-4 flex-row items-center justify-center"
+            >
+              <RefreshCw size={24} color="#F97316" />
+              <Text className="text-orange-700 font-medium ml-2">
+                Request Teacher to Re-grade
+              </Text>
+            </TouchableOpacity>
+            <Text className="text-gray-500 text-xs mt-2 text-center">
+              If you believe your answers were graded incorrectly, you can request a review from your teacher.
+            </Text>
+          </View>
+        )}
+
         {/* Tips for Improvement */}
         {attempt.score < 70 && (
           <View className="bg-blue-50 rounded-xl p-4 mb-4">
@@ -342,6 +381,61 @@ const ExamResultDetailScreen = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Request Re-grade Modal */}
+      <Modal
+        visible={showReviewModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowReviewModal(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View className="bg-white rounded-2xl p-6 w-full max-w-md">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-lg font-bold text-gray-900">Request Re-grade</Text>
+              <TouchableOpacity onPress={() => setShowReviewModal(false)}>
+                <X size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            <Text className="text-gray-600 mb-4">
+              Please provide a reason for your re-grade request. The teacher will review your submission and may adjust the score if necessary.
+            </Text>
+
+            <TextInput
+              multiline
+              numberOfLines={4}
+              placeholder="Enter your reason for requesting a re-grade..."
+              value={reviewReason}
+              onChangeText={setReviewReason}
+              className="bg-gray-50 border border-gray-300 rounded-lg p-3 text-gray-700 mb-4"
+              textAlignVertical="top"
+            />
+
+            <View className="flex-row gap-2">
+              <TouchableOpacity
+                onPress={() => {
+                  setShowReviewModal(false);
+                  setReviewReason('');
+                }}
+                className="flex-1 bg-gray-200 py-3 rounded-lg"
+                disabled={submittingReview}
+              >
+                <Text className="text-gray-700 font-medium text-center">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleRequestReview}
+                className={`flex-1 py-3 rounded-lg ${submittingReview ? 'bg-orange-300' : 'bg-orange-500'}`}
+                disabled={submittingReview}
+              >
+                <Text className="text-white font-medium text-center">
+                  {submittingReview ? 'Submitting...' : 'Submit Request'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

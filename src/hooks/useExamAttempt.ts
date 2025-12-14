@@ -5,6 +5,7 @@ import ExamService from '../services/examService'; // Import service tổng củ
 import type {
   ActiveExam,
   ExamResult,
+  RequestReviewPayload,
   SaveProgressPayload,
   SubmitExamPayload,
 } from '../types/examTypes';
@@ -417,6 +418,28 @@ export const useExamAttempt = () => {
     []
   );
 
+  const requestReview = useCallback(
+    async (attemptId: string, payload: RequestReviewPayload) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await ExamService.requestReview(attemptId, payload);
+        if (res.data.code === 0 || res.data.code === 1000) {
+          toast.success("Request review successfully!");
+          return true;
+        } else {
+          throw new Error(res.data.message || "Failed to request review");
+        }
+      } catch (err) {
+        handleError(err, "Failed to request review");
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
 
   return {
     loading,
@@ -434,6 +457,7 @@ export const useExamAttempt = () => {
     saveProgress,
     restoreSavedAnswers,
     hasSavedAnswers,
+    requestReview
   };
 };
 

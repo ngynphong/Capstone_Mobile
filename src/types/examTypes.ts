@@ -323,3 +323,7 @@ export interface ExamRatingsQueryParams {
   pageSize?: number;
   sorts?: string[];
 }
+
+export interface RequestReviewPayload {
+  reason: string;
+}

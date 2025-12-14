@@ -14,6 +14,7 @@ import type {
   SaveProgressPayload,
   ExamRatingsQueryParams,
   ExamRatingsResponse,
+  RequestReviewPayload,
 } from '../types/examTypes';
 import type { AxiosResponse } from 'axios';
 
@@ -175,6 +176,13 @@ const ExamService = {
     params?: ExamRatingsQueryParams
   ): Promise<AxiosResponse<ExamRatingsResponse>> {
     return axiosInstance.get(`/exam-templates/ratings/${templateId}`, { params });
+  },
+
+  requestReview(
+    attemptId: string,
+    data: RequestReviewPayload
+  ): Promise<AxiosResponse<ApiResponse<string>>> {
+    return axiosInstance.post(`/exam-attempts/${attemptId}/request-review`, data);
   },
 };
 
