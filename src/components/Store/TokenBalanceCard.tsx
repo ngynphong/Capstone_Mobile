@@ -18,7 +18,7 @@ const TokenBalanceCard: React.FC<TokenBalanceCardProps> = ({
       <View className="flex-row items-center justify-between">
         <View className="flex-1">
           <Text className="text-white text-sm font-medium mb-1" style={{ opacity: 0.9 }}>
-            Số dư hiện tại
+            Current Balance
           </Text>
           {isLoading ? (
             <ActivityIndicator size="large" color="white" />
@@ -35,7 +35,7 @@ const TokenBalanceCard: React.FC<TokenBalanceCardProps> = ({
       </View>
 
       <Text className="text-white text-sm mt-3" style={{ opacity: 0.8 }}>
-        Sử dụng số dư để mua khoá học, đề thi và tài liệu trong hệ thống.
+        Use your balance to buy courses, exams and materials in the system.
       </Text>
     </View>
   );

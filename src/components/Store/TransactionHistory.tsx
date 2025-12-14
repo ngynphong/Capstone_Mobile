@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, RefreshControl, Alert } from 'react-native';
-import { Transaction } from '../../types/storeTypes';
-import { getTransactionHistory } from '../../services/paymentService';
+import { Transaction, WalletTransaction } from '../../types/storeTypes';
+import { getTransactionHistory, getAllTransactions } from '../../services/paymentService';
 import TransactionItem from './TransactionItem';
 
 interface TransactionHistoryProps {
@@ -26,19 +26,68 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
       const page = reset ? 1 : currentPage;
       setIsLoading(reset);
 
-      const response = await getTransactionHistory(page, 10);  
-      console.log(response.data.transactions)
-      if (response.code === 1000) {
-        const newTransactions = response.data.transactions;       
-        if (reset) {
-          setTransactions(newTransactions);
-        } else {
-          setTransactions(prev => [...prev, ...newTransactions]);
-        }
+      // Gọi cả 2 API: user transactions và all transactions
+      const [userTransactionsResponse, allTransactions] = await Promise.all([
+        getTransactionHistory(page, 10),
+        getAllTransactions().catch(err => {
+          console.log('getAllTransactions error (non-critical):', err);
+          return []; // Nếu lỗi thì trả về array rỗng
+        }),
+      ]);
 
-        setCurrentPage(page);
-        setHasMorePages(page < response.data.totalPages);
+      console.log('User transactions:', userTransactionsResponse.data.transactions);
+      console.log('All transactions:', allTransactions);
+
+      // Map allTransactions từ WalletTransaction sang Transaction format
+      const mappedAllTransactions: Transaction[] = allTransactions.map((wt: WalletTransaction) => ({
+        id: wt.id,
+        type: (wt.type?.name === 'subscription' 
+          ? 'subscription' 
+          : wt.type?.name === 'refund' 
+            ? 'refund' 
+            : 'token_purchase') as Transaction['type'],
+        amount: wt.amount,
+        currency: 'VND',
+        description: wt.description ?? '',
+        status: (['pending', 'completed', 'failed', 'cancelled'].includes(wt.status) 
+          ? wt.status 
+          : 'pending') as Transaction['status'],
+        createdAt: wt.createdAt,
+        referenceId: wt.externalReference,
+      }));
+
+      // Merge transactions từ cả 2 API, ưu tiên user transactions
+      let newTransactions: Transaction[] = [];
+      
+      if (userTransactionsResponse.code === 1000) {
+        newTransactions = userTransactionsResponse.data.transactions;
       }
+
+      // Thêm các transactions từ allTransactions mà chưa có trong userTransactions
+      const userTransactionIds = new Set(newTransactions.map(t => t.id));
+      const additionalTransactions = mappedAllTransactions.filter(
+        t => !userTransactionIds.has(t.id)
+      );
+
+      // Merge và sort theo createdAt (mới nhất trước)
+      const mergedTransactions = [...newTransactions, ...additionalTransactions].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      if (reset) {
+        setTransactions(mergedTransactions);
+      } else {
+        setTransactions(prev => {
+          const existingIds = new Set(prev.map(t => t.id));
+          const uniqueNew = mergedTransactions.filter(t => !existingIds.has(t.id));
+          return [...prev, ...uniqueNew].sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        });
+      }
+
+      setCurrentPage(page);
+      setHasMorePages(page < userTransactionsResponse.data.totalPages);
     } catch (error) {
       console.error('Failed to load transaction history:', error);
       if (reset) {
@@ -87,7 +136,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
             No transactions yet
           </Text>
           <Text className="text-gray-400 text-center text-sm">
-            Your token purchases and subscriptions will appear here
+            Your VND purchases and subscriptions will appear here
           </Text>
         </View>
       </View>

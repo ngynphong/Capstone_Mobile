@@ -18,6 +18,34 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ transaction }) => {
     });
   };
 
+  const formatAmount = (amount: number, currency: string = 'VND') => {
+    // Format số tiền theo định dạng VND
+    const formattedAmount = Math.abs(amount).toLocaleString('vi-VN');
+    return `${formattedAmount} ₫`;
+  };
+
+  // Kiểm tra loại giao dịch dựa trên description và referenceId
+  const getTransactionType = () => {
+    const description = transaction.description || '';
+    const referenceId = transaction.referenceId || '';
+    const combinedText = `${description} ${referenceId}`.toUpperCase();
+    
+    // Kiểm tra TOP UP WALLET (nạp tiền) - màu xanh và dấu +
+    if (combinedText.includes('TOP UP WALLET')) {
+      return { color: 'text-green-600', sign: '+' };
+    }
+    
+    // Kiểm tra PAYMENT LEARNING (thanh toán học liệu) - màu đỏ và dấu -
+    if (combinedText.includes('PAYMENT LEARNING')) {
+      return { color: 'text-red-600', sign: '-' };
+    }
+    
+    // Mặc định: refund thì xanh và +, còn lại thì đỏ và -
+    return transaction.type === 'refund' 
+      ? { color: 'text-green-600', sign: '+' }
+      : { color: 'text-gray-900', sign: '-' };
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
@@ -38,7 +66,7 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ transaction }) => {
       case 'completed':
         return '✓';
       case 'pending':
-        return '⏳';
+        return ''; // Bỏ icon đồng hồ cát
       case 'failed':
         return '✗';
       case 'cancelled':
@@ -91,17 +119,22 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ transaction }) => {
 
         <View className="items-end">
           {/* Amount */}
-          <Text className={`font-bold text-base mb-1 ${
-            transaction.type === 'refund' ? 'text-green-600' : 'text-gray-900'
-          }`}>
-            {transaction.type === 'refund' ? '+' : '-'}${transaction.amount.toFixed(2)}
-          </Text>
+          {(() => {
+            const transactionType = getTransactionType();
+            return (
+              <Text className={`font-bold text-base mb-1 ${transactionType.color}`}>
+                {transactionType.sign}{formatAmount(transaction.amount, transaction.currency)}
+              </Text>
+            );
+          })()}
 
           {/* Status */}
           <View className="flex-row items-center">
-            <Text className={`text-xs mr-1 ${getStatusColor(transaction.status)}`}>
-              {getStatusIcon(transaction.status)}
-            </Text>
+            {getStatusIcon(transaction.status) && (
+              <Text className={`text-xs mr-1 ${getStatusColor(transaction.status)}`}>
+                {getStatusIcon(transaction.status)}
+              </Text>
+            )}
             <Text className={`text-xs font-medium ${getStatusColor(transaction.status)}`}>
               {transaction.status.toUpperCase()}
             </Text>

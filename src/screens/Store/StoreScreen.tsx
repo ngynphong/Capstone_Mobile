@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, RefreshControl, Alert } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, Alert, TouchableOpacity } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useScroll } from '../../context/ScrollContext';
 import TokenBalanceCard from '../../components/Store/TokenBalanceCard';
-import TokenPackages from '../../components/Store/TokenPackages';
 import TransactionHistory from '../../components/Store/TransactionHistory';
 import usePayments from '../../hooks/usePayments';
 
@@ -23,15 +22,6 @@ const StoreScreen = () => {
       console.error('Failed to fetch payments:', error);
     });
   }, [fetchPaymentsByUser]);
-
-  const handleTokenPurchased = (tokens: number) => {
-    // Update user token balance (simulate)
-    if (user) {
-      // In a real app, this would be handled by the payment service callback
-      // For now, we'll just refresh the user data
-      refreshUser();
-    }
-  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -75,7 +65,7 @@ const StoreScreen = () => {
             My Wallet
           </Text>
           <Text className="text-gray-600 mb-4">
-            Quản lý số dư và lịch sử giao dịch của bạn
+            Manage your balance and transaction history
           </Text>
 
           {/* Token Balance Card */}
@@ -85,18 +75,21 @@ const StoreScreen = () => {
           />
 
           {/* Quick actions */}
-          <View className="mt-2 flex-row space-x-3">
-            <View className="flex-1 bg-emerald-500 rounded-2xl py-3 items-center justify-center shadow-md">
-              <Text className="text-white font-semibold">Nạp tiền</Text>
-            </View>
-            <View className="flex-1 bg-sky-500 rounded-2xl py-3 items-center justify-center shadow-md">
-              <Text className="text-white font-semibold">Rút / Đổi thưởng</Text>
-            </View>
+          <View className="mt-2">
+            <TouchableOpacity 
+              className="flex-1 bg-emerald-500 rounded-2xl py-3 items-center justify-center shadow-md"
+              onPress={() => {
+                Alert.alert(
+                  'Notification',
+                  'This feature must be used on web',
+                  [{ text: 'OK' }]
+                );
+              }}
+            >
+              <Text className="text-white font-semibold">Deposit</Text>
+            </TouchableOpacity>
           </View>
         </View>
-
-        {/* Token Packages - gợi ý gói nạp */}
-        <TokenPackages onTokenPurchased={handleTokenPurchased} />
 
         {/* Transaction History */}
         <TransactionHistory refreshTrigger={refreshTrigger} />
