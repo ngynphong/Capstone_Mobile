@@ -11,6 +11,7 @@ import {
   UserTokenTransactionsResponse,
   MomoCreateResponse,
   PaymentsByUserResponse,
+  WalletTransaction,
 } from '../types/storeTypes';
 
 // Mock data for development - replace with actual API calls
