@@ -158,7 +158,7 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
     
     if (!user || !learningMaterialId) {
       console.log('Missing user or learningMaterialId');
-      Alert.alert('Lỗi', 'Vui lòng đăng nhập để đánh giá.');
+      Alert.alert('Error', 'Please login to rate.');
       return;
     }
 
@@ -200,9 +200,9 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
       setComment('');
       setRating(5);
       
-      // Hiển thị thông báo thành công sau khi đóng modal
+      // Show success message after closing modal
       setTimeout(() => {
-        Alert.alert('Thành công', 'Cảm ơn bạn đã đánh giá học liệu này!', [
+        Alert.alert('Success', 'Thank you for rating this learning material!', [
           { text: 'OK' },
         ]);
       }, 300);
@@ -244,10 +244,10 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
           ]
         );
       } else {
-        // Hiển thị lỗi
-        const displayMessage = errorMessage || 'Không thể gửi đánh giá. Vui lòng thử lại.';
+        // Show error
+        const displayMessage = errorMessage || 'Unable to submit rating. Please try again.';
         console.log('Showing error alert:', displayMessage);
-        Alert.alert('Lỗi', displayMessage, [{ text: 'OK' }]);
+        Alert.alert('Error', displayMessage, [{ text: 'OK' }]);
       }
     }
   };
@@ -259,7 +259,7 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
     }
 
     if (!lesson.fileName) {
-      Alert.alert('Không có PDF', 'Bài học này chưa có tài liệu PDF.');
+      Alert.alert('No PDF', 'This lesson does not have a PDF document.');
       return;
     }
 
@@ -311,7 +311,7 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
       }
     } catch (error) {
       console.error('PDF error', error);
-      Alert.alert('Lỗi', 'Không thể mở PDF. Vui lòng thử lại.');
+      Alert.alert('Error', 'Unable to open PDF. Please try again.');
     } finally {
       setDownloadingLessonId(null);
     }
@@ -327,7 +327,7 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
           <Text style={styles.lessonTitle}>{lesson.title}</Text>
           {lesson.durationInSeconds ? (
             <Text style={styles.lessonDuration}>
-              {Math.ceil(lesson.durationInSeconds / 60)} phút
+              {Math.ceil(lesson.durationInSeconds / 60)} min
             </Text>
           ) : null}
         </View>
@@ -439,7 +439,7 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
             ) : (
               <View style={styles.videoPlaceholder}>
                 <Text style={styles.videoPlaceholderText}>
-                  {videoError || 'Chưa có video cho bài học này.'}
+                  {videoError || 'No video available for this lesson.'}
                 </Text>
               </View>
             )}
@@ -447,8 +447,8 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
           <View style={styles.heroContent}>
             <Text style={styles.durationBadge}>
               {displayLesson?.durationInSeconds
-                ? `${Math.ceil(displayLesson.durationInSeconds / 60)} phút`
-                : 'Bài học'}
+                ? `${Math.ceil(displayLesson.durationInSeconds / 60)} min`
+                : 'Lesson'}
             </Text>
             <Text style={styles.heroTitle}>
               {displayLesson?.title || material.title}
@@ -478,7 +478,7 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
             <ActivityIndicator color="#3CBCB2" />
           ) : derivedLessons.length === 0 ? (
             <Text style={styles.emptyText}>
-              Chưa có bài học nào cho học liệu này.
+              No lessons available for this material.
             </Text>
           ) : (
             derivedLessons.map(renderLesson)
@@ -495,9 +495,9 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
       >
         <View style={styles.ratingModalOverlay}>
           <View style={styles.ratingModalContent}>
-            <Text style={styles.ratingModalTitle}>Đánh giá học liệu</Text>
+            <Text style={styles.ratingModalTitle}>Rate Learning Material</Text>
             <Text style={styles.ratingModalSubtitle}>
-              Bạn đã hoàn thành học liệu "{material.title}". Hãy chia sẻ đánh giá của bạn!
+              You have completed "{material.title}". Please share your rating!
             </Text>
 
             {/* Star Rating */}
@@ -514,12 +514,12 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={styles.ratingText}>{rating} sao</Text>
+            <Text style={styles.ratingText}>{rating} star{rating !== 1 ? 's' : ''}</Text>
 
             {/* Comment Input */}
             <TextInput
               style={styles.commentInput}
-              placeholder="Chia sẻ nhận xét của bạn (tùy chọn)..."
+              placeholder="Share your comments (optional)..."
               placeholderTextColor="#9CA3AF"
               multiline
               numberOfLines={4}
@@ -539,7 +539,7 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
                 }}
                 disabled={isSubmittingRating}
               >
-                <Text style={styles.ratingSecondaryText}>Bỏ qua</Text>
+                <Text style={styles.ratingSecondaryText}>Skip</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.ratingPrimaryBtn, isSubmittingRating && styles.primaryBtnDisabled]}
@@ -549,7 +549,7 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
                 {isSubmittingRating ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text style={styles.ratingPrimaryText}>Gửi đánh giá</Text>
+                  <Text style={styles.ratingPrimaryText}>Submit Rating</Text>
                 )}
               </TouchableOpacity>
             </View>

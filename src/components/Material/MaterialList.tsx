@@ -145,10 +145,10 @@ const MaterialList = () => {
       // Đóng modal xác nhận
       setShowConfirmModal(false);
       
-      // Thành công
+      // Success
       Alert.alert(
-        "Thành công",
-        `Bạn đã đăng ký học liệu "${selectedMaterial.title}" thành công!`,
+        "Success",
+        `You have successfully registered for "${selectedMaterial.title}"!`,
         [
           {
             text: "OK",
@@ -187,8 +187,8 @@ const MaterialList = () => {
       // Đóng modal xác nhận khi có lỗi khác
       setShowConfirmModal(false);
       
-      // Hiển thị thông báo lỗi
-      Alert.alert("Lỗi", errorMessage || "Không thể đăng ký học liệu. Vui lòng thử lại.", [{ text: "OK" }]);
+      // Show error message
+      Alert.alert("Error", errorMessage || "Unable to register for material. Please try again.", [{ text: "OK" }]);
     }
   };
 
@@ -290,13 +290,13 @@ const MaterialList = () => {
       >
         <View style={styles.confirmModalOverlay}>
           <View style={styles.confirmModalContent}>
-            <Text style={styles.confirmModalTitle}>Xác nhận đăng ký</Text>
+            <Text style={styles.confirmModalTitle}>Confirm Registration</Text>
             <Text style={styles.confirmModalMessage}>
-              Bạn có chắc chắn muốn đăng ký học liệu "{selectedMaterial?.title}"?
+              Are you sure you want to register for "{selectedMaterial?.title}"?
             </Text>
             {selectedMaterial?.typeName === 'TOKEN' && (
               <Text style={styles.confirmModalWarning}>
-                ⚠️ Học liệu này yêu cầu thanh toán bằng TOKEN. Số dư của bạn sẽ bị trừ khi đăng ký.
+                ⚠️ This material requires payment with VND. Your balance will be deducted when registering.
               </Text>
             )}
             <View style={styles.confirmModalActions}>
@@ -305,7 +305,7 @@ const MaterialList = () => {
                 onPress={() => setShowConfirmModal(false)}
                 disabled={isRegistering}
               >
-                <Text style={styles.confirmSecondaryText}>Hủy</Text>
+                <Text style={styles.confirmSecondaryText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.confirmPrimaryBtn, isRegistering && styles.primaryBtnDisabled]}
@@ -315,7 +315,7 @@ const MaterialList = () => {
                 {isRegistering ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text style={styles.confirmPrimaryText}>Đăng ký</Text>
+                  <Text style={styles.confirmPrimaryText}>Register</Text>
                 )}
               </TouchableOpacity>
             </View>

@@ -194,7 +194,14 @@ export const getTransactionHistory = async (
       '/api/token-transaction/user',
     );
     const body = response.data;
-    const walletTransactions = Array.isArray(body.data) ? body.data : [];
+    
+    // Xử lý cả trường hợp data là array hoặc object
+    const walletTransactions = Array.isArray(body.data) 
+      ? body.data 
+      : body.data 
+        ? [body.data] 
+        : [];
+    
     const list: Transaction[] = walletTransactions.map((wt) => ({
       id: wt.id,
       type: (wt.type?.name === 'subscription' ? 'subscription' : wt.type?.name === 'refund' ? 'refund' : 'token_purchase') as Transaction['type'],
@@ -223,9 +230,18 @@ export const getTransactionHistory = async (
 };
 
 // Lấy toàn bộ transactions (nếu cần cho admin / thống kê) - API /api/transactions
-export const getAllTransactions = async (): Promise<TransactionsResponse> => {
-  const response = await axiosInstance.get<TransactionsResponse>('/api/transactions');
-  return response.data;
+export const getAllTransactions = async (): Promise<WalletTransaction[]> => {
+  try {
+    const response = await axiosInstance.get<TransactionsResponse>('/api/transactions');
+    // API trả về array trực tiếp hoặc có thể wrap trong response.data
+    const transactions = Array.isArray(response.data) 
+      ? response.data 
+      : (response.data as any)?.data || [];
+    return transactions;
+  } catch (error) {
+    console.error('Failed to fetch all transactions:', error);
+    throw error;
+  }
 };
 
 // Tạo giao dịch thanh toán MoMo - API /payment/momo/create?amount=
