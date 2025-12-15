@@ -3,6 +3,7 @@ export interface Material {
   learningMaterialId?: string;
   title: string;
   description: string;
+  price?: number;
   fileImage?: string;
   contentUrl: string;
   typeId: string;

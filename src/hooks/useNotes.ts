@@ -17,6 +17,11 @@ const normalizeNotesResponse = (response: NoteListApiResponse | Note[] | undefin
     return rawData;
   }
 
+  // Trường hợp backend trả về 1 object Note đơn lẻ (không paging)
+  if ((rawData as any)?.id && (rawData as any)?.lessonId) {
+    return [rawData as Note];
+  }
+
   const pageInfo = rawData as PageInfo<Note>;
   return pageInfo.items || pageInfo.content || [];
 };

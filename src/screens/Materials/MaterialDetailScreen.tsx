@@ -4,18 +4,15 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
   ActivityIndicator,
   Alert,
   Linking,
-  ImageBackground,
   Platform,
-  TextInput,
 } from 'react-native';
 import { RouteProp, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ResizeMode, Video, AVPlaybackStatus } from 'expo-av';
+import { AVPlaybackStatus, Video } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import type { MaterialStackParamList } from '../../types/types';
@@ -25,6 +22,9 @@ import useMaterialRating from '../../hooks/useMaterialRating';
 import { useAuth } from '../../context/AuthContext';
 import NoteModal from '../../components/Material/NoteModal';
 import RatingModal from '../../components/Material/RatingModal';
+import { useNotes } from '../../hooks/useNotes';
+import MaterialHero from '../../components/Material/MaterialHero';
+import LessonList from '../../components/Material/LessonList';
 
 type DetailRouteProp = RouteProp<MaterialStackParamList, 'MaterialDetail'>;
 type DetailNavProp = NativeStackNavigationProp<
@@ -53,6 +53,13 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
     getLessonAssetDownloadConfig,
   } = useMaterialDetail({ material, learningMaterialId });
 
+  const {
+    fetchNotesByLessonAndUser,
+    createNote,
+    updateNote,
+    deleteNote,
+  } = useNotes();
+
   const [downloadingLessonId, setDownloadingLessonId] = useState<string | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [rating, setRating] = useState(5);
@@ -62,6 +69,9 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [noteLessonTitle, setNoteLessonTitle] = useState('');
+  const [noteLessonId, setNoteLessonId] = useState<string | null>(null);
+  const [existingNoteId, setExistingNoteId] = useState<string | null>(null);
+  const [isSavingNote, setIsSavingNote] = useState(false);
   const videoRef = useRef<Video>(null);
   const { 
     createRating, 
@@ -211,20 +221,12 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
         ]);
       }, 300);
     } catch (error: any) {
-      console.error('Error submitting rating:', error);
-      console.error('Error details:', {
-        status: error?.response?.status,
-        data: error?.response?.data,
-        message: error?.message,
-      });
-      
-      // Kiểm tra nếu lỗi là "đã đánh giá rồi"
+      // Gom logic xử lý lỗi rating cho gọn
       const errorMessage = error?.response?.data?.message || error?.message || '';
       const errorCode = error?.response?.data?.code;
       const statusCode = error?.response?.status;
-      
-      console.log('Error info:', { errorMessage, errorCode, statusCode });
-      
+
+      // Trường hợp "đã đánh giá rồi"
       if (
         errorMessage.includes('already rated') ||
         errorMessage.includes('You have already rated') ||
@@ -321,72 +323,93 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
     }
   };
 
-  const renderLesson = (lesson: Lesson) => {
-    const hasVideo = Boolean(lesson.videoUrl || lesson.fileName);
-    const hasDocument = Boolean(lesson.documentUrl || lesson.fileName);
+  const handleOpenNote = async (lesson: Lesson) => {
+    if (!user) {
+      Alert.alert('Thông báo', 'Bạn cần đăng nhập để tạo ghi chú.');
+      return;
+    }
 
-    return (
-      <View key={lesson.id} style={styles.lessonCard}>
-        <View style={styles.lessonHeader}>
-          <Text style={styles.lessonTitle}>{lesson.title}</Text>
-          {lesson.durationInSeconds ? (
-            <Text style={styles.lessonDuration}>
-              {Math.ceil(lesson.durationInSeconds / 60)} min
-            </Text>
-          ) : null}
-        </View>
-        {lesson.description ? (
-          <Text style={styles.lessonDescription}>{lesson.description}</Text>
-        ) : null}
-        <View style={styles.lessonActions}>
-          <TouchableOpacity
-            style={[styles.lessonButton, !hasVideo && styles.disabledButton]}
-            disabled={!hasVideo}
-            onPress={() =>
-              hasVideo ? setActiveVideoLessonId(lesson.id) : undefined
-            }
-          >
-            <Text
-              style={[
-                styles.lessonButtonText,
-                !hasVideo && styles.disabledButtonText,
-              ]}
-            >
-              Video
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.lessonButton, !hasDocument && styles.disabledButton]}
-            disabled={!hasDocument || downloadingLessonId === lesson.id}
-            onPress={() => handleOpenPdf(lesson)}
-          >
-            {downloadingLessonId === lesson.id ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text
-                style={[
-                  styles.lessonButtonText,
-                  !hasDocument && styles.disabledButtonText,
-                ]}
-              >
-                PDF
-              </Text>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.lessonButton}
-            onPress={() =>
-              {
-                setNoteLessonTitle(lesson.title);
-                setShowNoteModal(true);
-              }
-            }
-          >
-            <Text style={styles.lessonButtonText}>Note</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
+    try {
+      setNoteLessonTitle(lesson.title);
+      setNoteLessonId(lesson.id);
+      setShowNoteModal(true);
+
+      const userNotes = await fetchNotesByLessonAndUser(lesson.id, user.id);
+      console.log('Fetched notes for lesson', lesson.id, userNotes);
+      if (userNotes && userNotes.length > 0) {
+        const firstNote: any = userNotes[0];
+        setExistingNoteId(firstNote.id);
+        // backend dùng field description cho nội dung ghi chú
+        setNoteText(firstNote.description || firstNote.content || '');
+      } else {
+        setExistingNoteId(null);
+        setNoteText('');
+      }
+    } catch (error: any) {
+      console.log('Error loading note:', error);
+      Alert.alert(
+        'Lỗi',
+        error?.response?.data?.message ||
+          error?.message ||
+          'Không thể tải ghi chú. Vui lòng thử lại.',
+      );
+      setExistingNoteId(null);
+      setNoteText('');
+    }
+  };
+
+  const handleSaveNote = async () => {
+    if (!noteLessonId || !user) {
+      setShowNoteModal(false);
+      return;
+    }
+
+    try {
+      setIsSavingNote(true);
+
+      // Nếu đang có note cũ và user xóa hết nội dung -> coi như xóa note
+      if (existingNoteId && !noteText.trim()) {
+        await deleteNote(existingNoteId);
+        setExistingNoteId(null);
+        setNoteText('');
+        Alert.alert('Thành công', 'Ghi chú của bạn đã được xóa.');
+        setShowNoteModal(false);
+        return;
+      }
+
+      if (!noteText.trim()) {
+        Alert.alert('Thông báo', 'Nội dung ghi chú không được để trống.');
+        return;
+      }
+
+      if (existingNoteId) {
+        await updateNote(existingNoteId, {
+          description: noteText.trim(),
+          title: noteLessonTitle || undefined,
+        });
+      } else {
+        const newNote = await createNote({
+          lessonId: noteLessonId,
+          description: noteText.trim(),
+          title: noteLessonTitle || undefined,
+        });
+        setExistingNoteId(newNote.id);
+      }
+
+      Alert.alert('Thành công', 'Ghi chú của bạn đã được lưu.');
+      setShowNoteModal(false);
+      // Không reset text để lần sau mở lại vẫn thấy nội dung
+    } catch (error: any) {
+      console.log('Error saving note:', error);
+      Alert.alert(
+        'Lỗi',
+        error?.response?.data?.message ||
+          error?.message ||
+          'Không thể lưu ghi chú. Vui lòng thử lại.',
+      );
+    } finally {
+      setIsSavingNote(false);
+    }
   };
 
   return (
@@ -399,106 +422,28 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
           <Text style={styles.backText}>← Course Library</Text>
         </TouchableOpacity>
 
-        <View style={styles.heroCard}>
-          <View style={styles.videoWrapper}>
-            {videoLoading ? (
-              <ActivityIndicator color="#3CBCB2" size="large" />
-            ) : videoSource ? (
-              <Video
-                ref={videoRef}
-                source={videoSource}
-                style={styles.videoPlayer}
-                useNativeControls
-                resizeMode={ResizeMode.CONTAIN}
-                // @ts-ignore - expo-av Video works on web but has deprecation warning
-                webStyle={{ width: '100%', height: '100%' }}
-                onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-                onError={(error) => {
-                  console.error('Video playback error:', error);
+        <MaterialHero
+          material={material}
+          displayLesson={displayLesson}
+          videoSource={videoSource}
+          videoLoading={videoLoading}
+          videoError={videoError}
+          videoRef={videoRef}
+          onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+        />
 
-                  // Xử lý error object - có thể là error.error hoặc error trực tiếp
-                  const errorObj = (error && typeof error === 'object' && 'error' in error)
-                    ? (error as any).error
-                    : error;
-                  const errorCode = (errorObj && typeof errorObj === 'object' && 'code' in errorObj)
-                    ? (errorObj as any).code
-                    : (error && typeof error === 'object' && 'code' in error)
-                      ? (error as any).code
-                      : undefined;
-                  const errorMessage = (errorObj && typeof errorObj === 'object')
-                    ? (errorObj as any).localizedDescription || (errorObj as any).message
-                    : (error && typeof error === 'object' && 'message' in error)
-                      ? (error as any).message
-                      : undefined;
-
-                  console.error('Error code:', errorCode);
-                  console.error('Error message:', errorMessage);
-                  console.error('Full error:', JSON.stringify(error, null, 2));
-                  console.error('Video source:', JSON.stringify(videoSource, null, 2));
-
-                  // Error handling đã được xử lý trong hook
-                  // Chỉ log để debug
-                  console.error('Video playback error:', {
-                    errorCode,
-                    errorMessage,
-                    error
-                  });
-                }}
-                onLoad={() => {
-                  console.log('Video loaded successfully');
-                }}
-                onLoadStart={() => {
-                  console.log('Video loading started');
-                }}
-              />
-            ) : (
-              <View style={styles.videoPlaceholder}>
-                <Text style={styles.videoPlaceholderText}>
-                  {videoError || 'No video available for this lesson.'}
-                </Text>
-              </View>
-            )}
-          </View>
-          <View style={styles.heroContent}>
-            <Text style={styles.durationBadge}>
-              {displayLesson?.durationInSeconds
-                ? `${Math.ceil(displayLesson.durationInSeconds / 60)} min`
-                : 'Lesson'}
-            </Text>
-            <Text style={styles.heroTitle}>
-              {displayLesson?.title || material.title}
-            </Text>
-            <Text style={styles.heroSubtitle}>
-              {material.authorName} • {material.subjectName}
-            </Text>
-            <Text style={styles.heroDescription}>
-              {displayLesson?.description || material.description ||
-                'Khám phá nội dung chuyên sâu, xây dựng nền tảng vững chắc và áp dụng vào thực tế.'}
-            </Text>
-            <TouchableOpacity style={styles.readMoreBtn}>
-              <Text style={styles.readMoreText}>Tìm hiểu thêm</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Danh sách bài học</Text>
-            <Text style={styles.sectionSubtitle}>
-              {derivedLessons.length} bài học
-            </Text>
-          </View>
-
-          {isLoading ? (
-            <ActivityIndicator color="#3CBCB2" />
-          ) : derivedLessons.length === 0 ? (
-            <Text style={styles.emptyText}>
-              No lessons available for this material.
-            </Text>
-          ) : (
-            derivedLessons.map(renderLesson)
-          )}
-        </View>
+        <LessonList
+          lessons={derivedLessons}
+          isLoading={isLoading}
+          downloadingLessonId={downloadingLessonId}
+          onOpenVideo={(lessonId, hasVideo) => {
+            if (hasVideo) {
+              setActiveVideoLessonId(lessonId);
+            }
+          }}
+          onOpenPdf={handleOpenPdf}
+          onOpenNote={handleOpenNote}
+        />
       </ScrollView>
 
       <NoteModal
@@ -510,12 +455,10 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
           setShowNoteModal(false);
           setNoteText('');
           setNoteLessonTitle('');
+          setNoteLessonId(null);
+          setExistingNoteId(null);
         }}
-        onSave={() => {
-          setShowNoteModal(false);
-          setNoteText('');
-          setNoteLessonTitle('');
-        }}
+        onSave={handleSaveNote}
       />
 
       <RatingModal
@@ -553,246 +496,6 @@ const styles = StyleSheet.create({
   backText: {
     color: '#3CBCB2',
     fontWeight: '600',
-  },
-  heroCard: {
-    backgroundColor: '#fff',
-    marginHorizontal: 16,
-    borderRadius: 24,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  videoWrapper: {
-    width: '100%',
-    height: 220,
-    backgroundColor: '#0F172A',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  videoPlayer: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#000',
-  },
-  videoPlaceholder: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  videoPlaceholderText: {
-    color: '#E2E8F0',
-    textAlign: 'center',
-  },
-  heroContent: {
-    padding: 20,
-    gap: 10,
-  },
-  durationBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#E0F7F5',
-    color: '#0F766E',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 999,
-    fontWeight: '600',
-    fontSize: 12,
-  },
-  heroTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  heroSubtitle: {
-    color: '#475569',
-    fontWeight: '600',
-  },
-  heroDescription: {
-    color: '#475569',
-    lineHeight: 20,
-  },
-  readMoreBtn: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#CBD5F5',
-  },
-  readMoreText: {
-    color: '#2563EB',
-    fontWeight: '600',
-  },
-  section: {
-    marginHorizontal: 16,
-    marginTop: 20,
-    padding: 20,
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 12,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  emptyText: {
-    color: '#9CA3AF',
-    fontStyle: 'italic',
-  },
-  lessonCard: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  lessonHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  lessonTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  lessonDuration: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  lessonDescription: {
-    fontSize: 14,
-    color: '#4B5563',
-    marginBottom: 12,
-    lineHeight: 20,
-  },
-  lessonActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  lessonButton: {
-    flex: 1,
-    backgroundColor: '#3CBCB2',
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  disabledButton: {
-    backgroundColor: '#D1D5DB',
-  },
-  lessonButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  disabledButtonText: {
-    color: '#6B7280',
-  },
-  ratingModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  ratingModalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    width: '85%',
-    maxWidth: 400,
-  },
-  ratingModalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#111',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  ratingModalSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 24,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  starRatingContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-    gap: 8,
-  },
-  starButton: {
-    padding: 4,
-  },
-  starIcon: {
-    fontSize: 32,
-  },
-  ratingText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#3CBCB2',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  commentInput: {
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 14,
-    color: '#111827',
-    minHeight: 100,
-    marginBottom: 20,
-    backgroundColor: '#F9FAFB',
-  },
-  ratingModalActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  ratingSecondaryBtn: {
-    flex: 1,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  ratingSecondaryText: {
-    color: '#111827',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  ratingPrimaryBtn: {
-    flex: 1,
-    backgroundColor: '#3CBCB2',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  ratingPrimaryText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
   },
   primaryBtnDisabled: {
     opacity: 0.6,

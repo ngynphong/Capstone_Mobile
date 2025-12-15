@@ -23,6 +23,8 @@ import { MaterialStackParamList } from "../../types/types";
 import useMaterialImageSource from "../../hooks/useMaterialImageSource";
 import useMaterialRegister from "../../hooks/useMaterialRegister";
 import MaterialService from "../../services/materialService";
+import { MaterialRating, MaterialRatingStatistics } from "../../types/material";
+import useMaterialRating from "../../hooks/useMaterialRating";
 
 const REGISTERED_MATERIALS_KEY = '@registered_materials';
 
@@ -39,10 +41,55 @@ const MaterialList = () => {
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [registeredMaterials, setRegisteredMaterials] = useState<Set<string>>(new Set());
+  const [ratingStats, setRatingStats] = useState<MaterialRatingStatistics | null>(null);
+  const [showRatingsModal, setShowRatingsModal] = useState(false);
   const navigation =
     useNavigation<NativeStackNavigationProp<MaterialStackParamList>>();
   const { source: modalImageSource } = useMaterialImageSource(selectedMaterial?.fileImage);
   const { registerMaterial, isLoading: isRegistering, error: registerError } = useMaterialRegister();
+  const {
+    ratings,
+    fetchRatingsByMaterial,
+    isLoading: isLoadingRatings,
+  } = useMaterialRating();
+
+  // Lấy thống kê rating khi chọn một material để mở modal
+  useEffect(() => {
+    const loadRatingStats = async () => {
+      if (!selectedMaterial) {
+        setRatingStats(null);
+        return;
+      }
+      try {
+        const res = await MaterialService.getMaterialRatingStatistics(
+          selectedMaterial.id,
+        );
+        setRatingStats(res.data.data);
+      } catch (err) {
+        // Không cần show lỗi, chỉ là thông tin phụ
+        console.log('Failed to load rating statistics', err);
+      }
+    };
+
+    loadRatingStats();
+  }, [selectedMaterial]);
+
+  const handleOpenRatings = async () => {
+    if (!selectedMaterial || !ratingStats || ratingStats.totalRatings === 0) {
+      return;
+    }
+
+    try {
+      await fetchRatingsByMaterial(selectedMaterial.id);
+      setShowRatingsModal(true);
+    } catch (err) {
+      console.log('Failed to load ratings list', err);
+      Alert.alert(
+        'Thông báo',
+        'Không thể tải danh sách đánh giá. Vui lòng thử lại sau.',
+      );
+    }
+  };
 
   // Hàm lưu danh sách đã đăng ký vào AsyncStorage
   const saveRegisteredMaterials = async (materials: Set<string>) => {
@@ -240,12 +287,24 @@ const MaterialList = () => {
               <Text style={styles.modalSubtitle}>
                 {selectedMaterial?.subjectName} • {selectedMaterial?.authorName}
               </Text>
+              {ratingStats && ratingStats.totalRatings > 0 && (
+                <TouchableOpacity onPress={handleOpenRatings}>
+                  <Text style={styles.modalMeta}>
+                    Rating: {ratingStats.averageRating.toFixed(1)} ⭐ ({ratingStats.totalRatings} ratings)
+                  </Text>
+                </TouchableOpacity>
+              )}
               <Text style={styles.modalDescription}>
                 {selectedMaterial?.description || "No detailed description yet."}
               </Text>
               {selectedMaterial?.typeName && (
                 <Text style={styles.modalMeta}>
                   Type: {selectedMaterial.typeName}
+                </Text>
+              )}
+              {typeof selectedMaterial?.price === 'number' && selectedMaterial.price > 0 && (
+                <Text style={styles.modalMeta}>
+                  Price: {selectedMaterial.price.toLocaleString('vi-VN')} VND
                 </Text>
               )}
               {selectedMaterial?.createdAt && (
@@ -281,6 +340,57 @@ const MaterialList = () => {
             </View>
           </View>
         </Pressable>
+      </Modal>
+
+      {/* Ratings list modal */}
+      <Modal
+        transparent
+        visible={showRatingsModal}
+        animationType="fade"
+        onRequestClose={() => setShowRatingsModal(false)}
+      >
+        <View style={styles.confirmModalOverlay}>
+          <View style={styles.confirmModalContent}>
+            <Text style={styles.confirmModalTitle}>
+              Ratings for "{selectedMaterial?.title}"
+            </Text>
+            {isLoadingRatings ? (
+              <View style={styles.center}>
+                <ActivityIndicator size="small" color="#3CBCB2" />
+              </View>
+            ) : ratings.length === 0 ? (
+              <Text style={styles.confirmModalMessage}>
+                Chưa có đánh giá nào cho học liệu này.
+              </Text>
+            ) : (
+              <ScrollView style={{ maxHeight: 300 }}>
+                {ratings.map((r: MaterialRating) => (
+                  <View key={r.id} style={{ marginBottom: 12 }}>
+                    <Text style={{ fontWeight: '600', marginBottom: 2 }}>
+                      {r.userFullName || 'Người dùng ẩn danh'}
+                    </Text>
+                    <Text style={{ marginBottom: 2 }}>
+                      ⭐ {r.rating} {r.comment ? ` - ${r.comment}` : ''}
+                    </Text>
+                    {r.createdAt && (
+                      <Text style={{ fontSize: 12, color: '#6B7280' }}>
+                        {new Date(r.createdAt).toLocaleString()}
+                      </Text>
+                    )}
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+            <View style={styles.confirmModalActions}>
+              <TouchableOpacity
+                style={styles.confirmPrimaryBtn}
+                onPress={() => setShowRatingsModal(false)}
+              >
+                <Text style={styles.confirmPrimaryText}>Đóng</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </Modal>
 
       {/* Confirmation Modal */}
