@@ -64,9 +64,11 @@ const MaterialList = () => {
         const registeredList = response.data.data.items || [];
         
         // Tạo Set từ danh sách ID của materials đã đăng ký
-        const registeredIds = new Set(
-          registeredList.map((material: Material) => material.id || material.learningMaterialId).filter(Boolean)
-        );
+        const registeredIdsArray = registeredList
+          .map((material: Material) => material.id || material.learningMaterialId)
+          .filter((id): id is string => Boolean(id));
+
+        const registeredIds = new Set<string>(registeredIdsArray);
         
         setRegisteredMaterials(registeredIds);
         console.log('Loaded registered materials from API:', Array.from(registeredIds));
@@ -239,16 +241,16 @@ const MaterialList = () => {
                 {selectedMaterial?.subjectName} • {selectedMaterial?.authorName}
               </Text>
               <Text style={styles.modalDescription}>
-                {selectedMaterial?.description || "Chưa có mô tả chi tiết."}
+                {selectedMaterial?.description || "No detailed description yet."}
               </Text>
               {selectedMaterial?.typeName && (
                 <Text style={styles.modalMeta}>
-                  Hình thức: {selectedMaterial.typeName}
+                  Type: {selectedMaterial.typeName}
                 </Text>
               )}
               {selectedMaterial?.createdAt && (
                 <Text style={styles.modalMeta}>
-                  Cập nhật: {new Date(selectedMaterial.createdAt).toLocaleDateString()}
+                  Updated: {new Date(selectedMaterial.createdAt).toLocaleDateString()}
                 </Text>
               )}
             </ScrollView>

@@ -11,7 +11,6 @@ import {
   Linking,
   ImageBackground,
   Platform,
-  Modal,
   TextInput,
 } from 'react-native';
 import { RouteProp, useNavigation } from '@react-navigation/native';
@@ -24,6 +23,8 @@ import type { Lesson } from '../../types/lessonTypes';
 import { useMaterialDetail } from '../../hooks/useMaterialDetail';
 import useMaterialRating from '../../hooks/useMaterialRating';
 import { useAuth } from '../../context/AuthContext';
+import NoteModal from '../../components/Material/NoteModal';
+import RatingModal from '../../components/Material/RatingModal';
 
 type DetailRouteProp = RouteProp<MaterialStackParamList, 'MaterialDetail'>;
 type DetailNavProp = NativeStackNavigationProp<
@@ -58,6 +59,9 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
   const [comment, setComment] = useState('');
   const [hasRated, setHasRated] = useState(false);
   const [isCheckingRating, setIsCheckingRating] = useState(false);
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [noteText, setNoteText] = useState('');
+  const [noteLessonTitle, setNoteLessonTitle] = useState('');
   const videoRef = useRef<Video>(null);
   const { 
     createRating, 
@@ -369,6 +373,17 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
               </Text>
             )}
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.lessonButton}
+            onPress={() =>
+              {
+                setNoteLessonTitle(lesson.title);
+                setShowNoteModal(true);
+              }
+            }
+          >
+            <Text style={styles.lessonButtonText}>Note</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -486,76 +501,38 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
         </View>
       </ScrollView>
 
-      {/* Rating Modal */}
-      <Modal
-        transparent
+      <NoteModal
+        visible={showNoteModal}
+        lessonTitle={noteLessonTitle}
+        noteText={noteText}
+        onChangeText={setNoteText}
+        onClose={() => {
+          setShowNoteModal(false);
+          setNoteText('');
+          setNoteLessonTitle('');
+        }}
+        onSave={() => {
+          setShowNoteModal(false);
+          setNoteText('');
+          setNoteLessonTitle('');
+        }}
+      />
+
+      <RatingModal
         visible={showRatingModal}
-        animationType="fade"
-        onRequestClose={() => setShowRatingModal(false)}
-      >
-        <View style={styles.ratingModalOverlay}>
-          <View style={styles.ratingModalContent}>
-            <Text style={styles.ratingModalTitle}>Rate Learning Material</Text>
-            <Text style={styles.ratingModalSubtitle}>
-              You have completed "{material.title}". Please share your rating!
-            </Text>
-
-            {/* Star Rating */}
-            <View style={styles.starRatingContainer}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <TouchableOpacity
-                  key={star}
-                  onPress={() => setRating(star)}
-                  style={styles.starButton}
-                >
-                  <Text style={styles.starIcon}>
-                    {star <= rating ? '⭐' : '☆'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={styles.ratingText}>{rating} star{rating !== 1 ? 's' : ''}</Text>
-
-            {/* Comment Input */}
-            <TextInput
-              style={styles.commentInput}
-              placeholder="Share your comments (optional)..."
-              placeholderTextColor="#9CA3AF"
-              multiline
-              numberOfLines={4}
-              value={comment}
-              onChangeText={setComment}
-              textAlignVertical="top"
-            />
-
-            {/* Action Buttons */}
-            <View style={styles.ratingModalActions}>
-              <TouchableOpacity
-                style={styles.ratingSecondaryBtn}
-                onPress={() => {
-                  setShowRatingModal(false);
-                  setComment('');
-                  setRating(5);
-                }}
-                disabled={isSubmittingRating}
-              >
-                <Text style={styles.ratingSecondaryText}>Skip</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.ratingPrimaryBtn, isSubmittingRating && styles.primaryBtnDisabled]}
-                onPress={handleSubmitRating}
-                disabled={isSubmittingRating}
-              >
-                {isSubmittingRating ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.ratingPrimaryText}>Submit Rating</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        materialTitle={material.title}
+        rating={rating}
+        setRating={setRating}
+        comment={comment}
+        setComment={setComment}
+        isSubmitting={isSubmittingRating}
+        onSubmit={handleSubmitRating}
+        onClose={() => {
+          setShowRatingModal(false);
+          setComment('');
+          setRating(5);
+        }}
+      />
     </View>
   );
 };
