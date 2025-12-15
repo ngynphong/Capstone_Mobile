@@ -5,7 +5,7 @@ export interface Note {
   lessonId: string;
   userId: string;
   title?: string;
-  content: string;
+  description: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -13,7 +13,7 @@ export interface Note {
 export interface NotePayload {
   lessonId: string;
   title?: string;
-  content: string;
+  description: string;
 }
 
 export type NoteResponse = ApiResponse<Note>;

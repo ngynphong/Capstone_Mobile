@@ -25,6 +25,7 @@ import useMaterialRating from '../../hooks/useMaterialRating';
 import { useAuth } from '../../context/AuthContext';
 import NoteModal from '../../components/Material/NoteModal';
 import RatingModal from '../../components/Material/RatingModal';
+import { useNotes } from '../../hooks/useNotes';
 
 type DetailRouteProp = RouteProp<MaterialStackParamList, 'MaterialDetail'>;
 type DetailNavProp = NativeStackNavigationProp<
@@ -53,6 +54,13 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
     getLessonAssetDownloadConfig,
   } = useMaterialDetail({ material, learningMaterialId });
 
+  const {
+    fetchNotesByLessonAndUser,
+    createNote,
+    updateNote,
+    deleteNote,
+  } = useNotes();
+
   const [downloadingLessonId, setDownloadingLessonId] = useState<string | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [rating, setRating] = useState(5);
@@ -62,6 +70,9 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [noteLessonTitle, setNoteLessonTitle] = useState('');
+  const [noteLessonId, setNoteLessonId] = useState<string | null>(null);
+  const [existingNoteId, setExistingNoteId] = useState<string | null>(null);
+  const [isSavingNote, setIsSavingNote] = useState(false);
   const videoRef = useRef<Video>(null);
   const { 
     createRating, 
@@ -321,6 +332,95 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
     }
   };
 
+  const handleOpenNote = async (lesson: Lesson) => {
+    if (!user) {
+      Alert.alert('Thông báo', 'Bạn cần đăng nhập để tạo ghi chú.');
+      return;
+    }
+
+    try {
+      setNoteLessonTitle(lesson.title);
+      setNoteLessonId(lesson.id);
+      setShowNoteModal(true);
+
+      const userNotes = await fetchNotesByLessonAndUser(lesson.id, user.id);
+      console.log('Fetched notes for lesson', lesson.id, userNotes);
+      if (userNotes && userNotes.length > 0) {
+        const firstNote: any = userNotes[0];
+        setExistingNoteId(firstNote.id);
+        // backend dùng field description cho nội dung ghi chú
+        setNoteText(firstNote.description || firstNote.content || '');
+      } else {
+        setExistingNoteId(null);
+        setNoteText('');
+      }
+    } catch (error: any) {
+      console.log('Error loading note:', error);
+      Alert.alert(
+        'Lỗi',
+        error?.response?.data?.message ||
+          error?.message ||
+          'Không thể tải ghi chú. Vui lòng thử lại.',
+      );
+      setExistingNoteId(null);
+      setNoteText('');
+    }
+  };
+
+  const handleSaveNote = async () => {
+    if (!noteLessonId || !user) {
+      setShowNoteModal(false);
+      return;
+    }
+
+    try {
+      setIsSavingNote(true);
+
+      // Nếu đang có note cũ và user xóa hết nội dung -> coi như xóa note
+      if (existingNoteId && !noteText.trim()) {
+        await deleteNote(existingNoteId);
+        setExistingNoteId(null);
+        setNoteText('');
+        Alert.alert('Thành công', 'Ghi chú của bạn đã được xóa.');
+        setShowNoteModal(false);
+        return;
+      }
+
+      if (!noteText.trim()) {
+        Alert.alert('Thông báo', 'Nội dung ghi chú không được để trống.');
+        return;
+      }
+
+      if (existingNoteId) {
+        await updateNote(existingNoteId, {
+          description: noteText.trim(),
+          title: noteLessonTitle || undefined,
+        });
+      } else {
+        const newNote = await createNote({
+          lessonId: noteLessonId,
+          description: noteText.trim(),
+          title: noteLessonTitle || undefined,
+        });
+        setExistingNoteId(newNote.id);
+      }
+
+      Alert.alert('Thành công', 'Ghi chú của bạn đã được lưu.');
+      setShowNoteModal(false);
+      // Không reset text để lần sau mở lại vẫn thấy nội dung
+    } catch (error: any) {
+      console.log('Error saving note:', error);
+      Alert.alert(
+        'Lỗi',
+        error?.response?.data?.message ||
+          error?.message ||
+          'Không thể lưu ghi chú. Vui lòng thử lại.',
+      );
+    } finally {
+      setIsSavingNote(false);
+    }
+  };
+
   const renderLesson = (lesson: Lesson) => {
     const hasVideo = Boolean(lesson.videoUrl || lesson.fileName);
     const hasDocument = Boolean(lesson.documentUrl || lesson.fileName);
@@ -375,12 +475,7 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.lessonButton}
-            onPress={() =>
-              {
-                setNoteLessonTitle(lesson.title);
-                setShowNoteModal(true);
-              }
-            }
+            onPress={() => handleOpenNote(lesson)}
           >
             <Text style={styles.lessonButtonText}>Note</Text>
           </TouchableOpacity>
@@ -510,12 +605,10 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
           setShowNoteModal(false);
           setNoteText('');
           setNoteLessonTitle('');
+          setNoteLessonId(null);
+          setExistingNoteId(null);
         }}
-        onSave={() => {
-          setShowNoteModal(false);
-          setNoteText('');
-          setNoteLessonTitle('');
-        }}
+        onSave={handleSaveNote}
       />
 
       <RatingModal
