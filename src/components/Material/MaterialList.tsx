@@ -302,6 +302,11 @@ const MaterialList = () => {
                   Type: {selectedMaterial.typeName}
                 </Text>
               )}
+              {typeof selectedMaterial?.price === 'number' && selectedMaterial.price > 0 && (
+                <Text style={styles.modalMeta}>
+                  Price: {selectedMaterial.price.toLocaleString('vi-VN')} VND
+                </Text>
+              )}
               {selectedMaterial?.createdAt && (
                 <Text style={styles.modalMeta}>
                   Updated: {new Date(selectedMaterial.createdAt).toLocaleDateString()}
