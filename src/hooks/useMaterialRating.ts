@@ -84,10 +84,21 @@ export const useMaterialRating = () => {
       try {
         const response = await MaterialService.getRatingsByMaterial(materialId);
         const responseData = response.data.data;
-        // Xử lý cả trường hợp data là object hoặc array
-        const ratingsList = Array.isArray(responseData) 
-          ? responseData 
-          : [responseData];
+
+        // Backend có thể trả:
+        // - Array<MaterialRating>
+        // - 1 object MaterialRating
+        // - Hoặc Page { content: MaterialRating[], ... }
+        let ratingsList: MaterialRating[] = [];
+
+        if (Array.isArray(responseData)) {
+          ratingsList = responseData;
+        } else if (responseData && Array.isArray((responseData as any).content)) {
+          ratingsList = (responseData as any).content;
+        } else if (responseData) {
+          ratingsList = [responseData as MaterialRating];
+        }
+
         setRatings(ratingsList);
         return ratingsList;
       } catch (err: any) {
