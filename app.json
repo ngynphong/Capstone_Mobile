@@ -1,5 +1,6 @@
 {
   "expo": {
+    "userInterfaceStyle": "automatic",
     "name": "Mobile_App",
     "slug": "Mobile_App",
     "version": "1.0.0",
