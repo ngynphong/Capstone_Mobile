@@ -1,8 +1,8 @@
 {
   "expo": {
     "userInterfaceStyle": "automatic",
-    "name": "Mobile_App",
-    "slug": "Mobile_App",
+    "name": "AP Test Platform",
+    "slug": "AP Test Platform",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

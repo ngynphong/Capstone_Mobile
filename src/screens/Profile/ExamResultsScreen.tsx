@@ -121,6 +121,25 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
           </View>
         </View>
 
+        {/* AP Result - hiển thị nếu có */}
+        {attempt.apResult && attempt.apResult.scaledScore > 0 && (
+          <View className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 mb-3">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center">
+                <Text className="text-sm font-medium text-indigo-700">AP Score:</Text>
+                <View className="bg-indigo-600 px-2 py-0.5 rounded ml-2">
+                  <Text className="text-white font-bold text-sm">{attempt.apResult.scaledScore}</Text>
+                </View>
+              </View>
+            </View>
+            {attempt.apResult.qualificationMessage && (
+              <Text className="text-xs text-indigo-600 mt-1">
+                {attempt.apResult.qualificationMessage}
+              </Text>
+            )}
+          </View>
+        )}
+
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center">
             <Clock size={16} color="#6B7280" />

@@ -19,7 +19,7 @@ const normalizeNotesResponse = (response: NoteListApiResponse | Note[] | undefin
 
   // Trường hợp backend trả về 1 object Note đơn lẻ (không paging)
   if ((rawData as any)?.id && (rawData as any)?.lessonId) {
-    return [rawData as Note];
+    return [rawData as unknown as Note];
   }
 
   const pageInfo = rawData as PageInfo<Note>;

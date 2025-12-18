@@ -23,7 +23,13 @@ export type TabParamList = {
   Profile: undefined;
   Exams: undefined;
   Community: undefined;
-  Roadmap: undefined;
+  Flashcard: undefined;
+};
+
+export type FlashcardStackParamList = {
+  FlashcardMain: undefined;
+  FlashcardDetail: { flashcardSetId: string };
+  FlashcardQuiz: { flashcardSetId: string };
 };
 
 export type MaterialStackParamList = {

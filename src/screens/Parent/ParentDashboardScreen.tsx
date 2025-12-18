@@ -113,7 +113,7 @@ const ParentDashboardScreen = () => {
           </View>
           <View className="w-px h-8 bg-white/20" />
           <View className="items-center flex-1">
-            <Text className="text-white text-xl font-bold">{averageScore}%</Text>
+            <Text className="text-white text-xl font-bold">{averageScore}</Text>
             <Text className="text-white/70 text-xs mt-0.5">Average Score</Text>
           </View>
         </View>
@@ -147,7 +147,7 @@ const ParentDashboardScreen = () => {
                 <View className="w-10 h-10 bg-white/20 rounded-full items-center justify-center mb-3">
                   <Award size={20} color="white" />
                 </View>
-                <Text className="text-white text-3xl font-bold">{averageScore}%</Text>
+                <Text className="text-white text-3xl font-bold">{averageScore}</Text>
                 <Text className="text-white/90 text-sm mt-1">Average Score</Text>
               </View>
             </View>
@@ -261,7 +261,7 @@ const ParentDashboardScreen = () => {
                         className="font-bold text-2xl"
                         style={{ color: getScoreColor(child.averageScore) }}
                       >
-                        {child.averageScore}%
+                        {child.averageScore}
                       </Text>
                       <Text className="text-xs text-gray-500 mt-1">AVG Score</Text>
                     </View>

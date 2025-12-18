@@ -119,12 +119,22 @@ const FullTestScreen = () => {
 
       const storageKey = `exam_start_time_${attempt.examAttemptId}`;
 
-      // Kiểm tra xem đã có startTime trong storage chưa
+      // Priority 1: remainTime từ API (cross-device sync)
+      // Khi thi trên thiết bị khác hoặc API trả về remainTime, dùng giá trị này
+      if (attempt.remainTime !== undefined && attempt.remainTime > 0) {
+        console.log('[Timer] Using remainTime from API:', attempt.remainTime, 'seconds');
+        setTimeRemaining(attempt.remainTime);
+        // Update AsyncStorage với thời điểm hiện tại để xử lý app restart
+        await AsyncStorage.setItem(storageKey, Date.now().toString());
+        return;
+      }
+
+      // Priority 2, 3, 4: Fallback logic cho cùng thiết bị
       let startTimeMs: number;
       const savedStartTime = await AsyncStorage.getItem(storageKey);
 
       if (savedStartTime) {
-        // Đã thi trước đó, dùng thời gian đã lưu
+        // Đã thi trước đó trên cùng thiết bị, dùng thời gian đã lưu
         startTimeMs = parseInt(savedStartTime, 10);
       } else if (attempt.startTime) {
         // API trả về startTime
@@ -181,11 +191,11 @@ const FullTestScreen = () => {
 
   const handleCancel = () => {
     Alert.alert(
-      'Cancel',
-      'You are sure to cancel this test? All progress will be lost.',
+      'Cancel & Submit',
+      'Are you sure you want to cancel? Your current answers will be submitted automatically.',
       [
-        { text: 'Continue', style: 'cancel' },
-        { text: 'Cancel', style: 'destructive', onPress: () => navigation.goBack() },
+        { text: 'Continue Exam', style: 'cancel' },
+        { text: 'Cancel & Submit', style: 'destructive', onPress: () => confirmSubmission() },
       ]
     );
   };
@@ -557,7 +567,7 @@ const FullTestScreen = () => {
                     <MathKeyboard
                       value={answers[question.examQuestionId]?.frqAnswerText || ''}
                       onChangeText={(text) => handleFRQInput(question.examQuestionId, text)}
-                      placeholder="Nhập câu trả lời của bạn. Sử dụng bàn phím toán để thêm công thức..."
+                      placeholder="Enter your answer..."
                     />
                   </View>
                 ))}

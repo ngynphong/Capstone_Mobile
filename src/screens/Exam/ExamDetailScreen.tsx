@@ -44,7 +44,7 @@ const ExamDetailScreen = () => {
             // Show confirmation for full test
             Alert.alert(
                 'Full Test Warning',
-                `This is a full test including both Multiple Choice and Free Response sections. The timer will start immediately. The exam costs ${exam.tokenCost} tokens.`,
+                `This is a full test including both Multiple Choice and Free Response sections. The timer will start immediately. The exam costs ${exam.tokenCost.toLocaleString('vi-VN')} VNĐ.`,
                 [
                     { text: 'Cancel', style: 'cancel' },
                     {
@@ -132,8 +132,8 @@ const ExamDetailScreen = () => {
                                 <Text className="text-sm text-gray-600 ml-2">{exam.passingScore}</Text>
                             </View>
                             <View className="flex-row items-center mb-2">
-                                <Text className="text-sm font-medium text-gray-700">Token Cost:</Text>
-                                <Text className="text-sm text-gray-600 ml-2">{exam.tokenCost} 💰</Text>
+                                <Text className="text-sm font-medium text-gray-700">Cost:</Text>
+                                <Text className="text-sm text-gray-600 ml-2">{exam.tokenCost.toLocaleString('vi-VN')} VNĐ</Text>
                             </View>
                             <View className="flex-row items-center mb-2">
                                 <Text className="text-sm font-medium text-gray-700">Status:</Text>
@@ -216,10 +216,10 @@ const ExamDetailScreen = () => {
                                 </View>
                                 <View>
                                     <Text className="text-lg font-semibold text-gray-900">
-                                        Đánh giá
+                                        Reviews
                                     </Text>
                                     <Text className="text-sm text-gray-500">
-                                        {pagination?.totalElement || 0} đánh giá
+                                        {pagination?.totalElement || 0} reviews
                                     </Text>
                                 </View>
                             </View>
@@ -237,7 +237,7 @@ const ExamDetailScreen = () => {
                             </View>
                         ) : ratings.length === 0 ? (
                             <View className="py-4 items-center">
-                                <Text className="text-gray-500">Chưa có đánh giá nào</Text>
+                                <Text className="text-gray-500">No ratings yet</Text>
                             </View>
                         ) : (
                             <View>
@@ -279,7 +279,7 @@ const ExamDetailScreen = () => {
                                 {ratings.length > 3 && (
                                     <TouchableOpacity className="mt-4 py-2">
                                         <Text className="text-center text-teal-600 font-medium">
-                                            Xem tất cả {pagination?.totalElement} đánh giá
+                                            See all {pagination?.totalElement} ratings
                                         </Text>
                                     </TouchableOpacity>
                                 )}
@@ -294,9 +294,9 @@ const ExamDetailScreen = () => {
                     <View className="bg-blue-50 rounded-xl p-4 mb-8">
                         <Text className="text-sm font-medium text-blue-800 mb-2">💡 Tips:</Text>
                         <Text className="text-sm text-blue-700">
-                            • Không giới hạn thời gian - hãy dành thời gian suy nghĩ kỹ từng câu hỏi{'\n'}
-                            • Có thể luyện tập nhiều lần để cải thiện kỹ năng{'\n'}
-                            • Theo dõi tiến độ học tập của bạn
+                            • No time limit - take your time to think carefully about each question.{'\n'}
+                            • You can practice multiple times to improve your skills{'\n'}
+                            • Track your learning progress
                         </Text>
                     </View>
                 </View>
@@ -308,10 +308,10 @@ const ExamDetailScreen = () => {
                     <View className="bg-white rounded-2xl p-8 items-center shadow-lg">
                         <ActivityIndicator size="large" color="#3CBCB2" />
                         <Text className="text-gray-900 font-semibold mt-4 text-lg">
-                            Đang khởi tạo bài thi...
+                            Initializing the test...
                         </Text>
                         <Text className="text-gray-600 text-center mt-2">
-                            Vui lòng đợi trong giây lát
+                            Please wait a moment
                         </Text>
                     </View>
                 </View>
