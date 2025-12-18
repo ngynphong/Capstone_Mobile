@@ -96,12 +96,12 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onPress }) => {
 
       {exam.tokenCost ? (
         <View className="mb-4">
-          <Text className="text-xs text-gray-500 mb-1">Token Cost:</Text>
-          <Text className="text-sm text-gray-600">{exam.tokenCost} 💰</Text>
+          <Text className="text-xs text-gray-500 mb-1">Cost:</Text>
+          <Text className="text-sm text-gray-600">{exam.tokenCost.toLocaleString('vi-VN')} VNĐ </Text>
         </View>
       ) :
         <View className="mb-4">
-          <Text className="text-xs text-gray-500 mb-1">Token Cost:</Text>
+          <Text className="text-xs text-gray-500 mb-1">Cost:</Text>
           <Text className="text-sm text-gray-600">Free</Text>
         </View>}
 

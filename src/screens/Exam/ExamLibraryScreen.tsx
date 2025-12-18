@@ -193,8 +193,8 @@ const ExamLibraryScreen = () => {
 
         <View className="flex-row items-center justify-between mt-2">
           <View className="flex-row items-center">
-            <Text className="text-sm font-medium text-gray-700">Token Cost:</Text>
-            <Text className="text-sm text-gray-600 ml-2">{item.tokenCost ? item.tokenCost : 'Free'} 💰</Text>
+            <Text className="text-sm font-medium text-gray-700">Cost:</Text>
+            <Text className="text-sm text-gray-600 ml-2">{item.tokenCost ? item.tokenCost.toLocaleString('vi-VN') : 'Free'} VNĐ</Text>
           </View>
         </View>
 

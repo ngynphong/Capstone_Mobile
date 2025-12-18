@@ -110,6 +110,7 @@ export interface ActiveExam {
   savedAnswer: SaveProgressPayload | null; // Đáp án đã lưu (null nếu thi lần đầu)
   attemptSessionToken: string; // Token for save/submit verification
   startTime?: string; // Thời gian bắt đầu bài thi (ISO string)
+  remainTime?: number; // Thời gian còn lại (seconds) - dùng cho đồng bộ cross-device
 }
 
 // 2. Types cho API /exam-test/submit/{attemptId}
@@ -262,6 +263,14 @@ export interface AttemptResultDetail {
 }
 
 /**
+ * AP Result - Điểm chuẩn AP từ College Board
+ */
+export interface APResult {
+  scaledScore: number;
+  qualificationMessage: string;
+}
+
+/**
  * Kiểu dữ liệu cho một dòng trong lịch sử thi
  * (Dùng cho trang ExamResultsScreen)
  */
@@ -273,6 +282,7 @@ export interface HistoryRecord {
   startTime: string;
   endTime: string | null;
   rating: number | null;
+  apResult?: APResult | null; // Điểm chuẩn AP (nếu có)
 }
 
 /**

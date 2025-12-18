@@ -23,12 +23,12 @@ const ChildProgressScreen = () => {
 
   const handleUnlinkStudent = (email: string, studentName: string) => {
     Alert.alert(
-      'Xác nhận hủy liên kết',
-      `Bạn có chắc muốn hủy liên kết với học sinh ${studentName}?`,
+      'Confirm unlink',
+      `Are you sure you want to unlink ${studentName}?`,
       [
-        { text: 'Hủy', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Xác nhận',
+          text: 'Confirm',
           style: 'destructive',
           onPress: async () => {
             try {

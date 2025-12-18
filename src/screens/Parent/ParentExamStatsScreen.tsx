@@ -205,7 +205,7 @@ const ParentExamStatsScreen = () => {
                         </View>
                         <View className="w-px h-8 bg-white/20" />
                         <View className="items-center flex-1">
-                            <Text className="text-white text-xl font-bold">{stats.averageScore?.toFixed(1) || 0}%</Text>
+                            <Text className="text-white text-xl font-bold">{stats.averageScore?.toFixed(1) || 0}</Text>
                             <Text className="text-white/70 text-xs mt-0.5">Average</Text>
                         </View>
                         <View className="w-px h-8 bg-white/20" />
@@ -281,7 +281,7 @@ const ParentExamStatsScreen = () => {
                                         <View className="w-10 h-10 bg-white/20 rounded-full items-center justify-center mb-3">
                                             <Award size={20} color="white" />
                                         </View>
-                                        <Text className="text-white text-3xl font-bold">{stats?.averageScore?.toFixed(1) || 0}%</Text>
+                                        <Text className="text-white text-3xl font-bold">{stats?.averageScore?.toFixed(1) || 0}</Text>
                                         <Text className="text-white/90 text-sm mt-1">Average score</Text>
                                     </View>
                                 </View>
