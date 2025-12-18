@@ -5,10 +5,7 @@ import {
     TouchableOpacity,
     ScrollView,
     StyleSheet,
-    Modal,
     TextInput,
-    KeyboardAvoidingView,
-    Platform,
 } from 'react-native';
 import { X, Calculator, ChevronDown, ChevronUp } from 'lucide-react-native';
 import LatexText from './LatexText';
@@ -30,7 +27,7 @@ interface MathSymbol {
 
 // Common math symbols organized by category
 const MATH_SYMBOLS: Record<string, MathSymbol[]> = {
-    'Cơ bản': [
+    'Basic': [
         { symbol: '+', latex: '+', display: '+' },
         { symbol: '-', latex: '-', display: '−' },
         { symbol: '×', latex: '\\times', display: '×' },
@@ -44,7 +41,7 @@ const MATH_SYMBOLS: Record<string, MathSymbol[]> = {
         { symbol: '±', latex: '\\pm', display: '±' },
         { symbol: '∞', latex: '\\infty', display: '∞' },
     ],
-    'Lũy thừa & Căn': [
+    'Exponent & Root': [
         { symbol: 'x²', latex: '^2', display: 'x²' },
         { symbol: 'x³', latex: '^3', display: 'x³' },
         { symbol: 'xⁿ', latex: '^{}', display: 'xⁿ', cursor: -1 },
@@ -53,13 +50,13 @@ const MATH_SYMBOLS: Record<string, MathSymbol[]> = {
         { symbol: 'ⁿ√', latex: '\\sqrt[]{}', display: 'ⁿ√', cursor: -4 },
         { symbol: 'xₙ', latex: '_{}', display: 'xₙ', cursor: -1 },
     ],
-    'Phân số': [
+    'Fraction': [
         { symbol: '½', latex: '\\frac{1}{2}', display: '½' },
         { symbol: 'a/b', latex: '\\frac{}{}', display: 'a/b', cursor: -3 },
         { symbol: 'π', latex: '\\pi', display: 'π' },
         { symbol: 'e', latex: 'e', display: 'e' },
     ],
-    'Góc & Lượng giác': [
+    'Angle & Trigonometry': [
         { symbol: '°', latex: '^\\circ', display: '°' },
         { symbol: 'sin', latex: '\\sin', display: 'sin' },
         { symbol: 'cos', latex: '\\cos', display: 'cos' },
@@ -69,7 +66,7 @@ const MATH_SYMBOLS: Record<string, MathSymbol[]> = {
         { symbol: 'β', latex: '\\beta', display: 'β' },
         { symbol: 'θ', latex: '\\theta', display: 'θ' },
     ],
-    'Tích phân & Giới hạn': [
+    'Integral & Limit': [
         { symbol: '∫', latex: '\\int', display: '∫' },
         { symbol: '∑', latex: '\\sum', display: '∑' },
         { symbol: '∏', latex: '\\prod', display: '∏' },
@@ -77,7 +74,7 @@ const MATH_SYMBOLS: Record<string, MathSymbol[]> = {
         { symbol: '→', latex: '\\to', display: '→' },
         { symbol: 'dx', latex: '\\,dx', display: 'dx' },
     ],
-    'Tập hợp': [
+    'Set': [
         { symbol: '∈', latex: '\\in', display: '∈' },
         { symbol: '∉', latex: '\\notin', display: '∉' },
         { symbol: '⊂', latex: '\\subset', display: '⊂' },
@@ -87,13 +84,13 @@ const MATH_SYMBOLS: Record<string, MathSymbol[]> = {
         { symbol: 'ℝ', latex: '\\mathbb{R}', display: 'ℝ' },
         { symbol: 'ℕ', latex: '\\mathbb{N}', display: 'ℕ' },
     ],
-    'Ngoặc': [
+    'Parentheses': [
         { symbol: '( )', latex: '()', display: '( )', cursor: -1 },
         { symbol: '[ ]', latex: '[]', display: '[ ]', cursor: -1 },
         { symbol: '{ }', latex: '\\{\\}', display: '{ }', cursor: -2 },
         { symbol: '| |', latex: '||', display: '| |', cursor: -1 },
     ],
-    'Số': [
+    'Numbers': [
         { symbol: '0', latex: '0', display: '0' },
         { symbol: '1', latex: '1', display: '1' },
         { symbol: '2', latex: '2', display: '2' },
@@ -107,7 +104,7 @@ const MATH_SYMBOLS: Record<string, MathSymbol[]> = {
         { symbol: '.', latex: '.', display: '.' },
         { symbol: ',', latex: ',', display: ',' },
     ],
-    'Biến số': [
+    'Variables': [
         { symbol: 'a', latex: 'a', display: 'a' },
         { symbol: 'b', latex: 'b', display: 'b' },
         { symbol: 'c', latex: 'c', display: 'c' },
@@ -132,7 +129,7 @@ const MathKeyboard: React.FC<MathKeyboardProps> = ({
     const [showKeyboard, setShowKeyboard] = useState(false);
     const [activeCategory, setActiveCategory] = useState('Cơ bản');
     const [cursorPosition, setCursorPosition] = useState(value.length);
-    const [showPreview, setShowPreview] = useState(true); // Show preview by default
+    // const [showPreview, setShowPreview] = useState(true); // Show preview by default
 
     const insertSymbol = (latex: string, cursorOffset?: number) => {
         const before = value.slice(0, cursorPosition);
@@ -168,8 +165,8 @@ const MathKeyboard: React.FC<MathKeyboardProps> = ({
                 activeOpacity={0.8}
             >
                 <View style={styles.answerHeader}>
-                    <Text style={styles.answerLabel}>Câu trả lời của bạn:</Text>
-                    <Text style={styles.editHint}>{showInput ? '▼ Ẩn input' : '▶ Bấm để sửa'}</Text>
+                    <Text style={styles.answerLabel}>Your answer:</Text>
+                    <Text style={styles.editHint}>{showInput ? '▼ Hide input' : '▶ Tap to edit'}</Text>
                 </View>
                 {value.trim() ? (
                     <View style={styles.renderedContent}>
@@ -190,7 +187,7 @@ const MathKeyboard: React.FC<MathKeyboardProps> = ({
                         multiline
                         value={value}
                         onChangeText={handleTextChange}
-                        placeholder="Nhập công thức ở đây... Ví dụ: $x^2 + y^2$"
+                        placeholder="Enter your answer..."
                         placeholderTextColor="#9CA3AF"
                         style={styles.textInput}
                         textAlignVertical="top"
@@ -206,7 +203,7 @@ const MathKeyboard: React.FC<MathKeyboardProps> = ({
                         >
                             <Calculator size={20} color={showKeyboard ? '#fff' : '#3CBCB2'} />
                             <Text style={[styles.toolbarText, showKeyboard && styles.toolbarTextActive]}>
-                                Bàn phím toán
+                                Math Keyboard
                             </Text>
                             {showKeyboard ? (
                                 <ChevronDown size={16} color="#fff" />
@@ -279,13 +276,13 @@ const MathKeyboard: React.FC<MathKeyboardProps> = ({
                             style={[styles.quickActionButton, styles.closeButton]}
                         >
                             <X size={16} color="#EF4444" />
-                            <Text style={styles.closeButtonText}>Đóng</Text>
+                            <Text style={styles.closeButtonText}>Close</Text>
                         </TouchableOpacity>
                     </View>
 
                     {/* Help Text */}
                     <Text style={styles.helpText}>
-                        💡 Tip: Sử dụng $...$ để viết công thức LaTeX. Ví dụ: $x^2 + y^2 = r^2$
+                        💡 Tip: Use $...$ to write LaTeX. Example: $x^2 + y^2 = r^2$
                     </Text>
                 </View>
             )}

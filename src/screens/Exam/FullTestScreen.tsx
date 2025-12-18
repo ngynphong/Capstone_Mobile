@@ -191,11 +191,11 @@ const FullTestScreen = () => {
 
   const handleCancel = () => {
     Alert.alert(
-      'Cancel',
-      'You are sure to cancel this test? All progress will be lost.',
+      'Cancel & Submit',
+      'Are you sure you want to cancel? Your current answers will be submitted automatically.',
       [
-        { text: 'Continue', style: 'cancel' },
-        { text: 'Cancel', style: 'destructive', onPress: () => navigation.goBack() },
+        { text: 'Continue Exam', style: 'cancel' },
+        { text: 'Cancel & Submit', style: 'destructive', onPress: () => confirmSubmission() },
       ]
     );
   };
