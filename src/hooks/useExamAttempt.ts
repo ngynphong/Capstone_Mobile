@@ -59,14 +59,13 @@ export const useExamAttempt = () => {
         // Đã đổi tên hàm: ExamService.startSingleAttempt
         const res = await ExamService.startSingleAttempt(payload);
         if (res.data.code === 0 || res.data.code === 1000) {
-          console.log('data bài thi', res.data.data)
           setActiveAttempt(res.data.data);
           return res.data.data;
         } else {
-          throw new Error(res.data.message || 'Không thể bắt đầu bài thi');
+          throw new Error(res.data.message || 'Failed to start exam');
         }
       } catch (err) {
-        handleError(err, 'Không thể bắt đầu bài thi');
+        handleError(err, 'Failed to start exam');
         return null;
       } finally {
         setLoading(false);
@@ -90,11 +89,11 @@ export const useExamAttempt = () => {
           return res.data.data;
         } else {
           throw new Error(
-            res.data.message || 'Không thể bắt đầu bài thi tổ hợp',
+            res.data.message || 'Failed to start combo exam',
           );
         }
       } catch (err) {
-        handleError(err, 'Không thể bắt đầu bài thi tổ hợp');
+        handleError(err, 'Failed to start combo exam');
         return null;
       } finally {
         setLoading(false);
@@ -118,11 +117,11 @@ export const useExamAttempt = () => {
           return res.data.data;
         } else {
           throw new Error(
-            res.data.message || 'Không thể bắt đầu bài thi ngẫu nhiên',
+            res.data.message || 'Failed to start random combo exam',
           );
         }
       } catch (err) {
-        handleError(err, 'Không thể bắt đầu bài thi ngẫu nhiên');
+        handleError(err, 'Failed to start random combo exam');
         return null;
       } finally {
         setLoading(false);
@@ -144,13 +143,13 @@ export const useExamAttempt = () => {
         if (res.data.code === 0 || res.data.code === 1000) {
           setSubmissionResult(res.data.data);
           setActiveAttempt(null); // Xóa bài thi đang làm
-          toast.success('Nộp bài thành công!');
+          toast.success('Submit successfully!');
           return res.data.data;
         } else {
-          throw new Error(res.data.message || 'Không thể nộp bài');
+          throw new Error(res.data.message || 'Submit failed!');
         }
       } catch (err) {
-        const errorMessage = handleError(err, 'Không thể nộp bài');
+        const errorMessage = handleError(err, 'Submit failed!');
         throw new Error(errorMessage);
       } finally {
         setLoading(false);
@@ -169,9 +168,9 @@ export const useExamAttempt = () => {
       try {
         // Đã đổi tên hàm: ExamService.rateAttempt
         await ExamService.rateAttempt(attemptId, payload);
-        toast.success('Đánh giá của bạn đã được gửi!');
+        toast.success('Rate successfully!');
       } catch (err) {
-        handleError(err, 'Không thể gửi đánh giá');
+        handleError(err, 'Rate failed!');
       } finally {
         setLoading(false);
       }
@@ -192,10 +191,10 @@ export const useExamAttempt = () => {
         setAttemptResultDetail(res.data.data);
         return res.data.data;
       } else {
-        throw new Error(res.data.message || 'Không thể tải kết quả chi tiết');
+        throw new Error(res.data.message || 'Failed to load attempt result');
       }
     } catch (err) {
-      handleError(err, 'Không thể tải kết quả chi tiết');
+      handleError(err, 'Failed to load attempt result');
       return null;
     } finally {
       setLoading(false);
@@ -530,7 +529,7 @@ export const useExamAttemptHistory = () => {
   );
 
   useEffect(() => {
-    fetchHistory(0, 10, ['startTime_desc']); // Keep default sorting for initial load
+    fetchHistory(0, 20, ['startTime_desc']); // Keep default sorting for initial load
   }, [fetchHistory]);
 
   const handlePageChange = (newPage: number, newSize: number) => {
