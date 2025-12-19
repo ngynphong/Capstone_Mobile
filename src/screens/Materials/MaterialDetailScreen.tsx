@@ -52,6 +52,7 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
     videoError,
     setActiveVideoLessonId,
     getLessonAssetDownloadConfig,
+    refreshLessons,
   } = useMaterialDetail({ material, learningMaterialId });
 
   const {
@@ -120,12 +121,12 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
     checkExistingRating();
   }, [user, learningMaterialId, fetchRatingByMaterialAndUser]);
 
-  // Reset thời gian lưu khi chuyển lesson
+  // Reset save time when switching lessons
   useEffect(() => {
     resetSaveTime();
   }, [displayLesson?.id, resetSaveTime]);
 
-  // Kiểm tra xem đây có phải là lesson cuối cùng không
+  // Check if this is the last lesson
   const isLastLesson = () => {
     if (!displayLesson || derivedLessons.length === 0) return false;
     const lastLesson = derivedLessons[derivedLessons.length - 1];
@@ -134,46 +135,52 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
 
   // Xử lý khi video kết thúc
   const handlePlaybackStatusUpdate = async (status: AVPlaybackStatus) => {
-    // Gọi hook để lưu tiến trình (nếu có)
+    // Call hook to save progress (if available)
     await handleProgressUpdate(status, async (updatedStatus) => {
-      // Kiểm tra nếu video đã kết thúc và đây là lesson cuối cùng
-      if (updatedStatus.isLoaded && updatedStatus.didJustFinish && isLastLesson()) {
-        // Kiểm tra lại xem đã đánh giá chưa trước khi hiển thị modal
-        if (!user || !learningMaterialId) return;
+      // If video just finished, refresh lessons to update completed status
+      if (updatedStatus.isLoaded && updatedStatus.didJustFinish) {
+        // Refresh lessons to update progress
+        refreshLessons();
         
-        // Nếu đã biết là đã đánh giá rồi, không cần kiểm tra lại
-        if (hasRated) {
-          console.log('Already rated, skipping modal');
-          return;
-        }
-        
-        try {
-          console.log('Checking if user has rated:', { learningMaterialId, userId: user.id });
-          const existingRating = await fetchRatingByMaterialAndUser(
-            learningMaterialId,
-            user.id
-          );
+        // Check if this is the last lesson
+        if (isLastLesson()) {
+          // Check again if user has rated before showing modal
+          if (!user || !learningMaterialId) return;
           
-          console.log('Rating check result:', existingRating);
-          
-          // Chỉ hiển thị modal nếu chưa đánh giá
-          if (!existingRating) {
-            console.log('No rating found, showing modal');
-            setShowRatingModal(true);
-          } else {
-            // Đánh dấu đã đánh giá và KHÔNG hiển thị modal
-            setHasRated(true);
-            console.log('User has already rated this material, NOT showing modal');
+          // If already rated, no need to check again
+          if (hasRated) {
+            console.log('Already rated, skipping modal');
+            return;
           }
-        } catch (error: any) {
-          // Nếu lỗi là 404 hoặc không tìm thấy, hiển thị modal
-          if (error?.response?.status === 404 || error?.response?.data?.code === 1001) {
-            console.log('Rating not found (404), showing modal');
-            setShowRatingModal(true);
-          } else {
-            // Lỗi khác, vẫn hiển thị modal để user có thể đánh giá
-            console.log('Error checking rating, showing modal:', error);
-            setShowRatingModal(true);
+          
+          try {
+            console.log('Checking if user has rated:', { learningMaterialId, userId: user.id });
+            const existingRating = await fetchRatingByMaterialAndUser(
+              learningMaterialId,
+              user.id
+            );
+            
+            console.log('Rating check result:', existingRating);
+            
+            // Only show modal if not rated yet
+            if (!existingRating) {
+              console.log('No rating found, showing modal');
+              setShowRatingModal(true);
+            } else {
+              // Mark as rated and DO NOT show modal
+              setHasRated(true);
+              console.log('User has already rated this material, NOT showing modal');
+            }
+          } catch (error: any) {
+            // If error is 404 or not found, show modal
+            if (error?.response?.status === 404 || error?.response?.data?.code === 1001) {
+              console.log('Rating not found (404), showing modal');
+              setShowRatingModal(true);
+            } else {
+              // Other errors, still show modal so user can rate
+              console.log('Error checking rating, showing modal:', error);
+              setShowRatingModal(true);
+            }
           }
         }
       }

@@ -140,14 +140,14 @@ export const useMaterialDetail = ({ material, learningMaterialId }: UseMaterialD
       if (!displayLesson) {
         if (isMounted) {
           setVideoSource(null);
-          setVideoError('Chưa có video cho học liệu này.');
+          setVideoError('No video available for this material.');
         }
         lastProcessedLessonId.current = null;
         lastProcessedFileName.current = null;
         return;
       }
 
-      // Kiểm tra xem đã xử lý lesson này chưa để tránh gọi API liên tục
+      // Check if this lesson has been processed to avoid calling API continuously
       const currentLessonId = displayLesson.id;
       const currentFileName = displayLesson.fileName || displayLesson.videoUrl;
       
@@ -158,23 +158,23 @@ export const useMaterialDetail = ({ material, learningMaterialId }: UseMaterialD
         return;
       }
 
-      // Cập nhật ref để đánh dấu đã xử lý
+      // Update ref to mark as processed
       lastProcessedLessonId.current = currentLessonId;
       lastProcessedFileName.current = currentFileName || null;
 
-      // Lấy video URL hoặc fileName từ lesson (ưu tiên videoUrl)
+      // Get video URL or fileName from lesson (prefer videoUrl)
       const source = displayLesson.videoUrl || displayLesson.fileName;
       
       if (!source) {
         if (isMounted) {
           setVideoSource(null);
-          setVideoError('Chưa có video cho bài học này.');
+          setVideoError('No video available for this lesson.');
           setVideoLoading(false);
         }
         return;
       }
 
-      // Load video từ source
+      // Load video from source
       setVideoLoading(true);
       loadVideoFromSource(source).then((videoSource) => {
         if (!isMounted) return;
@@ -184,14 +184,14 @@ export const useMaterialDetail = ({ material, learningMaterialId }: UseMaterialD
           setVideoError(null);
         } else {
           setVideoSource(null);
-          setVideoError('Không thể tải video. Vui lòng thử lại.');
+          setVideoError('Unable to load video. Please try again.');
         }
         setVideoLoading(false);
       }).catch((error) => {
         if (!isMounted) return;
         console.error('Error loading video:', error);
         setVideoSource(null);
-        setVideoError('Lỗi khi tải video.');
+        setVideoError('Error loading video.');
         setVideoLoading(false);
       });
     };
@@ -203,6 +203,11 @@ export const useMaterialDetail = ({ material, learningMaterialId }: UseMaterialD
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayLesson?.id, displayLesson?.fileName, displayLesson?.videoUrl, loadVideoFromSource]);
+
+  // Hàm refresh lessons để cập nhật progress
+  const refreshLessons = useCallback(() => {
+    fetchLessonsByMaterial(learningMaterialId);
+  }, [learningMaterialId, fetchLessonsByMaterial]);
 
   return {
     // Lessons
@@ -219,6 +224,7 @@ export const useMaterialDetail = ({ material, learningMaterialId }: UseMaterialD
     // Actions
     setActiveVideoLessonId,
     getLessonAssetDownloadConfig,
+    refreshLessons,
   };
 };
 

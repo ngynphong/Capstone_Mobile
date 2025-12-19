@@ -1,8 +1,8 @@
 import type { ApiResponse, PageInfo } from './apiTypes';
 
 /**
- * Thông tin cơ bản của một lesson.
- * Các field được để optional vì backend có thể chưa cố định hoàn toàn.
+ * Basic information of a lesson.
+ * Fields are optional because backend may not be fully fixed yet.
  */
 export interface Lesson {
   id: string;
@@ -17,10 +17,15 @@ export interface Lesson {
   fileName?: string;
   createdAt?: string;
   updatedAt?: string;
+  // Progress fields from API /lessons/progress/by-learning-material
+  completed?: boolean; // Whether the lesson is completed
+  progressPercentage?: number; // Completion percentage (0-100)
+  nextToContinue?: boolean; // Next lesson to continue
+  lastWatchedSecond?: number; // Last watched second
 }
 
 /**
- * Thông tin video lesson trả về từ /videos.
+ * Video lesson information returned from /videos.
  */
 export interface LessonVideo {
   id: string;
@@ -34,33 +39,33 @@ export interface LessonVideo {
 }
 
 /**
- * Kết quả phân trang chung cho danh sách lesson.
+ * Paginated result for lesson list.
  */
 export type LessonListResponse = ApiResponse<PageInfo<Lesson>>;
 
 /**
- * Kết quả trả về khi gọi GET /lessons/{id}.
+ * Response when calling GET /lessons/{id}.
  */
 export type LessonDetailResponse = ApiResponse<Lesson>;
 
 /**
- * Kết quả trả về khi gọi GET /videos.
+ * Response when calling GET /videos.
  */
 export type LessonVideosResponse = ApiResponse<LessonVideo[]>;
 
 /**
- * Kết quả trả về khi lấy lesson theo learning material.
- * Có thể là array trực tiếp hoặc PageInfo structure
+ * Response when getting lessons by learning material.
+ * Can be a direct array or PageInfo structure
  */
 export type LessonByMaterialResponse = ApiResponse<Lesson[] | PageInfo<Lesson>>;
 
 /**
- * Request body để lưu progress của lesson video.
+ * Request body to save lesson video progress.
  */
 export interface SaveLessonProgressRequest {
-  currentTime?: number; // Thời gian hiện tại đã xem (giây)
-  progressPercentage?: number; // Phần trăm hoàn thành (0-100)
-  completed?: boolean; // Đã hoàn thành lesson chưa
-  [key: string]: unknown; // Cho phép các field khác từ backend
+  currentTime?: number; // Current watched time (seconds)
+  progressPercentage?: number; // Completion percentage (0-100)
+  completed?: boolean; // Whether the lesson is completed
+  [key: string]: unknown; // Allow other fields from backend
 }
 
