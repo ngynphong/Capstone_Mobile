@@ -276,6 +276,7 @@ export interface AttemptResultDetail {
   endTime: string;
   rating: number;
   questions: AttemptResultQuestion[];
+  
 }
 
 /**

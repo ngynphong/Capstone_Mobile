@@ -4,4 +4,5 @@ export interface AiExamAskRequest {
     studentAnswer: string;
     studentAsking: string;
     doneBy: string;
+    questionContext: string;
 }

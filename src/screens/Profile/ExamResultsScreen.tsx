@@ -57,7 +57,7 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
   const onRefresh = async () => {
     setRefreshing(true);
     setCurrentPage(0);
-    await fetchHistory(0, 10);
+    await fetchHistory(0, 20);
     setRefreshing(false);
   };
 
@@ -65,7 +65,7 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
     if (pageInfo && pageInfo.pageNo < pageInfo.totalPage - 1 && !loadingMore) {
       setLoadingMore(true);
       setCurrentPage(prev => prev + 1);
-      await fetchHistory(pageInfo.pageNo + 1, 10);
+      await fetchHistory(pageInfo.pageNo + 1, 20);
       setLoadingMore(false);
     }
   };
@@ -168,10 +168,11 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
     );
   };
 
-  if (loading) {
+  if (loading && allHistory.length === 0) {
     return (
       <View className="flex-1 justify-center items-center bg-gray-50">
-        <Text className="text-gray-600 text-lg">Loading exam results...</Text>
+        <ActivityIndicator size="large" color="#3CBCB2" />
+        <Text className="text-gray-600 mt-4">Loading exam history...</Text>
       </View>
     );
   }
@@ -190,6 +191,30 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
             </TouchableOpacity>
             <Text className="text-xl font-bold text-gray-900">Exam Results</Text>
           </View>
+
+          {/* Quick Pagination Info in Header */}
+          {pageInfo && (
+            <View className="flex-row items-center">
+              <View className="bg-teal-50 px-3 py-1 rounded-full mr-2">
+                <Text className="text-xs text-teal-700 font-medium">
+                  {allHistory.length}/{pageInfo.totalElement}
+                </Text>
+              </View>
+              {hasMorePages && (
+                <TouchableOpacity
+                  onPress={loadMore}
+                  disabled={loadingMore}
+                  className="bg-teal-400 px-3 py-1 rounded-full"
+                >
+                  {loadingMore ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <Text className="text-xs text-white font-medium">+More</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
         </View>
 
         {/* Sort Options */}
@@ -267,6 +292,42 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
               </View>
             </View>
 
+            {/* Pagination Info Box - Always Visible */}
+            {pageInfo && (
+              <View className="bg-teal-50 border border-teal-200 rounded-xl p-3 mb-4 flex-row items-center justify-between">
+                <View>
+                  <Text className="text-sm text-teal-700 font-medium">
+                    Showing {allHistory.length} of {pageInfo.totalElement} results
+                  </Text>
+                  <Text className="text-xs text-teal-600">
+                    Page {pageInfo.pageNo + 1} of {pageInfo.totalPage}
+                  </Text>
+                </View>
+                {hasMorePages ? (
+                  <TouchableOpacity
+                    onPress={loadMore}
+                    disabled={loadingMore}
+                    className="bg-teal-400 px-4 py-2 rounded-lg flex-row items-center"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <ActivityIndicator size="small" color="white" />
+                        <Text className="text-white font-medium text-sm ml-2">Loading...</Text>
+                      </>
+                    ) : (
+                      <Text className="text-white font-medium text-sm">
+                        Load More ({pageInfo.totalElement - allHistory.length})
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                ) : (
+                  <View className="bg-green-100 px-3 py-2 rounded-lg">
+                    <Text className="text-sm text-green-700 font-medium">✓ All loaded</Text>
+                  </View>
+                )}
+              </View>
+            )}
+
             {/* Exam Results List */}
             <View className="mb-4">
               <Text className="text-lg font-semibold text-gray-900 mb-3">
@@ -274,35 +335,34 @@ const ExamResultsScreen: React.FC<ExamResultsScreenProps> = ({ navigation }) => 
               </Text>
               {sortedHistory.map((attempt: any, index: number) => renderExamResult(attempt, index))}
 
-              {/* Load More Button */}
-              {hasMorePages && (
+              {/* Bottom Loading Indicator */}
+              {loadingMore && (
+                <View className="py-4 items-center">
+                  <ActivityIndicator size="small" color="#3CBCB2" />
+                  <Text className="text-sm text-gray-500 mt-2">Loading more results...</Text>
+                </View>
+              )}
+
+              {/* Load More Button at Bottom */}
+              {hasMorePages && !loadingMore && (
                 <View className="mt-4">
                   <TouchableOpacity
                     onPress={loadMore}
                     className="bg-teal-400 py-3 rounded-xl"
-                    disabled={loading}
+                    disabled={loadingMore}
                   >
-                    {loading ? (
-                      <View className="flex-row items-center justify-center">
-                        <ActivityIndicator size="small" color="white" />
-                        <Text className="text-white font-medium text-center text-lg ml-2">
-                          Loading...
-                        </Text>
-                      </View>
-                    ) : (
-                      <Text className="text-white font-medium text-center text-lg">
-                        Load More Results
-                      </Text>
-                    )}
+                    <Text className="text-white font-medium text-center text-lg">
+                      Load More ({pageInfo ? pageInfo.totalElement - allHistory.length : 0} remaining)
+                    </Text>
                   </TouchableOpacity>
                 </View>
               )}
 
-              {/* Pagination Info */}
-              {pageInfo && (
-                <View className="mt-3 items-center">
-                  <Text className="text-sm text-gray-500">
-                    Page {pageInfo.pageNo + 1} of {pageInfo.totalPage}
+              {/* All Loaded Message */}
+              {!hasMorePages && allHistory.length > 0 && (
+                <View className="mt-4 py-3 items-center bg-gray-100 rounded-xl">
+                  <Text className="text-sm text-gray-600 font-medium">
+                    ✓ You've seen all {allHistory.length} results
                   </Text>
                 </View>
               )}

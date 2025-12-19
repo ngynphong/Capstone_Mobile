@@ -5,18 +5,26 @@ import { useAuth } from '../../context/AuthContext';
 import { useAiExamAsk } from '../../hooks/useAiExamAsk';
 import Markdown from 'react-native-markdown-display';
 import LatexText from '../common/LatexText';
+import QuestionImage from './QuestionImage';
+import AudioPlayer from '../common/AudioPlayer';
 
 interface QuestionItemProps {
     questionItem: any;
     index: number;
     attemptId: string;
+    hideContextMedia?: boolean; // Hide context/image/audio if shown at group level
 }
 
-const ExamQuestionResultItem: React.FC<QuestionItemProps> = ({ questionItem, index, attemptId }) => {
+const ExamQuestionResultItem: React.FC<QuestionItemProps> = ({ questionItem, index, attemptId, hideContextMedia = false }) => {
     const { user } = useAuth();
     const { askAi, response, isLoading, error } = useAiExamAsk();
     const [showAiSection, setShowAiSection] = useState(false);
     const [userQuestion, setUserQuestion] = useState('');
+
+    // Extract question media
+    const questionImage = questionItem.question.imageUrl;
+    const questionAudio = questionItem.question.audioUrl;
+    const questionContext = questionItem.question.questionContext;
 
     const handleAskAi = () => {
         if (!userQuestion.trim()) return;
@@ -28,7 +36,8 @@ const ExamQuestionResultItem: React.FC<QuestionItemProps> = ({ questionItem, ind
                 ? questionItem.question.answers?.find((a: any) => a.id === questionItem.studentAnswer?.selectedAnswerId)?.content || 'No answer'
                 : questionItem.studentAnswer?.frqAnswerText || 'No answer',
             studentAsking: userQuestion,
-            doneBy: user?.email || 'User'
+            doneBy: user?.email || 'User',
+            questionContext: questionContext?.content || '',
         });
     };
 
@@ -62,6 +71,16 @@ const ExamQuestionResultItem: React.FC<QuestionItemProps> = ({ questionItem, ind
                     </Text>
                 </View>
             </View>
+
+            {/* Question Image (only show if not hidden by group) */}
+            {!hideContextMedia && questionImage && (
+                <QuestionImage imageUrl={questionImage} alt="Question image" />
+            )}
+
+            {/* Question Audio (only show if not hidden by group) */}
+            {!hideContextMedia && questionAudio && (
+                <AudioPlayer audioUrl={questionAudio} title="Listen to the audio" />
+            )}
 
             <LatexText content={questionItem.question.content} fontSize={15} />
 

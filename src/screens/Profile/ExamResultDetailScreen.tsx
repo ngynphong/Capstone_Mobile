@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, Modal } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, Modal, ActivityIndicator } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { ChevronLeft, Calendar, Clock, CheckCircle, Target, Award, TrendingUp, Star, RefreshCw, X } from 'lucide-react-native';
 
 import { useScroll } from '../../context/ScrollContext';
 import { useExamAttempt } from '../../hooks/useExamAttempt';
 import ExamQuestionResultItem from '../../components/Exam/ExamQuestionResultItem';
+import QuestionContextBlock from '../../components/Exam/QuestionContextBlock';
+import QuestionImage from '../../components/Exam/QuestionImage';
+import AudioPlayer from '../../components/common/AudioPlayer';
+import { QuestionContext, AttemptResultQuestion } from '../../types/examTypes';
 
 const ExamResultDetailScreen = () => {
   const navigation = useNavigation<any>();
@@ -101,10 +105,102 @@ const ExamResultDetailScreen = () => {
     return 'Keep studying and try again. You\'ll get better!';
   };
 
+  // Group questions by context, imageUrl, or audioUrl
+  interface QuestionGroup {
+    contextId?: string;
+    context?: QuestionContext | null;
+    sharedImageUrl?: string | null;
+    sharedAudioUrl?: string | null;
+    questions: AttemptResultQuestion[];
+  }
+
+  const groupedQuestions = useMemo(() => {
+    if (!attempt?.questions) return [];
+
+    const groups: QuestionGroup[] = [];
+    const processedIds = new Set<string>();
+
+    attempt.questions.forEach((q) => {
+      if (processedIds.has(q.examQuestionId)) return;
+
+      const context = q.question.questionContext;
+      const imageUrl = q.question.imageUrl;
+      const audioUrl = q.question.audioUrl;
+
+      // Find all questions with the same context (if exists)
+      if (context?.id) {
+        const sameContextQuestions = attempt.questions.filter(
+          (otherQ) => otherQ.question.questionContext?.id === context.id
+        );
+
+        sameContextQuestions.forEach((sq) => processedIds.add(sq.examQuestionId));
+
+        groups.push({
+          contextId: context.id,
+          context,
+          sharedImageUrl: null,
+          sharedAudioUrl: null,
+          questions: sameContextQuestions,
+        });
+      }
+      // Group by same imageUrl if no context
+      else if (imageUrl) {
+        const sameImageQuestions = attempt.questions.filter(
+          (otherQ) =>
+            !otherQ.question.questionContext?.id &&
+            otherQ.question.imageUrl === imageUrl
+        );
+
+        sameImageQuestions.forEach((sq) => processedIds.add(sq.examQuestionId));
+
+        groups.push({
+          contextId: undefined,
+          context: null,
+          sharedImageUrl: imageUrl,
+          sharedAudioUrl: null,
+          questions: sameImageQuestions,
+        });
+      }
+      // Group by same audioUrl if no context and no image
+      else if (audioUrl) {
+        const sameAudioQuestions = attempt.questions.filter(
+          (otherQ) =>
+            !otherQ.question.questionContext?.id &&
+            !otherQ.question.imageUrl &&
+            otherQ.question.audioUrl === audioUrl
+        );
+
+        sameAudioQuestions.forEach((sq) => processedIds.add(sq.examQuestionId));
+
+        groups.push({
+          contextId: undefined,
+          context: null,
+          sharedImageUrl: null,
+          sharedAudioUrl: audioUrl,
+          questions: sameAudioQuestions,
+        });
+      }
+      // Individual question without any grouping
+      else {
+        processedIds.add(q.examQuestionId);
+        groups.push({
+          contextId: undefined,
+          context: null,
+          sharedImageUrl: null,
+          sharedAudioUrl: null,
+          questions: [q],
+        });
+      }
+    });
+
+    return groups;
+  }, [attempt?.questions]);
+
   if (loading) {
     return (
       <View className="flex-1 justify-center items-center bg-gray-50">
-        <Text className="text-gray-600 text-lg">Loading exam result...</Text>
+        <ActivityIndicator size="large" color="#3CBCB2" />
+        <Text className="text-gray-600 mt-4">Loading exam history...</Text>
       </View>
     );
   }
@@ -224,13 +320,47 @@ const ExamResultDetailScreen = () => {
         <View className="bg-white rounded-xl p-6 mb-4">
           <Text className="text-lg font-semibold text-gray-900 mb-4">Question Details</Text>
 
-          {attempt.questions.map((questionItem, index) => (
-            <ExamQuestionResultItem
-              key={questionItem.examQuestionId}
-              questionItem={questionItem}
-              index={index}
-              attemptId={attemptId}
-            />
+          {groupedQuestions.map((group, groupIndex) => (
+            <View key={group.contextId || `group-${groupIndex}`} className="mb-6">
+              {/* Shared Context Block */}
+              {group.context && (
+                <QuestionContextBlock
+                  context={group.context}
+                  questionCount={group.questions.length}
+                />
+              )}
+
+              {/* Shared Image (for questions without context but with same image) */}
+              {!group.context && group.sharedImageUrl && (
+                <View className="mb-4 bg-blue-50 rounded-xl p-4 border border-blue-200">
+                  <Text className="text-sm font-medium text-blue-800 mb-2">
+                    📷 Shared Image for {group.questions.length} question{group.questions.length > 1 ? 's' : ''}
+                  </Text>
+                  <QuestionImage imageUrl={group.sharedImageUrl} alt="Shared question image" />
+                </View>
+              )}
+
+              {/* Shared Audio (for questions without context/image but with same audio) */}
+              {!group.context && !group.sharedImageUrl && group.sharedAudioUrl && (
+                <View className="mb-4 bg-purple-50 rounded-xl p-4 border border-purple-200">
+                  <Text className="text-sm font-medium text-purple-800 mb-2">
+                    🎧 Shared Audio for {group.questions.length} question{group.questions.length > 1 ? 's' : ''}
+                  </Text>
+                  <AudioPlayer audioUrl={group.sharedAudioUrl} title="Listen to the audio" />
+                </View>
+              )}
+
+              {/* Render all questions in this group */}
+              {group.questions.map((questionItem, qIndex) => (
+                <ExamQuestionResultItem
+                  key={questionItem.examQuestionId}
+                  questionItem={questionItem}
+                  index={attempt.questions.findIndex(q => q.examQuestionId === questionItem.examQuestionId)}
+                  attemptId={attemptId}
+                  hideContextMedia={!!group.context || !!group.sharedImageUrl || !!group.sharedAudioUrl}
+                />
+              ))}
+            </View>
           ))}
         </View>
 
