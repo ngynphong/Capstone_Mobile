@@ -25,6 +25,7 @@ import RatingModal from '../../components/Material/RatingModal';
 import { useNotes } from '../../hooks/useNotes';
 import MaterialHero from '../../components/Material/MaterialHero';
 import LessonList from '../../components/Material/LessonList';
+import { useLessonProgress } from '../../hooks/useLessonProgress';
 
 type DetailRouteProp = RouteProp<MaterialStackParamList, 'MaterialDetail'>;
 type DetailNavProp = NativeStackNavigationProp<
@@ -51,6 +52,7 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
     videoError,
     setActiveVideoLessonId,
     getLessonAssetDownloadConfig,
+    refreshLessons,
   } = useMaterialDetail({ material, learningMaterialId });
 
   const {
@@ -79,6 +81,13 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
     isLoading: isSubmittingRating 
   } = useMaterialRating();
 
+  // Hook để lưu tiến trình video
+  const { handlePlaybackStatusUpdate: handleProgressUpdate, resetSaveTime } = useLessonProgress({
+    lessonId: displayLesson?.id,
+    enabled: !!user, // Chỉ lưu khi có user
+    saveInterval: 5, // Lưu mỗi 5 giây
+  });
+
   // Kiểm tra xem user đã đánh giá chưa khi component mount
   useEffect(() => {
     const checkExistingRating = async () => {
@@ -100,8 +109,6 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
         if (error?.response?.status === 404 || error?.response?.data?.code === 1001) {
           setHasRated(false);
         } else {
-          // Lỗi khác, vẫn coi như chưa đánh giá
-          console.log('Error checking rating:', error);
           setHasRated(false);
         }
       } finally {
@@ -112,7 +119,12 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
     checkExistingRating();
   }, [user, learningMaterialId, fetchRatingByMaterialAndUser]);
 
-  // Kiểm tra xem đây có phải là lesson cuối cùng không
+  // Reset save time when switching lessons
+  useEffect(() => {
+    resetSaveTime();
+  }, [displayLesson?.id, resetSaveTime]);
+
+  // Check if this is the last lesson
   const isLastLesson = () => {
     if (!displayLesson || derivedLessons.length === 0) return false;
     const lastLesson = derivedLessons[derivedLessons.length - 1];
@@ -121,64 +133,59 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
 
   // Xử lý khi video kết thúc
   const handlePlaybackStatusUpdate = async (status: AVPlaybackStatus) => {
-    if (!status.isLoaded) return;
-
-    // Kiểm tra nếu video đã kết thúc và đây là lesson cuối cùng
-    if (status.didJustFinish && isLastLesson()) {
-      // Kiểm tra lại xem đã đánh giá chưa trước khi hiển thị modal
-      if (!user || !learningMaterialId) return;
-      
-      // Nếu đã biết là đã đánh giá rồi, không cần kiểm tra lại
-      if (hasRated) {
-        console.log('Already rated, skipping modal');
-        return;
-      }
-      
-      try {
-        console.log('Checking if user has rated:', { learningMaterialId, userId: user.id });
-        const existingRating = await fetchRatingByMaterialAndUser(
-          learningMaterialId,
-          user.id
-        );
+    // Call hook to save progress (if available)
+    await handleProgressUpdate(status, async (updatedStatus) => {
+      // If video just finished, refresh lessons to update completed status
+      if (updatedStatus.isLoaded && updatedStatus.didJustFinish) {
+        setTimeout(() => {
+          refreshLessons();
+        }, 1000);
         
-        console.log('Rating check result:', existingRating);
+        setTimeout(() => {
+          refreshLessons();
+        }, 2000);
         
-        // Chỉ hiển thị modal nếu chưa đánh giá
-        if (!existingRating) {
-          console.log('No rating found, showing modal');
-          setShowRatingModal(true);
-        } else {
-          // Đánh dấu đã đánh giá và KHÔNG hiển thị modal
-          setHasRated(true);
-          console.log('User has already rated this material, NOT showing modal');
-        }
-      } catch (error: any) {
-        // Nếu lỗi là 404 hoặc không tìm thấy, hiển thị modal
-        if (error?.response?.status === 404 || error?.response?.data?.code === 1001) {
-          console.log('Rating not found (404), showing modal');
-          setShowRatingModal(true);
-        } else {
-          // Lỗi khác, vẫn hiển thị modal để user có thể đánh giá
-          console.log('Error checking rating, showing modal:', error);
-          setShowRatingModal(true);
+        // Check if this is the last lesson
+        if (isLastLesson()) {
+          // Check again if user has rated before showing modal
+          if (!user || !learningMaterialId) return;
+          
+          // If already rated, no need to check again
+          if (hasRated) {
+            return;
+          }
+          
+          try {
+            const existingRating = await fetchRatingByMaterialAndUser(
+              learningMaterialId,
+              user.id
+            );
+            
+            if (!existingRating) {
+              setShowRatingModal(true);
+            } else {
+              setHasRated(true);
+            }
+          } catch (error: any) {
+            if (error?.response?.status === 404 || error?.response?.data?.code === 1001) {
+              setShowRatingModal(true);
+            } else {
+              setShowRatingModal(true);
+            }
+          }
         }
       }
-    }
+    });
   };
 
   // Xử lý submit rating
   const handleSubmitRating = async () => {
-    console.log('handleSubmitRating called', { user, learningMaterialId, rating, hasRated });
-    
     if (!user || !learningMaterialId) {
-      console.log('Missing user or learningMaterialId');
       Alert.alert('Error', 'Please login to rate.');
       return;
     }
 
-    // Kiểm tra xem đã đánh giá chưa trước khi submit
     if (hasRated) {
-      console.log('Already rated, showing alert');
       Alert.alert(
         'Thông báo',
         'You have already rated this learning material',
@@ -188,21 +195,12 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
     }
 
     try {
-      console.log('Submitting rating...', {
-        learningMaterialId,
-        userId: user.id,
-        rating,
-        comment: comment.trim() || undefined,
-      });
-
-      const result = await createRating({
+      await createRating({
         learningMaterialId: learningMaterialId,
         userId: user.id,
         rating,
         comment: comment.trim() || undefined,
       });
-
-      console.log('Rating submitted successfully:', result);
 
       // Đánh dấu đã đánh giá ngay lập tức
       setHasRated(true);
@@ -250,9 +248,7 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
           ]
         );
       } else {
-        // Show error
         const displayMessage = errorMessage || 'Unable to submit rating. Please try again.';
-        console.log('Showing error alert:', displayMessage);
         Alert.alert('Error', displayMessage, [{ text: 'OK' }]);
       }
     }
@@ -335,7 +331,6 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
       setShowNoteModal(true);
 
       const userNotes = await fetchNotesByLessonAndUser(lesson.id, user.id);
-      console.log('Fetched notes for lesson', lesson.id, userNotes);
       if (userNotes && userNotes.length > 0) {
         const firstNote: any = userNotes[0];
         setExistingNoteId(firstNote.id);
@@ -346,7 +341,6 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
         setNoteText('');
       }
     } catch (error: any) {
-      console.log('Error loading note:', error);
       Alert.alert(
         'Lỗi',
         error?.response?.data?.message ||
@@ -398,9 +392,7 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
 
       Alert.alert('Thành công', 'Ghi chú của bạn đã được lưu.');
       setShowNoteModal(false);
-      // Không reset text để lần sau mở lại vẫn thấy nội dung
     } catch (error: any) {
-      console.log('Error saving note:', error);
       Alert.alert(
         'Lỗi',
         error?.response?.data?.message ||
@@ -436,6 +428,7 @@ const MaterialDetailScreen: React.FC<Props> = ({ route }) => {
           lessons={derivedLessons}
           isLoading={isLoading}
           downloadingLessonId={downloadingLessonId}
+          isMaterialCompleted={hasRated}
           onOpenVideo={(lessonId, hasVideo) => {
             if (hasVideo) {
               setActiveVideoLessonId(lessonId);

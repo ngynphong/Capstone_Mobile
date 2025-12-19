@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { ResizeMode, Video, AVPlaybackStatus } from 'expo-av';
 import type { Material } from '../../types/material';
@@ -23,6 +23,71 @@ const MaterialHero: React.FC<MaterialHeroProps> = ({
   videoRef,
   onPlaybackStatusUpdate,
 }) => {
+  const lastValidPositionRef = useRef<number>(0);
+  const isSeekingRef = useRef<boolean>(false);
+  const lastUpdateTimeRef = useRef<number>(Date.now());
+
+  // Reset vị trí hợp lệ khi video source thay đổi
+  useEffect(() => {
+    lastValidPositionRef.current = 0;
+    isSeekingRef.current = false;
+  }, [videoSource]);
+
+  const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
+    if (!status.isLoaded || !videoRef.current) {
+      onPlaybackStatusUpdate(status);
+      return;
+    }
+
+    const now = Date.now();
+    const currentTime = status.positionMillis / 1000;
+    const lastValid = lastValidPositionRef.current;
+    const timeSinceLastUpdate = (now - lastUpdateTimeRef.current) / 1000;
+
+    // Nếu video đang phát bình thường
+    if (status.isPlaying) {
+      // Cho phép tăng dần vị trí khi video đang phát (tối đa 2 giây mỗi lần update)
+      if (currentTime >= lastValid && currentTime <= lastValid + timeSinceLastUpdate + 1) {
+        // Vị trí hợp lệ - video đang phát bình thường
+        lastValidPositionRef.current = currentTime;
+        lastUpdateTimeRef.current = now;
+        isSeekingRef.current = false;
+      } else if (currentTime < lastValid - 0.3) {
+        // Tua về trước -> reset về vị trí hợp lệ
+        isSeekingRef.current = true;
+        videoRef.current.setPositionAsync(lastValid * 1000).catch(() => {});
+        onPlaybackStatusUpdate(status);
+        return;
+      } else if (currentTime > lastValid + 2) {
+        // Nhảy quá xa về phía trước -> reset về vị trí hợp lệ
+        isSeekingRef.current = true;
+        videoRef.current.setPositionAsync(lastValid * 1000).catch(() => {});
+        onPlaybackStatusUpdate(status);
+        return;
+      }
+    } else {
+      // Khi video đang pause, nếu vị trí thay đổi đột ngột -> có thể là seek
+      if (Math.abs(currentTime - lastValid) > 0.3 && !isSeekingRef.current) {
+        // Reset về vị trí hợp lệ
+        isSeekingRef.current = true;
+        videoRef.current.setPositionAsync(lastValid * 1000).catch(() => {});
+        onPlaybackStatusUpdate(status);
+        return;
+      }
+      // Nếu đang trong quá trình reset (isSeeking), không cập nhật lastValid
+      if (!isSeekingRef.current && currentTime >= lastValid) {
+        lastValidPositionRef.current = currentTime;
+      }
+    }
+
+    // Reset flag sau khi đã xử lý
+    if (isSeekingRef.current && Math.abs(currentTime - lastValid) < 0.2) {
+      isSeekingRef.current = false;
+    }
+
+    onPlaybackStatusUpdate(status);
+  };
+
   return (
     <View style={styles.heroCard}>
       <View style={styles.videoWrapper}>
@@ -37,7 +102,8 @@ const MaterialHero: React.FC<MaterialHeroProps> = ({
             resizeMode={ResizeMode.CONTAIN}
             // @ts-ignore - expo-av Video works on web but has deprecation warning
             webStyle={{ width: '100%', height: '100%' }}
-            onPlaybackStatusUpdate={onPlaybackStatusUpdate}
+            onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+            progressUpdateIntervalMillis={500}
           />
         ) : (
           <View style={styles.videoPlaceholder}>

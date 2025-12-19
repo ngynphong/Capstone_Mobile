@@ -1,10 +1,12 @@
 import type { AxiosResponse } from 'axios';
 import axiosInstance from '../configs/axios';
+import type { ApiResponse } from '../types/apiTypes';
 import type {
   LessonByMaterialResponse,
   LessonDetailResponse,
   LessonListResponse,
   LessonVideosResponse,
+  SaveLessonProgressRequest,
 } from '../types/lessonTypes';
 
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || '').replace(/\/$/, '');
@@ -71,15 +73,31 @@ const LessonService = {
   },
 
   /**
-   * GET /lessons/by-learning-material/{learningMaterialId}
-   * Lấy lesson theo learning material.
+   * GET /lessons/progress/by-learning-material/{learningMaterialId}
+   * Lấy lesson theo learning material với progress của user.
    */
   getLessonsByLearningMaterial(
     learningMaterialId: string,
   ): Promise<AxiosResponse<LessonByMaterialResponse>> {
     return axiosInstance.get(
-      `/lessons/by-learning-material/${learningMaterialId}`,
+      `/lessons/progress/by-learning-material/${learningMaterialId}`,
     );
+  },
+
+  /**
+   * PUT /lessons/{lessonId}/progress?lastWatchedSecond={seconds}
+   * Lưu tiến độ video lesson.
+   * API yêu cầu lastWatchedSecond là query parameter, không phải body.
+   */
+  saveLessonProgress(
+    lessonId: string,
+    lastWatchedSecond: number,
+  ): Promise<AxiosResponse<ApiResponse<unknown>>> {
+    return axiosInstance.put(`/lessons/${lessonId}/progress`, null, {
+      params: {
+        lastWatchedSecond: Math.round(lastWatchedSecond),
+      },
+    });
   },
 };
 
