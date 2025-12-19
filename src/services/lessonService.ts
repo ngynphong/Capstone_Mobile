@@ -85,14 +85,19 @@ const LessonService = {
   },
 
   /**
-   * PUT /lessons/{lessonId}/progress
+   * PUT /lessons/{lessonId}/progress?lastWatchedSecond={seconds}
    * Lưu tiến độ video lesson.
+   * API yêu cầu lastWatchedSecond là query parameter, không phải body.
    */
   saveLessonProgress(
     lessonId: string,
-    progress: SaveLessonProgressRequest,
+    lastWatchedSecond: number,
   ): Promise<AxiosResponse<ApiResponse<unknown>>> {
-    return axiosInstance.put(`/lessons/${lessonId}/progress`, progress);
+    return axiosInstance.put(`/lessons/${lessonId}/progress`, null, {
+      params: {
+        lastWatchedSecond: Math.round(lastWatchedSecond),
+      },
+    });
   },
 };
 
