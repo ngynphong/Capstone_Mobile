@@ -54,3 +54,13 @@ export type LessonVideosResponse = ApiResponse<LessonVideo[]>;
  */
 export type LessonByMaterialResponse = ApiResponse<Lesson[] | PageInfo<Lesson>>;
 
+/**
+ * Request body để lưu progress của lesson video.
+ */
+export interface SaveLessonProgressRequest {
+  currentTime?: number; // Thời gian hiện tại đã xem (giây)
+  progressPercentage?: number; // Phần trăm hoàn thành (0-100)
+  completed?: boolean; // Đã hoàn thành lesson chưa
+  [key: string]: unknown; // Cho phép các field khác từ backend
+}
+
