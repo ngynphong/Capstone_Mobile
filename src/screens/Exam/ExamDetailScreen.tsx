@@ -144,7 +144,7 @@ const ExamDetailScreen = () => {
                         </View>
 
                         {/* Stats */}
-                        <View className="flex-row items-center space-x-6">
+                        <View className="flex-row items-center space-x-6 gap-2">
                             <View className="flex-row items-center">
                                 <Clock size={18} color="#6B7280" />
                                 <Text className="text-sm text-gray-600 ml-2">

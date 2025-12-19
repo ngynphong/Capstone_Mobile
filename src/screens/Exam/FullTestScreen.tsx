@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,17 +11,22 @@ import {
   Animated,
   Easing,
   Modal,
+  TextInput,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Clock, BookOpen, CheckCircle, Circle, Save } from 'lucide-react-native';
+import { Clock, BookOpen, CheckCircle, Circle, Save, TextWrap, WrapText } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
-import { ActiveExam } from '../../types/examTypes';
+import { ActiveExam, ActiveExamQuestion, QuestionContext } from '../../types/examTypes';
 import { useExamAttempt } from '../../hooks/useExamAttempt';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import LatexText from '../../components/common/LatexText';
 import MathKeyboard from '../../components/common/MathKeyboard';
+import AudioPlayer from '../../components/common/AudioPlayer';
+import QuestionImage from '../../components/Exam/QuestionImage';
+import QuestionContextBlock from '../../components/Exam/QuestionContextBlock';
+import { needsMathKeyboard } from '../../configs/subjectConfig';
 
 const FullTestScreen = () => {
   const navigation = useNavigation<any>();
@@ -351,6 +356,47 @@ const FullTestScreen = () => {
   const mcqQuestions = attempt.questions.filter(q => q.question.type === 'mcq');
   const frqQuestions = attempt.questions.filter(q => q.question.type === 'frq');
 
+  // Group questions by context ID
+  interface QuestionGroup {
+    context: QuestionContext | null;
+    questions: ActiveExamQuestion[];
+  }
+
+  const groupQuestionsByContext = (questions: ActiveExamQuestion[]): QuestionGroup[] => {
+    const groups: Map<string | null, QuestionGroup> = new Map();
+
+    questions.forEach(q => {
+      const contextId = q.question.questionContext?.id || null;
+
+      if (!groups.has(contextId)) {
+        groups.set(contextId, {
+          context: q.question.questionContext || null,
+          questions: [],
+        });
+      }
+      groups.get(contextId)!.questions.push(q);
+    });
+
+    // Convert to array and sort: questions with context first, then standalone
+    return Array.from(groups.values()).sort((a, b) => {
+      if (a.context && !b.context) return -1;
+      if (!a.context && b.context) return 1;
+      return 0;
+    });
+  };
+
+  const mcqGroups = useMemo(() => groupQuestionsByContext(mcqQuestions), [mcqQuestions]);
+  const frqGroups = useMemo(() => groupQuestionsByContext(frqQuestions), [frqQuestions]);
+
+  // Calculate global question number
+  const getQuestionNumber = (question: ActiveExamQuestion, isFrq: boolean = false) => {
+    const allQuestions = isFrq
+      ? [...mcqQuestions, ...frqQuestions]
+      : mcqQuestions;
+    const index = allQuestions.findIndex(q => q.examQuestionId === question.examQuestionId);
+    return isFrq ? index + 1 : index + 1;
+  };
+
   // Format time display
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -374,7 +420,7 @@ const FullTestScreen = () => {
   return (
     <View className="flex-1 bg-gray-50">
       {/* Header */}
-      <View className="bg-white pt-12 pb-6 px-6 shadow-sm">
+      <View className="bg-white pt-12 pb-6 px-4 shadow-sm">
         <View className="flex-row items-center justify-between mb-4">
           <View className="flex-row items-center">
             {/* <TouchableOpacity
@@ -500,49 +546,83 @@ const FullTestScreen = () => {
       // onScroll={handleScroll}
       // scrollEventThrottle={16}
       >
-        <View className="bg-white rounded-2xl p-6 my-6 shadow-sm border border-gray-100">
+        <View className="bg-white rounded-2xl p-4 my-6 shadow-sm border border-gray-100">
           <Text className="text-xl font-bold text-gray-900 mb-6">
             {currentSection === 'mcq' ? 'Multiple Choice' : 'Essay'}
           </Text>
 
           {currentSection === 'mcq' ? (
-            // MCQ Section
+            // MCQ Section with Context Grouping
             mcqQuestions.length > 0 ? (
               <View className="space-y-4">
-                {mcqQuestions.map((question, index) => (
-                  <View key={question.examQuestionId} className="mb-6 p-4 bg-gray-50 rounded-lg">
-                    <Text className="text-lg font-semibold text-gray-900 mb-3">
-                      Question {index + 1}:
-                    </Text>
-                    <LatexText
-                      content={question.question.content}
-                      textStyle={{ fontSize: 16, lineHeight: 24, color: '#374151' }}
-                    />
-                    {question.question.answers && question.question.answers.length > 0 && (
-                      <View className="flex flex-col gap-2">
-                        {question.question.answers.map((answer, answerIndex) => {
-                          const isSelected = answers[question.examQuestionId]?.selectedAnswerId === answer.id;
-                          return (
-                            <TouchableOpacity
-                              key={answer.id}
-                              onPress={() => handleAnswerSelect(question.examQuestionId, answer.id)}
-                              className={`flex-row items-center p-3 rounded-lg border ${isSelected ? 'bg-teal-100 border-teal-400' : 'bg-white border-gray-300'
-                                }`}
-                            >
-                              {isSelected ? (
-                                <CheckCircle size={20} color="#3CBCB2" />
-                              ) : (
-                                <Circle size={20} color="#6B7280" />
-                              )}
-                              <LatexText
-                                content={`${String.fromCharCode(65 + answerIndex)}. ${answer.content}`}
-                                textStyle={{ marginLeft: 12, fontSize: 16, color: isSelected ? '#115e59' : '#374151', fontWeight: isSelected ? '500' : '400' }}
-                              />
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
+                {mcqGroups.map((group, groupIndex) => (
+                  <View
+                    key={group.context?.id || `standalone-${groupIndex}`}
+                    className={group.context ? 'mb-6 p-3 border-2 border-blue-200 rounded-2xl bg-blue-50/30' : ''}
+                  >
+                    {/* Context Block */}
+                    {group.context && (
+                      <QuestionContextBlock
+                        context={group.context}
+                        questionCount={group.questions.length}
+                      />
                     )}
+
+                    {/* Questions in this group */}
+                    {group.questions.map((question) => {
+                      const questionIndex = mcqQuestions.findIndex(q => q.examQuestionId === question.examQuestionId);
+                      return (
+                        <View key={question.examQuestionId} className="mb-6 p-4 bg-gray-50 rounded-lg">
+                          <Text className="text-lg font-semibold text-gray-900 mb-3">
+                            Question {questionIndex + 1}:
+                          </Text>
+
+                          {/* Question Image */}
+                          {question.question.imageUrl && (
+                            <QuestionImage imageUrl={question.question.imageUrl} />
+                          )}
+
+                          {/* Question Audio */}
+                          {question.question.audioUrl && (
+                            <AudioPlayer
+                              audioUrl={question.question.audioUrl}
+                              title="Listen to the question"
+                            />
+                          )}
+
+                          <LatexText
+                            content={question.question.content}
+                            textStyle={{ fontSize: 16, lineHeight: 24, color: '#374151', overflowWrap: 'break-word' }}
+                          />
+
+                          {question.question.answers && question.question.answers.length > 0 && (
+                            <View className="flex flex-col gap-2 mt-3">
+                              {question.question.answers.map((answer, answerIndex) => {
+                                const isSelected = answers[question.examQuestionId]?.selectedAnswerId === answer.id;
+                                return (
+                                  <TouchableOpacity
+                                    key={answer.id}
+                                    onPress={() => handleAnswerSelect(question.examQuestionId, answer.id)}
+                                    className={`flex-row items-center p-4 rounded-lg border ${isSelected ? 'bg-teal-100 border-teal-400' : 'bg-white border-gray-300'
+                                      }`}
+                                  >
+                                    {isSelected ? (
+                                      <CheckCircle size={20} color="#3CBCB2" />
+                                    ) : (
+                                      <Circle size={20} color="#6B7280" />
+                                    )}
+                                    <LatexText
+                                      content={`${String.fromCharCode(65 + answerIndex)}. ${answer.content}`}
+                                      textStyle={{ marginLeft: 8, fontSize: 16, color: isSelected ? '#115e59' : '#374151', fontWeight: isSelected ? '500' : '400' }}
+                                    />
+                                  </TouchableOpacity>
+                                );
+                              })}
+                            </View>
+                          )}
+                        </View>
+                      );
+                    })}
                   </View>
                 ))}
               </View>
@@ -552,29 +632,76 @@ const FullTestScreen = () => {
               </Text>
             )
           ) : (
-            // FRQ Section
+            // FRQ Section with Context Grouping
             frqQuestions.length > 0 ? (
               <View className="space-y-4">
-                {frqQuestions.map((question, index) => (
-                  <View key={question.examQuestionId} className="mb-6 p-4 bg-gray-50 rounded-lg">
-                    <Text className="text-lg font-semibold text-gray-900 mb-3">
-                      Question {mcqQuestions.length + index + 1}:
-                    </Text>
-                    <LatexText
-                      content={question.question.content}
-                      textStyle={{ fontSize: 16, lineHeight: 24, color: '#374151' }}
-                    />
-                    <MathKeyboard
-                      value={answers[question.examQuestionId]?.frqAnswerText || ''}
-                      onChangeText={(text) => handleFRQInput(question.examQuestionId, text)}
-                      placeholder="Enter your answer..."
-                    />
+                {frqGroups.map((group, groupIndex) => (
+                  <View
+                    key={group.context?.id || `standalone-frq-${groupIndex}`}
+                    className={group.context ? 'mb-6 p-3 border-2 border-blue-200 rounded-2xl bg-blue-50/30' : ''}
+                  >
+                    {/* Context Block */}
+                    {group.context && (
+                      <QuestionContextBlock
+                        context={group.context}
+                        questionCount={group.questions.length}
+                      />
+                    )}
+
+                    {/* Questions in this group */}
+                    {group.questions.map((question) => {
+                      const questionIndex = frqQuestions.findIndex(q => q.examQuestionId === question.examQuestionId);
+                      return (
+                        <View key={question.examQuestionId} className="mb-6 p-4 bg-gray-50 rounded-lg">
+                          <Text className="text-lg font-semibold text-gray-900 mb-3">
+                            Question {mcqQuestions.length + questionIndex + 1}:
+                          </Text>
+
+                          {/* Question Image */}
+                          {question.question.imageUrl && (
+                            <QuestionImage imageUrl={question.question.imageUrl} />
+                          )}
+
+                          {/* Question Audio */}
+                          {question.question.audioUrl && (
+                            <AudioPlayer
+                              audioUrl={question.question.audioUrl}
+                              title="Listen to the question"
+                            />
+                          )}
+
+                          <LatexText
+                            content={question.question.content}
+                            textStyle={{ fontSize: 16, lineHeight: 24, color: '#374151' }}
+                          />
+
+                          {/* Show MathKeyboard for Math/Physics/Chemistry, TextInput for others */}
+                          {needsMathKeyboard(question.question.subject?.name || '') ? (
+                            <MathKeyboard
+                              value={answers[question.examQuestionId]?.frqAnswerText || ''}
+                              onChangeText={(text) => handleFRQInput(question.examQuestionId, text)}
+                              placeholder="Enter your answer..."
+                            />
+                          ) : (
+                            <TextInput
+                              className="bg-white border border-gray-300 rounded-xl p-4 mt-3 min-h-[250px] text-base text-gray-900"
+                              multiline={true}
+                              textAlignVertical="top"
+                              placeholder="Write your essay answer here..."
+                              placeholderTextColor="#9CA3AF"
+                              value={answers[question.examQuestionId]?.frqAnswerText || ''}
+                              onChangeText={(text) => handleFRQInput(question.examQuestionId, text)}
+                            />
+                          )}
+                        </View>
+                      );
+                    })}
                   </View>
                 ))}
               </View>
             ) : (
               <Text className="text-gray-600 text-center py-8">
-                No multiple choice questions in this exam.
+                No essay questions in this exam.
               </Text>
             )
           )}
