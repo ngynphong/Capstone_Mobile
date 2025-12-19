@@ -16,15 +16,71 @@ interface LessonListProps {
   onOpenVideo: (lessonId: string, hasVideo: boolean) => void;
   onOpenPdf: (lesson: Lesson) => void;
   onOpenNote: (lesson: Lesson) => void;
+  isMaterialCompleted?: boolean; // Material has been completed (has rating/certificate)
 }
+
+/**
+ * Check if a lesson is completed
+ * A lesson is considered completed if:
+ * - completed === true (from API), OR
+ * - lastWatchedSecond >= durationInSeconds (watched to the end), OR
+ * - progressPercentage >= 90% (watched most of the video)
+ */
+const isLessonCompleted = (lesson: Lesson): boolean => {
+  // Check explicit completed flag from API
+  if (lesson.completed === true) {
+    return true;
+  }
+  
+  // Check progressPercentage first (most reliable if available)
+  if (lesson.progressPercentage !== undefined && lesson.progressPercentage >= 90) {
+    return true;
+  }
+  
+  // Check if watched to the end: lastWatchedSecond >= durationInSeconds
+  if (
+    lesson.lastWatchedSecond !== undefined &&
+    lesson.lastWatchedSecond > 0 &&
+    lesson.durationInSeconds !== undefined &&
+    lesson.durationInSeconds > 0
+  ) {
+    // Consider completed if watched at least 90% (to handle rounding issues)
+    return lesson.lastWatchedSecond >= lesson.durationInSeconds * 0.9;
+  }
+  
+  // If we have lastWatchedSecond but no duration, and lastWatchedSecond is significant
+  // This is a fallback for when API doesn't return duration
+  // Only use this if lastWatchedSecond is reasonably high (>= 5 seconds)
+  // This handles the case where video is very short (like 5 seconds)
+  if (
+    lesson.lastWatchedSecond !== undefined &&
+    lesson.lastWatchedSecond >= 5 &&
+    (lesson.durationInSeconds === undefined || lesson.durationInSeconds === 0)
+  ) {
+    // If lastWatchedSecond >= 5 and no duration, likely a short video that's been watched
+    // This is a heuristic - ideally API should provide duration
+    return true;
+  }
+  
+  return false;
+};
 
 /**
  * Check if a lesson is locked
  * A lesson is locked if:
- * - It's not the first lesson
- * - The previous lesson is not completed (completed !== true)
+ * - Material is not completed AND
+ * - It's not the first lesson AND
+ * - The previous lesson is not completed
  */
-const isLessonLocked = (lesson: Lesson, lessons: Lesson[], index: number): boolean => {
+const isLessonLocked = (
+  lesson: Lesson,
+  lessons: Lesson[],
+  index: number,
+  isMaterialCompleted: boolean = false
+): boolean => {
+  // If material is completed, all lessons are unlocked
+  if (isMaterialCompleted) return false;
+  
   // First lesson is always unlocked
   if (index === 0) return false;
   
@@ -32,8 +88,8 @@ const isLessonLocked = (lesson: Lesson, lessons: Lesson[], index: number): boole
   const previousLesson = lessons[index - 1];
   if (!previousLesson) return false;
   
-  // If previous lesson is not completed, this lesson is locked
-  return previousLesson.completed !== true;
+  // Check if previous lesson is completed
+  return !isLessonCompleted(previousLesson);
 };
 
 const LessonList: React.FC<LessonListProps> = ({
@@ -43,6 +99,7 @@ const LessonList: React.FC<LessonListProps> = ({
   onOpenVideo,
   onOpenPdf,
   onOpenNote,
+  isMaterialCompleted = false,
 }) => {
   return (
     <View style={styles.section}>
@@ -59,8 +116,8 @@ const LessonList: React.FC<LessonListProps> = ({
         lessons.map((lesson, index) => {
           const hasVideo = Boolean(lesson.videoUrl || lesson.fileName);
           const hasDocument = Boolean(lesson.documentUrl || lesson.fileName);
-          const isLocked = isLessonLocked(lesson, lessons, index);
-          const isCompleted = lesson.completed === true;
+          const isLocked = isLessonLocked(lesson, lessons, index, isMaterialCompleted);
+          const isCompleted = isLessonCompleted(lesson);
 
           return (
             <View key={lesson.id} style={styles.lessonCard}>

@@ -109,15 +109,27 @@ export const useLesson = () => {
 
         // Map các field từ backend sang Lesson interface
         // Backend có thể trả về: file, url, name thay vì fileName, videoUrl, title
-        const mappedLessons: Lesson[] = lessonsArray.map((lesson: any) => ({
-          ...lesson,
-          fileName: lesson.fileName || lesson.file,
-          videoUrl: lesson.videoUrl || lesson.url,
-          title: lesson.title || lesson.name,
-        }));
+        const mappedLessons: Lesson[] = lessonsArray.map((lesson: any) => {
+          // Lấy duration từ nhiều nguồn có thể
+          const duration = lesson.durationInSeconds 
+            || lesson.duration 
+            || lesson.durationSeconds
+            || (lesson.durationMillis ? Math.round(lesson.durationMillis / 1000) : undefined);
+          
+          const mapped: Lesson = {
+            ...lesson,
+            fileName: lesson.fileName || lesson.file,
+            videoUrl: lesson.videoUrl || lesson.url,
+            title: lesson.title || lesson.name,
+            // Map progress fields - đảm bảo map đúng từ API
+            completed: lesson.completed !== undefined ? Boolean(lesson.completed) : false,
+            progressPercentage: lesson.progressPercentage !== undefined ? Number(lesson.progressPercentage) : undefined,
+            lastWatchedSecond: lesson.lastWatchedSecond !== undefined ? Number(lesson.lastWatchedSecond) : undefined,
+            durationInSeconds: duration !== undefined ? Number(duration) : lesson.durationInSeconds,
+          };
+          return mapped;
+        });
 
-        console.log('Fetched lessons count:', mappedLessons.length);
-        console.log('Mapped lessons:', mappedLessons);
 
         setLessons({
           items: mappedLessons,
@@ -224,9 +236,6 @@ export const useLesson = () => {
     try {
       const response = await LessonService.getVideos(actualFileName);
       const responseData = response.data;
-      console.log('getVideos API response:', JSON.stringify(responseData, null, 2));
-      console.log('Response data type:', typeof responseData.data);
-      console.log('Response data:', responseData.data);
 
       // Kiểm tra cấu trúc response - có thể là:
       // 1. ApiResponse<LessonVideo[]> -> responseData.data là array
@@ -239,47 +248,31 @@ export const useLesson = () => {
       // Trường hợp 1: data là string URL trực tiếp
       if (typeof responseData.data === 'string') {
         videoUrl = responseData.data;
-        console.log('Response data is direct URL string:', videoUrl);
       }
       // Trường hợp 2: data là array
       else if (Array.isArray(responseData.data)) {
         if (responseData.data.length > 0) {
           const firstVideo = responseData.data[0];
           videoUrl = firstVideo.url || firstVideo.videoUrl || firstVideo.uri || firstVideo.videoUrl;
-          console.log('Extracted from array, firstVideo:', firstVideo);
-          console.log('Extracted video URL:', videoUrl);
         }
       }
       // Trường hợp 3: data là object
       else if (responseData.data && typeof responseData.data === 'object') {
-        // Thử nhiều field khác nhau
         const dataObj = responseData.data as any;
         videoUrl = dataObj.url ||
           dataObj.videoUrl ||
           dataObj.uri ||
           dataObj.video_url;
-        console.log('Extracted from object, video URL:', videoUrl);
-        console.log('Object keys:', Object.keys(dataObj));
       }
 
       // Nếu vẫn chưa có, thử xem responseData có phải là URL trực tiếp không
       if (!videoUrl && typeof responseData === 'string' && /^https?:\/\//i.test(responseData)) {
         videoUrl = responseData;
-        console.log('ResponseData itself is URL:', videoUrl);
       }
 
       if (videoUrl && /^https?:\/\//i.test(videoUrl)) {
-        console.log('✅ Valid video URL found:', videoUrl);
         return videoUrl;
       }
-
-      console.log('❌ No valid video URL found in response');
-      console.log('Response structure:', {
-        hasData: !!responseData.data,
-        dataType: typeof responseData.data,
-        isArray: Array.isArray(responseData.data),
-        dataKeys: responseData.data && typeof responseData.data === 'object' ? Object.keys(responseData.data) : null
-      });
       return null;
     } catch (err) {
       console.error('Không thể tải video lesson:', err);

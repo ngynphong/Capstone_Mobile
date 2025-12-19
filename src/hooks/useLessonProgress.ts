@@ -37,24 +37,34 @@ export const useLessonProgress = ({
       if (enabled && lessonId && status.positionMillis !== undefined) {
         const currentTime = Date.now();
         const timeSinceLastSave = (currentTime - lastSaveTimeRef.current) / 1000;
+        const currentTimeInSeconds = Math.round(status.positionMillis / 1000);
+        const durationInSeconds = status.durationMillis 
+          ? Math.round(status.durationMillis / 1000) 
+          : null;
 
-        // Chỉ lưu nếu đã qua đủ thời gian và không đang trong quá trình lưu
-        if (timeSinceLastSave >= saveInterval && !isSavingRef.current) {
+        // Nếu video vừa kết thúc, lưu ngay với duration để đánh dấu completed
+        const isVideoFinished = status.didJustFinish && durationInSeconds;
+        // Nếu video gần kết thúc (>= 95% hoặc đã kết thúc), cũng coi như completed
+        const isNearEnd = durationInSeconds && currentTimeInSeconds >= durationInSeconds * 0.95;
+        const shouldSave = isVideoFinished || isNearEnd || (timeSinceLastSave >= saveInterval && !isSavingRef.current);
+
+        if (shouldSave && !isSavingRef.current) {
           isSavingRef.current = true;
           
           try {
-            const currentTimeInSeconds = Math.round(status.positionMillis / 1000);
+            // Nếu video kết thúc hoặc gần kết thúc, gửi duration để đánh dấu completed
+            let lastWatchedSecond = currentTimeInSeconds;
+            if (isVideoFinished && durationInSeconds) {
+              lastWatchedSecond = durationInSeconds;
+            } else if (isNearEnd && durationInSeconds) {
+              // Nếu gần kết thúc, gửi duration để đảm bảo được đánh dấu completed
+              lastWatchedSecond = durationInSeconds;
+            }
 
-            await LessonService.saveLessonProgress(lessonId, currentTimeInSeconds);
-
+            await LessonService.saveLessonProgress(lessonId, lastWatchedSecond);
             lastSaveTimeRef.current = currentTime;
-            console.log('Progress saved:', {
-              lessonId,
-              lastWatchedSecond: currentTimeInSeconds,
-            });
           } catch (error) {
-            console.error('Error saving lesson progress:', error);
-            // Không hiển thị lỗi cho user để không làm gián đoạn việc xem video
+            // Silently handle error to not interrupt video playback
           } finally {
             isSavingRef.current = false;
           }
