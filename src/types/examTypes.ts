@@ -68,6 +68,19 @@ export interface ExamAnswer {
 }
 
 /**
+ * (API Start) Context/Reading passage cho câu hỏi.
+ */
+export interface QuestionContext {
+  id: string;
+  title: string;
+  content: string;
+  imageUrl: string | null;
+  audioUrl: string | null;
+  subjectId: string;
+  subjectName: string;
+}
+
+/**
  * (API Start) Chi tiết của một câu hỏi (object lồng nhau).
  */
 export interface ExamQuestionDetail {
@@ -79,6 +92,9 @@ export interface ExamQuestionDetail {
   createdBy: string;
   topic: string;
   answers: ExamAnswer[]; // Danh sách các lựa chọn trả lời
+  imageUrl: string | null; // Hình ảnh đính kèm câu hỏi
+  audioUrl: string | null; // Audio đính kèm câu hỏi
+  questionContext: QuestionContext | null; // Reading passage/context
 }
 
 /**
