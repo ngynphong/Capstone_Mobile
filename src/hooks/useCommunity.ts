@@ -168,13 +168,15 @@ export const useCommunity = () => {
 
   /**
    * Lấy danh sách posts trong community
+   * @param communityId - ID của community (required)
+   * @param params - Query parameters: page (default: 1), size (default: 15)
    */
   const fetchCommunityPosts = useCallback(
     async (
       communityId: string,
       params?: {
-        pageNo?: number;
-        pageSize?: number;
+        page?: number; // Default: 1
+        size?: number; // Default: 15
       },
     ): Promise<Post[]> => {
       try {

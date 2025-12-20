@@ -18,6 +18,7 @@ export interface Post {
   likes: number;
   comments: number;
   avatar?: string;
+  imageUrl?: string; // URL của hình ảnh đính kèm post
   createdAt: string;
   updatedAt: string;
   userId?: string;

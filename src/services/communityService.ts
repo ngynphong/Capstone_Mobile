@@ -58,12 +58,14 @@ const CommunityService = {
   /**
    * GET /communities/{communityId}/posts
    * Lấy danh sách posts trong community.
+   * @param communityId - ID của community (required, path parameter)
+   * @param params - Query parameters: page (default: 1), size (default: 15)
    */
   getCommunityPosts(
     communityId: string,
     params?: {
-      pageNo?: number;
-      pageSize?: number;
+      page?: number; // Default: 1
+      size?: number; // Default: 15
     },
   ): Promise<AxiosResponse<ApiResponse<PageInfo<Post> | Post[]>>> {
     return axiosInstance.get(`/communities/${communityId}/posts`, { params });

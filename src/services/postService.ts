@@ -11,6 +11,48 @@ import type {
 
 const PostService = {
   /**
+   * GET /posts
+   * Lấy danh sách tất cả posts (feed).
+   * NOTE: Endpoint này có thể không tồn tại, sử dụng getMyPosts hoặc getCommunityPosts thay thế
+   */
+  getAllPosts(
+    params?: {
+      pageNo?: number;
+      pageSize?: number;
+      subject?: string;
+      communityId?: string;
+    },
+  ): Promise<AxiosResponse<ApiResponse<PageInfo<Post> | Post[]>>> {
+    // Nếu có communityId, sử dụng endpoint communities
+    if (params?.communityId) {
+      const { communityId, ...restParams } = params;
+      return axiosInstance.get(`/communities/${communityId}/posts`, { 
+        params: {
+          page: restParams.pageNo || 1,
+          size: restParams.pageSize || 15,
+        }
+      });
+    }
+    // Fallback: sử dụng my-posts nếu không có communityId
+    return axiosInstance.get('/posts/my-posts', { 
+      params: {
+        pageNo: params?.pageNo || 0,
+        pageSize: params?.pageSize || 20,
+      }
+    });
+  },
+
+  /**
+   * GET /posts/{postId}
+   * Lấy chi tiết một post.
+   */
+  getPostById(
+    postId: string,
+  ): Promise<AxiosResponse<ApiResponse<Post>>> {
+    return axiosInstance.get(`/posts/${postId}`);
+  },
+
+  /**
    * PUT /posts/{postId}
    * Cập nhật post.
    */

@@ -227,6 +227,65 @@ export const usePost = () => {
   );
 
   /**
+   * Lấy danh sách tất cả posts (feed)
+   */
+  const fetchAllPosts = useCallback(
+    async (params?: {
+      pageNo?: number;
+      pageSize?: number;
+      subject?: string;
+      communityId?: string;
+    }): Promise<Post[]> => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const response = await PostService.getAllPosts(params);
+        const list = normalizePostResponse(response.data);
+        setPosts(list);
+        return list;
+      } catch (err: any) {
+        const message =
+          err?.response?.data?.message ||
+          err?.message ||
+          'Không thể tải danh sách posts.';
+        setError(message);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  /**
+   * Lấy chi tiết một post
+   */
+  const fetchPostById = useCallback(
+    async (postId: string): Promise<Post> => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const response = await PostService.getPostById(postId);
+        const post =
+          (response.data as ApiResponse<Post>).data || (response.data as any);
+        return post;
+      } catch (err: any) {
+        const message =
+          err?.response?.data?.message ||
+          err?.message ||
+          'Không thể tải chi tiết post.';
+        setError(message);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  /**
    * Lấy danh sách posts của user hiện tại
    */
   const fetchMyPosts = useCallback(
@@ -264,6 +323,8 @@ export const usePost = () => {
     error,
 
     // actions
+    fetchAllPosts,
+    fetchPostById,
     updatePost,
     deletePost,
     pinPost,

@@ -1,0 +1,269 @@
+import React from 'react';
+import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { Heart, MessageCircle, Share2, Bookmark } from 'lucide-react-native';
+import type { Post } from '../../types/communityTypes';
+
+interface PostCardProps {
+  post: Post;
+  onLike?: (postId: string) => void;
+  onComment?: (post: Post) => void;
+  onShare?: (post: Post) => void;
+  onBookmark?: (postId: string) => void;
+}
+
+const PostCard: React.FC<PostCardProps> = ({
+  post,
+  onLike,
+  onComment,
+  onShare,
+  onBookmark,
+}) => {
+  // Extract hashtags from content
+  const extractHashtags = (text: string) => {
+    if (!text || typeof text !== 'string') return [];
+    const hashtagRegex = /#\w+/g;
+    return text.match(hashtagRegex) || [];
+  };
+
+  const postContent = typeof post.content === 'string' ? post.content : '';
+  const hashtags = extractHashtags(postContent);
+  const contentWithoutHashtags = postContent.replace(/#\w+/g, '').trim();
+
+  // Format time ago safely
+  const formatTimeAgo = (timeAgo: string | undefined) => {
+    if (!timeAgo || typeof timeAgo !== 'string') {
+      return '';
+    }
+    return timeAgo;
+  };
+
+  // Get safe numeric value
+  const getSafeNumber = (value: number | undefined | null, defaultValue: number = 0) => {
+    if (typeof value === 'number' && !isNaN(value)) {
+      return value;
+    }
+    return defaultValue;
+  };
+
+  // Get username from author or generate from id
+  const getUsername = () => {
+    // If userId exists and looks like a username, use it directly
+    if (post.userId && typeof post.userId === 'string' && !post.userId.includes('@')) {
+      return `@${post.userId}`;
+    }
+    // Generate username from author name (Vietnamese name format)
+    // Ensure author is a string
+    let authorName = 'User';
+    if (typeof post.author === 'string') {
+      authorName = post.author;
+    } else if (post.author && typeof post.author === 'object') {
+      // If author is an object, try to get name property
+      authorName = (post.author as any).name || (post.author as any).firstName || 'User';
+    }
+    
+    // Convert Vietnamese name to username format (e.g., "Lê Hoàng Nam" -> "@nam_le_99")
+    const parts = authorName.toLowerCase().split(' ').filter(p => p.length > 0);
+    if (parts.length >= 2) {
+      const lastPart = parts[parts.length - 1]; // Last name
+      const firstPart = parts[0]; // First name
+      return `@${lastPart}_${firstPart.slice(0, 2)}_99`;
+    }
+    const username = authorName.toLowerCase().replace(/\s+/g, '_');
+    return `@${username}`;
+  };
+
+  // Get author display name safely
+  const getAuthorName = () => {
+    if (typeof post.author === 'string') {
+      return post.author;
+    }
+    if (post.author && typeof post.author === 'object') {
+      const authorObj = post.author as any;
+      if (authorObj.name) return authorObj.name;
+      if (authorObj.firstName && authorObj.lastName) {
+        return `${authorObj.firstName} ${authorObj.lastName}`;
+      }
+      if (authorObj.firstName) return authorObj.firstName;
+      if (authorObj.username) return authorObj.username;
+    }
+    return 'User';
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.userInfo}>
+          <Image
+            source={{
+              uri: post.avatar || 'https://placehold.co/40x40',
+            }}
+            style={styles.avatar}
+          />
+          <View style={styles.userDetails}>
+            <Text style={styles.authorName}>{getAuthorName()}</Text>
+            <Text style={styles.username}>{getUsername()}</Text>
+          </View>
+        </View>
+        <Text style={styles.timeAgo}>{formatTimeAgo(post.timeAgo || '')}</Text>
+      </View>
+
+      {/* Content */}
+      <View style={styles.content}>
+        <Text style={styles.postText}>{contentWithoutHashtags}</Text>
+        {hashtags.length > 0 && (
+          <View style={styles.hashtags}>
+            {hashtags.map((tag, index) => (
+              <Text key={index} style={styles.hashtag}>
+                {tag}
+              </Text>
+            ))}
+          </View>
+        )}
+      </View>
+
+      {/* Image if available */}
+      {post.imageUrl && (
+        <Image
+          source={{ uri: post.imageUrl }}
+          style={styles.postImage}
+          resizeMode="cover"
+        />
+      )}
+
+      {/* Actions */}
+      <View style={styles.actions}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => onLike?.(post.id)}
+        >
+          <Heart
+            size={20}
+            color={post.userVote === 'UP' ? '#EF4444' : '#666'}
+            fill={post.userVote === 'UP' ? '#EF4444' : 'none'}
+          />
+          <Text style={styles.actionText}>
+            {getSafeNumber(post.likes || post.voteCount)}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => onComment?.(post)}
+        >
+          <MessageCircle size={20} color="#666" />
+          <Text style={styles.actionText}>{getSafeNumber(post.comments)}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => onShare?.(post)}
+        >
+          <Share2 size={20} color="#666" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionButton, styles.bookmarkButton]}
+          onPress={() => onBookmark?.(post.id)}
+        >
+          <Bookmark size={20} color="#666" />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    marginBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  userDetails: {
+    flex: 1,
+  },
+  authorName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  username: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  timeAgo: {
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  content: {
+    marginBottom: 12,
+  },
+  postText: {
+    fontSize: 15,
+    color: '#111827',
+    lineHeight: 22,
+    marginBottom: 8,
+  },
+  hashtags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 4,
+  },
+  hashtag: {
+    fontSize: 14,
+    color: '#3CBCB2',
+    fontWeight: '500',
+    marginRight: 8,
+  },
+  postImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: '#F3F4F6',
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 24,
+  },
+  bookmarkButton: {
+    marginLeft: 'auto',
+    marginRight: 0,
+  },
+  actionText: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginLeft: 6,
+  },
+});
+
+export default PostCard;
+
