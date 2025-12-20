@@ -20,6 +20,11 @@ export interface Post {
   avatar?: string;
   createdAt: string;
   updatedAt: string;
+  userId?: string;
+  communityId?: string;
+  isPinned?: boolean;
+  voteCount?: number;
+  userVote?: 'UP' | 'DOWN' | null;
 }
 
 export interface Comment {
@@ -111,4 +116,71 @@ export interface CommentsResponse {
   comments: Comment[];
   totalCount: number;
   hasMore: boolean;
+}
+
+// Community API Types
+export interface Community {
+  id: string;
+  name: string;
+  description?: string;
+  subject?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+  memberCount?: number;
+  postCount?: number;
+}
+
+export interface CreateCommunityRequest {
+  name: string;
+  description?: string;
+  subject?: string;
+}
+
+export interface UpdateCommunityRequest {
+  name?: string;
+  description?: string;
+  subject?: string;
+}
+
+export interface CommunitySearchParams {
+  query?: string;
+  subject?: string;
+  pageNo?: number;
+  pageSize?: number;
+}
+
+// Comment API Types
+export interface CommentDetail extends Comment {
+  postId: string;
+  userId?: string;
+  voteCount?: number;
+  userVote?: 'UP' | 'DOWN' | null;
+  replies?: CommentDetail[];
+  parentId?: string;
+}
+
+export interface CreateCommentRequest {
+  content: string;
+  postId: string;
+  parentId?: string;
+}
+
+export interface UpdateCommentRequest {
+  content: string;
+}
+
+export interface CommentVoteRequest {
+  voteType: 'UP' | 'DOWN';
+}
+
+// Post API Types
+export interface UpdatePostRequest {
+  title?: string;
+  content?: string;
+  subject?: string;
+}
+
+export interface PostVoteRequest {
+  voteType: 'UP' | 'DOWN';
 }
