@@ -89,6 +89,38 @@ const PostCard: React.FC<PostCardProps> = ({
     return 'User';
   };
 
+  // Avatar mặc định chung cho tất cả user chưa có avatar
+  const DEFAULT_AVATAR = 'https://ui-avatars.com/api/?name=User&background=3CBCB2&color=fff&size=128&bold=true&format=png';
+
+  // Get author avatar safely
+  const getAuthorAvatar = () => {
+    // Nếu có avatar trực tiếp trong post và không phải placeholder
+    if (post.avatar && 
+        !post.avatar.includes('placehold') && 
+        !post.avatar.includes('40x40') &&
+        post.avatar.trim() !== '') {
+      return post.avatar;
+    }
+    
+    // Nếu author là object, lấy avatar từ author
+    if (post.author && typeof post.author === 'object') {
+      const authorObj = post.author as any;
+      const avatar = authorObj.avatar || authorObj.imgUrl;
+      if (avatar && 
+          !avatar.includes('placehold') && 
+          !avatar.includes('40x40') &&
+          avatar.trim() !== '') {
+        return avatar;
+      }
+      // Nếu không có avatar hợp lệ, dùng avatar mặc định chung
+      return DEFAULT_AVATAR;
+    }
+    
+    // Nếu author là string và không có avatar, dùng avatar mặc định chung
+    // Nếu có avatar trong post nhưng là placeholder, dùng avatar mặc định
+    return DEFAULT_AVATAR;
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -96,7 +128,7 @@ const PostCard: React.FC<PostCardProps> = ({
         <View style={styles.userInfo}>
           <Image
             source={{
-              uri: post.avatar || 'https://placehold.co/40x40',
+              uri: getAuthorAvatar(),
             }}
             style={styles.avatar}
           />

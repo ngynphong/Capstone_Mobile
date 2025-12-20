@@ -9,14 +9,15 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { Sparkles } from 'lucide-react-native';
+import { Sparkles, Menu } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
 import CreatePostModal from '../../components/Community/CreatePostModal';
 import CommentModal from '../../components/Community/CommentModal';
 import PostCard from '../../components/Community/PostCard';
+import CommunitySidebar from '../../components/Community/CommunitySidebar';
 import usePost from '../../hooks/usePost';
 import useCommunity from '../../hooks/useCommunity';
-import type { Post } from '../../types/communityTypes';
+import type { Post, Community, PostAuthor } from '../../types/communityTypes';
 
 interface CommunityScreenProps {
   navigation: any;
@@ -25,13 +26,8 @@ interface CommunityScreenProps {
 const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
   const { user } = useAuth();
   const {
-    posts,
     votePost,
     fetchPostComments,
-    fetchAllPosts,
-    fetchMyPosts,
-    isLoading: isPostLoading,
-    error: postError,
   } = usePost();
   
   const {
@@ -48,6 +44,9 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [allPostsFromCommunities, setAllPostsFromCommunities] = useState<Post[]>([]);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(null);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(false);
 
   // Format time ago helper
   const formatTimeAgo = (dateString: string): string => {
@@ -74,19 +73,50 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
     }
   };
 
+  // Extract author name from string | PostAuthor
+  const getAuthorName = (author: string | PostAuthor): string => {
+    if (typeof author === 'string') {
+      return author;
+    }
+    if (typeof author === 'object' && author !== null) {
+      return author.name || author.username || author.firstName || author.lastName || 
+             `${author.firstName || ''} ${author.lastName || ''}`.trim() || 'Unknown';
+    }
+    return '';
+  };
+
+  // Normalize post data from API
+  const normalizePost = (post: Post): Post => {
+    // Nếu author là object và có avatar, map vào post.avatar
+    if (post.author && typeof post.author === 'object') {
+      const authorObj = post.author as any;
+      return {
+        ...post,
+        avatar: post.avatar || authorObj.avatar || authorObj.imgUrl,
+        timeAgo: post.timeAgo || formatTimeAgo(post.createdAt),
+      };
+    }
+    return {
+      ...post,
+      timeAgo: post.timeAgo || formatTimeAgo(post.createdAt),
+    };
+  };
+
   // Format posts with timeAgo if missing
-  const formattedPosts = [...posts, ...allPostsFromCommunities].map(post => ({
-    ...post,
-    timeAgo: post.timeAgo || formatTimeAgo(post.createdAt),
-  }));
+  const formattedPosts = allPostsFromCommunities.map(normalizePost);
 
   // Remove duplicates based on post id
   const uniquePosts = formattedPosts.filter((post, index, self) =>
     index === self.findIndex((p) => p.id === post.id)
   );
 
+  // Filter posts by selected community
+  const filteredPosts = selectedCommunityId
+    ? uniquePosts.filter((post) => post.communityId === selectedCommunityId)
+    : uniquePosts;
+
   // Sort by createdAt (newest first)
-  const sortedPosts = uniquePosts.sort((a, b) => {
+  const sortedPosts = filteredPosts.sort((a, b) => {
     const dateA = new Date(a.createdAt).getTime();
     const dateB = new Date(b.createdAt).getTime();
     return dateB - dateA;
@@ -119,53 +149,41 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
       const allPostsArrays = await Promise.all(postsPromises);
       const mergedPosts = allPostsArrays.flat();
       setAllPostsFromCommunities(mergedPosts);
-
-      // Also fetch user's own posts
-      try {
-        await fetchMyPosts({
-          pageNo: 0,
-          pageSize: 20,
-        });
-      } catch (err) {
-        console.warn('Error fetching my posts:', err);
-      }
     } catch (error: any) {
       console.error('Error loading posts:', error);
+    }
+  };
+
+  const loadPostsFromCommunity = async (communityId: string | null) => {
+    setIsLoadingPosts(true);
+    try {
+      if (communityId === null) {
+        // Load all posts from all communities
+        await loadPosts();
+      } else {
+        // Load posts from specific community
+        const posts = await fetchCommunityPosts(communityId, {
+          page: 1,
+          size: 20,
+        });
+        setAllPostsFromCommunities(posts);
+      }
+    } catch (error: any) {
+      console.error('Error loading posts from community:', error);
+    } finally {
+      setIsLoadingPosts(false);
     }
   };
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      // Fetch communities first
-      const communitiesList = await fetchCommunities({
-        pageNo: 0,
-        pageSize: 10,
-      });
-
-      // Fetch posts from each community
-      const postsPromises = communitiesList.map((community) =>
-        fetchCommunityPosts(community.id, {
-          page: 1,
-          size: 20,
-        }).catch((err) => {
-          console.warn(`Error fetching posts from community ${community.id}:`, err);
-          return [];
-        })
-      );
-
-      const allPostsArrays = await Promise.all(postsPromises);
-      const mergedPosts = allPostsArrays.flat();
-      setAllPostsFromCommunities(mergedPosts);
-
-      // Also fetch user's own posts
-      try {
-        await fetchMyPosts({
-          pageNo: 0,
-          pageSize: 20,
-        });
-      } catch (err) {
-        console.warn('Error fetching my posts:', err);
+      if (selectedCommunityId) {
+        // Refresh posts from selected community
+        await loadPostsFromCommunity(selectedCommunityId);
+      } else {
+        // Refresh all posts
+        await loadPosts();
       }
     } catch (error: any) {
       console.error('Error refreshing posts:', error);
@@ -207,8 +225,46 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
     // TODO: Implement bookmark functionality
   };
 
+  // Get selected community name
+  const selectedCommunity = selectedCommunityId
+    ? communities.find((c) => c.id === selectedCommunityId)
+    : null;
+
   return (
     <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+      {/* Header with Menu Icon */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingTop: 50,
+          paddingHorizontal: 16,
+          paddingBottom: 12,
+          backgroundColor: '#FFFFFF',
+          borderBottomWidth: 1,
+          borderBottomColor: '#F3F4F6',
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => setSidebarVisible(true)}
+          style={{
+            padding: 8,
+            marginRight: 12,
+          }}
+        >
+          <Menu size={24} color="#111827" />
+        </TouchableOpacity>
+        <Text
+          style={{
+            fontSize: 20,
+            fontWeight: '700',
+            color: '#111827',
+          }}
+        >
+          {selectedCommunity ? selectedCommunity.name : 'Community'}
+        </Text>
+      </View>
+
       <ScrollView
         style={{ flex: 1 }}
         refreshControl={
@@ -279,7 +335,7 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
         </View>
 
         {/* Error State */}
-        {postError && (
+        {communityError && (
           <View
             style={{
               padding: 20,
@@ -294,13 +350,13 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
                 textAlign: 'center',
               }}
             >
-              {postError}
+              {communityError}
             </Text>
           </View>
         )}
 
         {/* Posts Feed */}
-        {(isPostLoading || isCommunityLoading) && !refreshing ? (
+        {(isCommunityLoading || isLoadingPosts) && !refreshing ? (
           <View
             style={{
               padding: 40,
@@ -326,7 +382,7 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
         )}
 
         {/* Empty State */}
-        {!isPostLoading && !isCommunityLoading && sortedPosts.length === 0 && !postError && !communityError && (
+        {!isCommunityLoading && !isLoadingPosts && sortedPosts.length === 0 && !communityError && (
           <View
             style={{
               padding: 40,
@@ -341,7 +397,9 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
                 textAlign: 'center',
               }}
             >
-              Chưa có bài viết nào.{'\n'}Hãy là người đầu tiên chia sẻ!
+              {selectedCommunityId 
+                ? "No posts yet in this community.\nBe the first to share!"
+                : "No posts yet.\nBe the first to share!"}
             </Text>
           </View>
         )}
@@ -361,7 +419,25 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
           setSelectedPost(null);
         }}
         postTitle={selectedPost?.title || selectedPost?.content || ''}
-        postAuthor={selectedPost?.author || ''}
+        postAuthor={selectedPost ? getAuthorName(selectedPost.author) : ''}
+      />
+
+      <CommunitySidebar
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        communities={communities}
+        onCommunityPress={(community) => {
+          if (community === null) {
+            // Show all posts
+            setSelectedCommunityId(null);
+            loadPostsFromCommunity(null);
+          } else {
+            // Show posts from selected community
+            setSelectedCommunityId(community.id);
+            loadPostsFromCommunity(community.id);
+          }
+          setSidebarVisible(false);
+        }}
       />
     </View>
   );

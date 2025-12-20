@@ -8,11 +8,22 @@ export interface ForumCategory {
   icon?: string;
 }
 
+export interface PostAuthor {
+  id?: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  avatar?: string;
+  imgUrl?: string;
+  email?: string;
+}
+
 export interface Post {
   id: string;
   title: string;
   content: string;
-  author: string;
+  author: string | PostAuthor; // Có thể là string hoặc object
   subject: string;
   timeAgo: string;
   likes: number;
