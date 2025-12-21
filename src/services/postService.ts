@@ -140,12 +140,11 @@ const PostService = {
       image?: any; // File object hoặc URI
     },
   ): Promise<AxiosResponse<ApiResponse<Post>>> {
-    const config: any = {
-      params: {
-        title: data.title,
-        content: data.content,
-      },
-    };
+    const formData = new FormData();
+    
+    // Append title và content vào FormData
+    formData.append('title', data.title);
+    formData.append('content', data.content);
 
     // Xử lý image: blob URL (web) hoặc file URI (native)
     if (data.image && data.image.uri) {
@@ -159,28 +158,25 @@ const PostService = {
             const file = new File([blob], data.image.name || `image_${Date.now()}.jpg`, {
               type: data.image.type || 'image/jpeg',
             });
-            const formData = new FormData();
-            formData.append('image', file);
+            const webFormData = new FormData();
+            webFormData.append('title', data.title);
+            webFormData.append('content', data.content);
+            webFormData.append('image', file);
             
-            return axiosInstance.post(`/communities/${communityId}/posts`, formData, config);
+            return axiosInstance.post(`/communities/${communityId}/posts`, webFormData);
           });
       } else {
         // Trên native: sử dụng object với uri, type, name
-        const formData = new FormData();
         const fileData: any = {
           uri: imageUri,
           type: data.image.type || 'image/jpeg',
           name: data.image.name || `image_${Date.now()}.jpg`,
         };
         formData.append('image', fileData);
-        
-        return axiosInstance.post(`/communities/${communityId}/posts`, formData, config);
       }
     }
 
-    // Không có image
-    const formData = new FormData();
-    return axiosInstance.post(`/communities/${communityId}/posts`, formData, config);
+    return axiosInstance.post(`/communities/${communityId}/posts`, formData);
   },
 };
 

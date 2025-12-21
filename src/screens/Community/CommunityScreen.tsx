@@ -30,6 +30,7 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
     votePost,
     fetchPostComments,
     createPost,
+    deletePost,
     isLoading: isPostLoading,
   } = usePost();
   
@@ -266,6 +267,42 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
     // TODO: Implement bookmark functionality
   };
 
+  const handleDelete = async (postId: string) => {
+    try {
+      await deletePost(postId);
+      // Remove post from list
+      setAllPostsFromCommunities(prev => prev.filter(p => p.id !== postId));
+      
+      // Refresh posts to ensure sync
+      if (selectedCommunityId) {
+        await loadPostsFromCommunity(selectedCommunityId);
+      } else {
+        await loadPosts();
+      }
+    } catch (error: any) {
+      Alert.alert(
+        'Error',
+        error?.response?.data?.message || error?.message || 'Failed to delete post'
+      );
+    }
+  };
+
+  // Check if user is the owner of the post
+  const isPostOwner = (post: Post): boolean => {
+    if (!user || !user.id) return false;
+    
+    // Check userId in post
+    if (post.userId && post.userId === user.id) return true;
+    
+    // Check author.id if author is object
+    if (post.author && typeof post.author === 'object') {
+      const authorObj = post.author as any;
+      if (authorObj.id && authorObj.id === user.id) return true;
+    }
+    
+    return false;
+  };
+
   // Get selected community name
   const selectedCommunity = selectedCommunityId
     ? communities.find((c) => c.id === selectedCommunityId)
@@ -417,6 +454,8 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
                 onComment={handleOpenComments}
                 onShare={handleShare}
                 onBookmark={handleBookmark}
+                onDelete={handleDelete}
+                isOwner={isPostOwner(post)}
               />
             ))}
           </View>
