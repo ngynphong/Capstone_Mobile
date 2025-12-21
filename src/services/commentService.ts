@@ -23,22 +23,15 @@ const CommentService = {
     return axiosInstance.get(`/posts/${postId}/comments`, { params });
   },
 
-  /**
-   * POST /posts/{postId}/comments
-   * Tạo comment mới cho post.
-   * content và parentCommentId là query parameters
-   * image là multipart/form-data trong body
-   */
   createComment(
     postId: string,
     payload: CreateCommentRequest & { image?: any },
   ): Promise<AxiosResponse<ApiResponse<CommentDetail>>> {
     const { content, parentId, image } = payload;
     
-    // Query parameters
     const params: any = { content };
     if (parentId) {
-      params.parentCommentId = parentId;
+      params.parenCommentId = parentId;
     }
     
     // Nếu có image, gửi multipart/form-data
@@ -69,8 +62,6 @@ const CommentService = {
       }
     }
     
-    // Không có image, gửi empty FormData với query params
-    // Một số API yêu cầu multipart/form-data ngay cả khi không có file
     const formData = new FormData();
     return axiosInstance.post(`/posts/${postId}/comments`, formData, { params });
   },
