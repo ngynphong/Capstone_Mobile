@@ -83,7 +83,11 @@ const CommentService = {
     commentId: string,
     payload: UpdateCommentRequest,
   ): Promise<AxiosResponse<ApiResponse<CommentDetail>>> {
-    return axiosInstance.put(`/comments/${commentId}`, payload);
+    // Đảm bảo payload chỉ chứa content là string thuần
+    const cleanPayload = {
+      content: typeof payload.content === 'string' ? payload.content : String(payload.content)
+    };
+    return axiosInstance.put(`/comments/${commentId}`, cleanPayload);
   },
 
   /**

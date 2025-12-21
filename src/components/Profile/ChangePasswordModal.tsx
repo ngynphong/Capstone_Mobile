@@ -6,6 +6,7 @@ import {
   ScrollView,
   TextInput,
   Modal,
+  StyleSheet,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
@@ -104,7 +105,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             <Text className="text-gray-700 text-lg font-medium mb-3">Current Password</Text>
             <View className="relative">
               <TextInput
-                className="border-2 border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50"
+                style={styles.input}
                 value={currentPassword}
                 onChangeText={setCurrentPassword}
                 placeholder="Enter current password"
@@ -127,7 +128,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             <Text className="text-gray-700 text-lg font-medium mb-3">New Password</Text>
             <View className="relative">
               <TextInput
-                className="border-2 border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50"
+                style={styles.input}
                 value={newPassword}
                 onChangeText={setNewPassword}
                 placeholder="Enter new password"
@@ -149,7 +150,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             <Text className="text-gray-700 text-lg font-medium mb-3">Confirm New Password</Text>
             <View className="relative">
               <TextInput
-                className="border-2 border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50"
+                style={styles.input}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 placeholder="Confirm new password"
@@ -181,5 +182,18 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  input: {
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 16,
+    backgroundColor: '#F9FAFB',
+    paddingRight: 48,
+  },
+});
 
 export default ChangePasswordModal;

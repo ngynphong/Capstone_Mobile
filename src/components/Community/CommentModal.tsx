@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,15 @@ import {
   Alert,
   ActivityIndicator,
   StyleSheet,
+  TouchableWithoutFeedback,
 } from 'react-native';
-import { X, Send, Heart, MessageCircle, Image as ImageIcon, XCircle } from 'lucide-react-native';
+import { X, Send, Heart, MessageCircle, Image as ImageIcon, XCircle, MoreVertical, Trash2, Edit2 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { CommentDetail } from '../../types/communityTypes';
 import { useComment } from '../../hooks/useComment';
 import { useTimeAgo } from '../../hooks/useTimeAgo';
 import { useAuth } from '../../context/AuthContext';
+import EditCommentModal from './EditCommentModal';
 
 interface CommentModalProps {
   visible: boolean;
@@ -36,9 +38,11 @@ const CommentModal: React.FC<CommentModalProps> = ({
   onCommentAdded,
 }) => {
   const { user } = useAuth();
-  const { comments, isLoading, fetchPostComments, createComment } = useComment();
+  const { comments, isLoading, fetchPostComments, createComment, deleteComment, updateComment } = useComment();
   const [newComment, setNewComment] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showMenuId, setShowMenuId] = useState<string | null>(null);
+  const [editingComment, setEditingComment] = useState<{ id: string; content: string } | null>(null);
 
   useEffect(() => {
     if (visible && postId) {
@@ -51,6 +55,8 @@ const CommentModal: React.FC<CommentModalProps> = ({
     if (!visible) {
       setNewComment('');
       setSelectedImage(null);
+      setEditingComment(null);
+      setShowMenuId(null);
     }
   }, [visible, postId, fetchPostComments]);
 
@@ -141,13 +147,99 @@ const CommentModal: React.FC<CommentModalProps> = ({
     return 'https://placehold.co/32x32';
   };
 
-  const CommentItem: React.FC<{ comment: CommentDetail }> = ({ comment }) => {
+  const isCommentOwner = (comment: CommentDetail): boolean => {
+    if (!user || !user.id) return false;
+    const commentUserId = comment.userId || (comment.author as any)?.id;
+    return commentUserId === user.id;
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    Alert.alert(
+      'Delete Comment',
+      'Are you sure you want to delete this comment?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteComment(commentId);
+              setShowMenuId(null);
+              if (onCommentAdded) {
+                onCommentAdded();
+              }
+            } catch (error: any) {
+              Alert.alert(
+                'Error',
+                error?.response?.data?.message || error?.message || 'Failed to delete comment'
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleStartEdit = useCallback((comment: CommentDetail) => {
+    setShowMenuId(null);
+    
+    // Normalize content - đảm bảo không phải JSON string
+    let normalizedContent = comment.content || '';
+    if (typeof normalizedContent === 'string' && normalizedContent.trim().startsWith('{')) {
+      try {
+        const parsed = JSON.parse(normalizedContent);
+        normalizedContent = parsed.content || normalizedContent;
+      } catch (e) {
+        // Nếu không parse được, giữ nguyên
+      }
+    }
+    
+    setEditingComment({
+      id: comment.id,
+      content: normalizedContent
+    });
+  }, []);
+
+  const handleSaveEdit = useCallback(async (commentId: string, content: string) => {
+    try {
+      await updateComment(commentId, { content });
+      // Refresh comments sau khi update
+      await fetchPostComments(postId, { page: 1, size: 50 });
+      if (onCommentAdded) {
+        onCommentAdded();
+      }
+      setEditingComment(null);
+    } catch (error: any) {
+      throw error; // Let EditCommentModal handle the error
+    }
+  }, [updateComment, fetchPostComments, postId, onCommentAdded]);
+
+  // Memoize các handlers để tránh re-render CommentItem
+  const handleSetShowMenuId = useCallback((id: string | null) => {
+    setShowMenuId(id);
+  }, []);
+
+
+  const CommentItem: React.FC<{ 
+    comment: CommentDetail;
+    showMenuId: string | null;
+    onSetShowMenuId: (id: string | null) => void;
+    onStartEdit: (comment: CommentDetail) => void;
+    onDeleteComment: (commentId: string) => void;
+  }> = React.memo(({ 
+    comment,
+    showMenuId,
+    onSetShowMenuId,
+    onStartEdit,
+    onDeleteComment,
+  }) => {
     const timeAgo = useTimeAgo(comment.createdAt);
     const authorName = getCommentAuthorName(comment.author);
-    // Ưu tiên avatar từ comment, sau đó từ author
     const authorAvatar = comment.avatar || getCommentAuthorAvatar(comment.author);
     const voteCount = comment.voteCount || 0;
     const commentImageUrl = (comment as any).imgUrl;
+    const isOwner = isCommentOwner(comment);
 
     return (
       <View style={styles.commentContainer}>
@@ -162,7 +254,41 @@ const CommentModal: React.FC<CommentModalProps> = ({
             <View style={styles.authorRow}>
               <Text style={styles.authorName}>{authorName}</Text>
               <Text style={styles.timeAgo}>{timeAgo}</Text>
+              {isOwner && (
+                <TouchableOpacity
+                  onPress={() => onSetShowMenuId(showMenuId === comment.id ? null : comment.id)}
+                  style={styles.menuButton}
+                >
+                  <MoreVertical size={16} color="#666" />
+                </TouchableOpacity>
+              )}
             </View>
+            {showMenuId === comment.id && isOwner && (
+              <View style={styles.menuContainer}>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    onStartEdit(comment);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Edit2 size={14} color="#3CBCB2" />
+                  <Text style={styles.menuItemText}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    onDeleteComment(comment.id);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Trash2 size={14} color="#EF4444" />
+                  <Text style={styles.menuItemTextDelete}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            )}
             {comment.content && (
               <Text style={styles.commentText}>{comment.content}</Text>
             )}
@@ -183,7 +309,11 @@ const CommentModal: React.FC<CommentModalProps> = ({
         </View>
       </View>
     );
-  };
+  }, (prevProps, nextProps) => {
+    // Return true nếu props giống nhau (không cần re-render)
+    return prevProps.comment.id === nextProps.comment.id &&
+           prevProps.showMenuId === nextProps.showMenuId;
+  });
 
   return (
     <Modal
@@ -216,11 +346,22 @@ const CommentModal: React.FC<CommentModalProps> = ({
         ) : (
           <FlatList
             data={comments}
-            renderItem={({ item }) => <CommentItem comment={item} />}
+            renderItem={({ item }) => (
+              <CommentItem 
+                comment={item}
+                showMenuId={showMenuId}
+                onSetShowMenuId={handleSetShowMenuId}
+                onStartEdit={handleStartEdit}
+                onDeleteComment={handleDeleteComment}
+              />
+            )}
             keyExtractor={(item) => item.id}
             style={styles.commentsList}
             contentContainerStyle={styles.commentsListContent}
             showsVerticalScrollIndicator={false}
+            removeClippedSubviews={false}
+            keyboardShouldPersistTaps="handled"
+            extraData={showMenuId}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <MessageCircle size={48} color="#ccc" />
@@ -272,6 +413,15 @@ const CommentModal: React.FC<CommentModalProps> = ({
           </View>
         </View>
       </View>
+
+      {/* Edit Comment Modal */}
+      <EditCommentModal
+        visible={editingComment !== null}
+        commentId={editingComment?.id || ''}
+        initialContent={editingComment?.content || ''}
+        onClose={() => setEditingComment(null)}
+        onSave={handleSaveEdit}
+      />
     </Modal>
   );
 };
@@ -458,6 +608,37 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 8,
+  },
+  menuButton: {
+    marginLeft: 'auto',
+    padding: 4,
+  },
+  menuContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 4,
+    marginTop: 4,
+    marginBottom: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  menuItemText: {
+    fontSize: 13,
+    color: '#111827',
+  },
+  menuItemTextDelete: {
+    fontSize: 13,
+    color: '#EF4444',
   },
 });
 

@@ -54,8 +54,21 @@ export const useComment = () => {
           const authorAvatar = comment.author?.imgUrl || comment.author?.avatar;
           const commentAvatar = comment.avatar;
           
+          // Đảm bảo content là string, không phải JSON string
+          let normalizedContent = comment.content || '';
+          // Nếu content là JSON string, parse nó
+          if (typeof normalizedContent === 'string' && normalizedContent.trim().startsWith('{')) {
+            try {
+              const parsed = JSON.parse(normalizedContent);
+              normalizedContent = parsed.content || normalizedContent;
+            } catch (e) {
+              // Nếu không parse được, giữ nguyên
+            }
+          }
+          
           return {
             ...comment,
+            content: normalizedContent,
             author: comment.author || comment.user || 'Unknown',
             avatar: authorAvatar || commentAvatar || comment.user?.imgUrl || comment.user?.avatar,
             voteCount: comment.voteCount !== undefined ? comment.voteCount : (comment.likes || 0),
@@ -128,10 +141,33 @@ export const useComment = () => {
         const updated =
           (response.data as ApiResponse<CommentDetail>).data ||
           (response.data as any);
+        
+        // Normalize updated comment
+        // Đảm bảo content là string, không phải JSON string
+        let normalizedContent = updated.content || '';
+        // Nếu content là JSON string, parse nó
+        if (typeof normalizedContent === 'string' && normalizedContent.startsWith('{')) {
+          try {
+            const parsed = JSON.parse(normalizedContent);
+            normalizedContent = parsed.content || normalizedContent;
+          } catch (e) {
+            // Nếu không parse được, giữ nguyên
+          }
+        }
+        
+        const normalizedUpdated = {
+          ...updated,
+          content: normalizedContent,
+          author: updated.author || updated.user || 'Unknown',
+          avatar: updated.avatar || updated.author?.imgUrl || updated.author?.avatar || updated.user?.imgUrl || updated.user?.avatar,
+          voteCount: updated.voteCount !== undefined ? updated.voteCount : (updated.likes || 0),
+          createdAt: updated.createdAt || updated.created_at || new Date().toISOString(),
+        };
+        
         setComments(prev =>
-          prev.map(c => (c.id === commentId ? { ...c, ...updated } : c)),
+          prev.map(c => (c.id === commentId ? { ...c, ...normalizedUpdated } : c)),
         );
-        return updated;
+        return normalizedUpdated;
       } catch (err: any) {
         const message =
           err?.response?.data?.message ||

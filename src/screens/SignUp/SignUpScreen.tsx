@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  ScrollView
+  ScrollView,
+  StyleSheet,
 } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -160,6 +161,34 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
+  // Memoize styles để tránh re-render không cần thiết
+  const firstNameInputStyle = useMemo(() => [
+    styles.input,
+    firstNameError ? styles.inputError : styles.inputNormal
+  ], [firstNameError]);
+
+  const lastNameInputStyle = useMemo(() => [
+    styles.input,
+    lastNameError ? styles.inputError : styles.inputNormal
+  ], [lastNameError]);
+
+  const emailInputStyle = useMemo(() => [
+    styles.input,
+    emailError ? styles.inputError : styles.inputNormal
+  ], [emailError]);
+
+  const passwordInputStyle = useMemo(() => [
+    styles.input,
+    styles.passwordInput,
+    passwordError ? styles.inputError : styles.inputNormal
+  ], [passwordError]);
+
+  const confirmPasswordInputStyle = useMemo(() => [
+    styles.input,
+    styles.passwordInput,
+    confirmPasswordError ? styles.inputError : styles.inputNormal
+  ], [confirmPasswordError]);
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -178,7 +207,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
           <View className="mb-4">
             <Text className="text-sm font-medium text-gray-700 mb-2">First Name</Text>
             <TextInput
-              className={`w-full h-12 border rounded-lg px-4  bg-white ${firstNameError ? 'border-red-500' : 'border-gray-300'}`}
+              style={firstNameInputStyle}
               placeholder="Enter your first name"
               value={firstName}
               onChangeText={(text) => {
@@ -202,7 +231,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
           <View className="mb-4">
             <Text className="text-sm font-medium text-gray-700 mb-2">Last Name</Text>
             <TextInput
-              className={`w-full h-12 border rounded-lg px-4  bg-white ${lastNameError ? 'border-red-500' : 'border-gray-300'}`}
+              style={lastNameInputStyle}
               placeholder='Enter last name'
               value={lastName}
               onChangeText={(text) => {
@@ -274,7 +303,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
           <View className="mb-4">
             <Text className="text-sm font-medium text-gray-700 mb-2">Email</Text>
             <TextInput
-              className={`w-full h-12 border rounded-lg px-4 bg-white ${emailError ? 'border-red-500' : 'border-gray-300'}`}
+              style={emailInputStyle}
               placeholder="Enter your email"
               value={email}
               onChangeText={(text) => {
@@ -307,7 +336,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             <Text className="text-sm font-medium text-gray-700 mb-2">Password</Text>
             <View className="relative">
               <TextInput
-                className={`w-full h-12 border rounded-lg px-4 pr-12  bg-white ${passwordError ? 'border-red-500' : 'border-gray-300'}`}
+                style={passwordInputStyle}
                 placeholder="Enter your password (min 6 characters)"
                 value={password}
                 onChangeText={(text) => {
@@ -349,7 +378,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             <Text className="text-sm font-medium text-gray-700 mb-2">Confirm Password</Text>
             <View className="relative">
               <TextInput
-                className={`w-full h-12 border rounded-lg px-4 pr-12  bg-white ${confirmPasswordError ? 'border-red-500' : 'border-gray-300'}`}
+                style={confirmPasswordInputStyle}
                 placeholder="Confirm your password"
                 value={confirmPassword}
                 onChangeText={(text) => {
@@ -408,5 +437,25 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
     </KeyboardAvoidingView>
   );
 };
+
+const styles = StyleSheet.create({
+  input: {
+    width: '100%',
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  passwordInput: {
+    paddingRight: 48,
+  },
+  inputNormal: {
+    borderColor: '#D1D5DB',
+  },
+  inputError: {
+    borderColor: '#EF4444',
+  },
+});
 
 export default SignUpScreen;
