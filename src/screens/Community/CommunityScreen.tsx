@@ -360,14 +360,6 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
     }
   };
 
-  const handleShare = (post: Post) => {
-    // TODO: Implement share functionality
-  };
-
-  const handleBookmark = (postId: string) => {
-    // TODO: Implement bookmark functionality
-  };
-
   const handleDelete = async (postId: string) => {
     try {
       await deletePost(postId);
@@ -553,8 +545,6 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
                 post={post}
                 onVote={handleVote}
                 onComment={handleOpenComments}
-                onShare={handleShare}
-                onBookmark={handleBookmark}
                 onDelete={handleDelete}
                 isOwner={isPostOwner(post)}
               />

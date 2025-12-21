@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, TouchableWithoutFeedback } from 'react-native';
-import { ThumbsUp, ThumbsDown, MessageCircle, Share2, Bookmark, MoreVertical, Trash2, Pin } from 'lucide-react-native';
+import { ThumbsUp, ThumbsDown, MessageCircle, MoreVertical, Trash2, Pin } from 'lucide-react-native';
 import type { Post } from '../../types/communityTypes';
 import { useTimeAgo } from '../../hooks/useTimeAgo';
 
@@ -8,8 +8,6 @@ interface PostCardProps {
   post: Post;
   onVote?: (postId: string, value: number) => void; // value: 1 for like, -1 for dislike
   onComment?: (post: Post) => void;
-  onShare?: (post: Post) => void;
-  onBookmark?: (postId: string) => void;
   onDelete?: (postId: string) => void;
   isOwner?: boolean; // Kiểm tra xem user có phải là chủ sở hữu post không
 }
@@ -18,8 +16,6 @@ const PostCard: React.FC<PostCardProps> = ({
   post,
   onVote,
   onComment,
-  onShare,
-  onBookmark,
   onDelete,
   isOwner = false,
 }) => {
@@ -277,20 +273,6 @@ const PostCard: React.FC<PostCardProps> = ({
           <MessageCircle size={20} color="#666" />
           <Text style={styles.actionText}>{getSafeNumber(post.commentCount ?? post.comments)}</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => onShare?.(post)}
-        >
-          <Share2 size={20} color="#666" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, styles.bookmarkButton]}
-          onPress={() => onBookmark?.(post.id)}
-        >
-          <Bookmark size={20} color="#666" />
-        </TouchableOpacity>
       </View>
     </View>
   );
@@ -425,10 +407,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginRight: 24,
-  },
-  bookmarkButton: {
-    marginLeft: 'auto',
-    marginRight: 0,
   },
   actionText: {
     fontSize: 13,

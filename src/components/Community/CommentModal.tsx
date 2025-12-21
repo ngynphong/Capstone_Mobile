@@ -44,20 +44,21 @@ const CommentModal: React.FC<CommentModalProps> = ({
   const [showMenuId, setShowMenuId] = useState<string | null>(null);
   const [editingComment, setEditingComment] = useState<{ id: string; content: string } | null>(null);
   const [localComments, setLocalComments] = useState<CommentDetail[]>([]);
+  const shouldSyncRef = useRef(true);
   
-  // Sync localComments với comments từ hook
   useEffect(() => {
-    setLocalComments(comments);
+    if (shouldSyncRef.current) {
+      setLocalComments(comments);
+    }
   }, [comments]);
 
   useEffect(() => {
     if (visible && postId) {
-      // Fetch comments khi modal mở
+      shouldSyncRef.current = true;
       fetchPostComments(postId, { page: 1, size: 50 }).catch(() => {
         // Error handled in hook
       });
     }
-    // Reset form khi đóng modal
     if (!visible) {
       setNewComment('');
       setSelectedImage(null);
@@ -130,11 +131,9 @@ const CommentModal: React.FC<CommentModalProps> = ({
   const getCommentAuthorName = (author: any): string => {
     if (typeof author === 'string') return author;
     if (author && typeof author === 'object') {
-      // Ưu tiên name hoặc username
       if (author.name) return author.name;
       if (author.username) return author.username;
       
-      // Combine firstName và lastName nếu có
       if (author.firstName || author.lastName) {
         const parts = [author.firstName, author.lastName].filter(Boolean);
         if (parts.length > 0) return parts.join(' ');
@@ -147,7 +146,6 @@ const CommentModal: React.FC<CommentModalProps> = ({
 
   const getCommentAuthorAvatar = (author: any): string => {
     if (author && typeof author === 'object') {
-      // Ưu tiên imgUrl, sau đó avatar
       return author.imgUrl || author.avatar || 'https://placehold.co/32x32';
     }
     return 'https://placehold.co/32x32';
@@ -190,14 +188,13 @@ const CommentModal: React.FC<CommentModalProps> = ({
   const handleStartEdit = useCallback((comment: CommentDetail) => {
     setShowMenuId(null);
     
-    // Normalize content - đảm bảo không phải JSON string
     let normalizedContent = comment.content || '';
     if (typeof normalizedContent === 'string' && normalizedContent.trim().startsWith('{')) {
       try {
         const parsed = JSON.parse(normalizedContent);
         normalizedContent = parsed.content || normalizedContent;
       } catch (e) {
-        // Nếu không parse được, giữ nguyên
+        // Ignore parse error
       }
     }
     
@@ -210,28 +207,27 @@ const CommentModal: React.FC<CommentModalProps> = ({
   const handleSaveEdit = useCallback(async (commentId: string, content: string) => {
     try {
       await updateComment(commentId, { content });
-      // Refresh comments sau khi update
       await fetchPostComments(postId, { page: 1, size: 50 });
       if (onCommentAdded) {
         onCommentAdded();
       }
       setEditingComment(null);
     } catch (error: any) {
-      throw error; // Let EditCommentModal handle the error
+      throw error;
     }
   }, [updateComment, fetchPostComments, postId, onCommentAdded]);
 
-  // Memoize các handlers để tránh re-render CommentItem
   const handleSetShowMenuId = useCallback((id: string | null) => {
     setShowMenuId(id);
   }, []);
 
   const handleVoteComment = useCallback(async (commentId: string, value: number) => {
     try {
+      shouldSyncRef.current = false;
+      
       const currentComment = localComments.find(c => c.id === commentId);
       const currentVoteValue = currentComment?.userVote === 'UP' ? 1 : currentComment?.userVote === 'DOWN' ? -1 : 0;
       
-      // Xác định giá trị vote mới: toggle nếu đã vote, set mới nếu chưa vote
       let newVoteValue: number;
       if (value === 1) {
         newVoteValue = currentVoteValue === 1 ? 0 : 1;
@@ -243,25 +239,23 @@ const CommentModal: React.FC<CommentModalProps> = ({
       
       const newVote: 'UP' | 'DOWN' | null = newVoteValue === 1 ? 'UP' : newVoteValue === -1 ? 'DOWN' : null;
       
-      // Tính toán vote count: Like +1, Dislike -1, chuyển từ like sang dislike -2
       const currentCount = currentComment?.voteCount || 0;
       let newCount = currentCount;
       
       if (currentVoteValue === 1 && newVoteValue === 0) {
-        newCount = currentCount - 1; // Bỏ like
+        newCount = currentCount - 1;
       } else if (currentVoteValue === -1 && newVoteValue === 0) {
-        newCount = currentCount + 1; // Bỏ dislike
+        newCount = currentCount + 1;
       } else if (currentVoteValue === -1 && newVoteValue === 1) {
-        newCount = currentCount + 2; // Dislike -> Like
+        newCount = currentCount + 2;
       } else if (currentVoteValue === 0 && newVoteValue === 1) {
-        newCount = currentCount + 1; // Like
+        newCount = currentCount + 1;
       } else if (currentVoteValue === 1 && newVoteValue === -1) {
-        newCount = currentCount - 2; // Like -> Dislike
+        newCount = currentCount - 2;
       } else if (currentVoteValue === 0 && newVoteValue === -1) {
-        newCount = currentCount - 1; // Dislike
+        newCount = currentCount - 1;
       }
       
-      // Optimistic update
       setLocalComments(prev =>
         prev.map(c => {
           if (c.id === commentId) {
@@ -275,7 +269,6 @@ const CommentModal: React.FC<CommentModalProps> = ({
         })
       );
       
-      // Sync với server
       const updatedComment = await voteComment(commentId, newVoteValue);
       const serverVoteValue = (updatedComment as any).userVoteValue !== undefined 
         ? (updatedComment as any).userVoteValue
@@ -296,7 +289,7 @@ const CommentModal: React.FC<CommentModalProps> = ({
         })
       );
     } catch (error) {
-      // Revert on error
+      shouldSyncRef.current = true;
       await fetchPostComments(postId, { page: 1, size: 50 });
     }
   }, [voteComment, localComments, fetchPostComments, postId]);
@@ -438,7 +431,6 @@ const CommentModal: React.FC<CommentModalProps> = ({
       </View>
     );
   }, (prevProps, nextProps) => {
-    // Return true nếu props giống nhau (không cần re-render)
     return prevProps.comment.id === nextProps.comment.id &&
            prevProps.showMenuId === nextProps.showMenuId;
   });
