@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
   StyleSheet,
   TouchableWithoutFeedback,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { X, Send, ThumbsUp, ThumbsDown, MessageCircle, Image as ImageIcon, XCircle, MoreVertical, Trash2, Edit2 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -51,6 +53,8 @@ const CommentModal: React.FC<CommentModalProps> = ({
   const [loadingReplies, setLoadingReplies] = useState<Set<string>>(new Set());
   const [localComments, setLocalComments] = useState<CommentDetail[]>([]);
   const shouldSyncRef = useRef(true);
+  const inputRef = useRef<TextInput>(null);
+  const scrollViewRef = useRef<FlatList>(null);
   
   useEffect(() => {
     if (shouldSyncRef.current) {
@@ -794,10 +798,15 @@ const CommentModal: React.FC<CommentModalProps> = ({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
+      <KeyboardAvoidingView 
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose}>
@@ -820,6 +829,7 @@ const CommentModal: React.FC<CommentModalProps> = ({
           </View>
         ) : (
           <FlatList
+            ref={scrollViewRef}
             data={organizeComments.parentComments}
             renderItem={({ item }) => (
               <CommentItem 
@@ -887,6 +897,7 @@ const CommentModal: React.FC<CommentModalProps> = ({
             </TouchableOpacity>
             <View style={styles.inputWrapper}>
               <TextInput
+                ref={inputRef}
                 style={styles.textInput}
                 placeholder={replyingToCommentId ? `Reply to ${replyingToAuthor}...` : "Write a comment..."}
                 placeholderTextColor="#9CA3AF"
@@ -895,6 +906,12 @@ const CommentModal: React.FC<CommentModalProps> = ({
                 multiline
                 numberOfLines={3}
                 textAlignVertical="top"
+                onFocus={() => {
+                  // Scroll đến cuối danh sách khi focus vào input
+                  setTimeout(() => {
+                    scrollViewRef.current?.scrollToEnd({ animated: true });
+                  }, 100);
+                }}
               />
             </View>
             <TouchableOpacity
@@ -905,16 +922,17 @@ const CommentModal: React.FC<CommentModalProps> = ({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+        </View>
 
-      {/* Edit Comment Modal */}
-      <EditCommentModal
-        visible={editingComment !== null}
-        commentId={editingComment?.id || ''}
-        initialContent={editingComment?.content || ''}
-        onClose={() => setEditingComment(null)}
-        onSave={handleSaveEdit}
-      />
+        {/* Edit Comment Modal */}
+        <EditCommentModal
+          visible={editingComment !== null}
+          commentId={editingComment?.id || ''}
+          initialContent={editingComment?.content || ''}
+          onClose={() => setEditingComment(null)}
+          onSave={handleSaveEdit}
+        />
+      </KeyboardAvoidingView>
     </Modal>
   );
 };

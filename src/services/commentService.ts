@@ -29,6 +29,7 @@ const CommentService = {
   ): Promise<AxiosResponse<ApiResponse<CommentDetail>>> {
     const { content, parentId, image } = payload;
     
+    // Query parameters cho cả 2 trường hợp
     const params: any = { content };
     if (parentId) {
       params.parenCommentId = parentId;
@@ -62,8 +63,13 @@ const CommentService = {
       }
     }
     
+    // Không có image: thử gửi content trong FormData (mobile có thể không chấp nhận FormData rỗng)
     const formData = new FormData();
-    return axiosInstance.post(`/posts/${postId}/comments`, formData, { params });
+    formData.append('content', content || '');
+    if (parentId) {
+      formData.append('parenCommentId', parentId);
+    }
+    return axiosInstance.post(`/posts/${postId}/comments`, formData);
   },
 
   /**
