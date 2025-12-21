@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, TouchableWithoutFeedback } from 'react-native';
-import { Heart, MessageCircle, Share2, Bookmark, MoreVertical, Trash2 } from 'lucide-react-native';
+import { Heart, MessageCircle, Share2, Bookmark, MoreVertical, Trash2, Pin } from 'lucide-react-native';
 import type { Post } from '../../types/communityTypes';
 import { useTimeAgo } from '../../hooks/useTimeAgo';
 
@@ -147,7 +147,7 @@ const PostCard: React.FC<PostCardProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, post.isPinned && styles.pinnedContainer]}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.userInfo}>
@@ -158,7 +158,12 @@ const PostCard: React.FC<PostCardProps> = ({
             style={styles.avatar}
           />
           <View style={styles.userDetails}>
-            <Text style={styles.authorName}>{getAuthorName()}</Text>
+            <View style={styles.authorNameRow}>
+              <Text style={styles.authorName}>{getAuthorName()}</Text>
+              {post.isPinned && (
+                <Pin size={14} color="#3CBCB2" fill="#3CBCB2" style={styles.pinIcon} />
+              )}
+            </View>
             <Text style={styles.username}>{getUsername()}</Text>
           </View>
         </View>
@@ -264,6 +269,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
+  pinnedContainer: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#3CBCB2',
+    backgroundColor: '#F0FDFA',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -284,11 +294,18 @@ const styles = StyleSheet.create({
   userDetails: {
     flex: 1,
   },
+  authorNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
   authorName: {
     fontSize: 15,
     fontWeight: '600',
     color: '#111827',
-    marginBottom: 2,
+  },
+  pinIcon: {
+    marginLeft: 6,
   },
   username: {
     fontSize: 13,

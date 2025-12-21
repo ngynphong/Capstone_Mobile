@@ -99,6 +99,9 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
       ? imageUrl 
       : undefined;
     
+    // Map pinned từ API (có thể là pinned hoặc isPinned)
+    const isPinned = post.isPinned || postAny.pinned || postAny.isPinned || false;
+    
     // Nếu author là object và có avatar, map vào post.avatar
     if (post.author && typeof post.author === 'object') {
       const authorObj = post.author as any;
@@ -106,12 +109,14 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
         ...post,
         avatar: post.avatar || authorObj.avatar || authorObj.imgUrl,
         imageUrl: finalImageUrl,
+        isPinned: isPinned,
         timeAgo: post.timeAgo || formatTimeAgo(post.createdAt),
       };
     }
     return {
       ...post,
       imageUrl: finalImageUrl,
+      isPinned: isPinned,
       timeAgo: post.timeAgo || formatTimeAgo(post.createdAt),
     };
   };
@@ -129,8 +134,13 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
     ? uniquePosts.filter((post) => post.communityId === selectedCommunityId)
     : uniquePosts;
 
-  // Sort by createdAt (newest first)
+  // Sort: pinned posts first, then by createdAt (newest first)
   const sortedPosts = filteredPosts.sort((a, b) => {
+    // Pinned posts first
+    if (a.isPinned && !b.isPinned) return -1;
+    if (!a.isPinned && b.isPinned) return 1;
+    
+    // Then sort by createdAt (newest first)
     const dateA = new Date(a.createdAt).getTime();
     const dateB = new Date(b.createdAt).getTime();
     return dateB - dateA;
