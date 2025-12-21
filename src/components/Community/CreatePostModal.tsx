@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   Image as RNImage,
+  StyleSheet,
 } from 'react-native';
 import { X, Image, Send, XCircle } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -113,7 +114,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           <View className="mt-4">
             <Text className="text-sm font-medium text-gray-700 mb-2">Title</Text>
             <TextInput
-              className="bg-gray-50 rounded-xl px-4 py-3 text-base text-gray-800"
+              style={styles.input}
               placeholder="What would you like to discuss?"
               value={title}
               onChangeText={setTitle}
@@ -126,7 +127,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           <View className="mt-4 mb-6">
             <Text className="text-sm font-medium text-gray-700 mb-2">Content</Text>
             <TextInput
-              className="bg-gray-50 rounded-xl px-4 py-3 text-base text-gray-800"
+              style={[styles.input, styles.contentInput]}
               placeholder="Share your thoughts, questions, or helpful information..."
               value={content}
               onChangeText={setContent}
@@ -167,5 +168,19 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  input: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#111827',
+  },
+  contentInput: {
+    minHeight: 120,
+  },
+});
 
 export default CreatePostModal;

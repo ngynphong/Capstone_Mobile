@@ -171,6 +171,7 @@ export interface CommentDetail extends Comment {
   userVote?: 'UP' | 'DOWN' | null;
   replies?: CommentDetail[];
   parentId?: string;
+  parenCommentId?: string; // Field từ API
 }
 
 export interface CreateCommentRequest {

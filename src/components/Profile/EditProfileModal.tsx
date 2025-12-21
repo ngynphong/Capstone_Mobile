@@ -6,6 +6,7 @@ import {
   ScrollView,
   TextInput,
   Modal,
+  StyleSheet,
 } from 'react-native';
 import { User } from '../../context/AuthContext';
 import { updateUserProfile } from '../../services/userService';
@@ -98,7 +99,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           <View className="mb-6">
             <Text className="text-gray-700 text-lg font-medium mb-3">First Name</Text>
             <TextInput
-              className="border-2 border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50"
+              style={styles.input}
               value={firstName}
               onChangeText={setFirstName}
               placeholder="Enter first name"
@@ -109,7 +110,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           <View className="mb-6">
             <Text className="text-gray-700 text-lg font-medium mb-3">Last Name</Text>
             <TextInput
-              className="border-2 border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50"
+              style={styles.input}
               value={lastName}
               onChangeText={setLastName}
               placeholder="Enter last name"
@@ -120,7 +121,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           <View className="mb-8">
             <Text className="text-gray-700 text-lg font-medium mb-3">Date of Birth</Text>
             <TextInput
-              className="border-2 border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50"
+              style={styles.input}
               value={dob}
               onChangeText={setDob}
               placeholder="YYYY-MM-DD"
@@ -142,5 +143,17 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  input: {
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 16,
+    backgroundColor: '#F9FAFB',
+  },
+});
 
 export default EditProfileModal;

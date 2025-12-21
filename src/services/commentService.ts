@@ -23,22 +23,16 @@ const CommentService = {
     return axiosInstance.get(`/posts/${postId}/comments`, { params });
   },
 
-  /**
-   * POST /posts/{postId}/comments
-   * Tạo comment mới cho post.
-   * content và parentCommentId là query parameters
-   * image là multipart/form-data trong body
-   */
   createComment(
     postId: string,
     payload: CreateCommentRequest & { image?: any },
   ): Promise<AxiosResponse<ApiResponse<CommentDetail>>> {
     const { content, parentId, image } = payload;
     
-    // Query parameters
+    // Query parameters cho cả 2 trường hợp
     const params: any = { content };
     if (parentId) {
-      params.parentCommentId = parentId;
+      params.parenCommentId = parentId;
     }
     
     // Nếu có image, gửi multipart/form-data
@@ -69,10 +63,13 @@ const CommentService = {
       }
     }
     
-    // Không có image, gửi empty FormData với query params
-    // Một số API yêu cầu multipart/form-data ngay cả khi không có file
+    // Không có image: thử gửi content trong FormData (mobile có thể không chấp nhận FormData rỗng)
     const formData = new FormData();
-    return axiosInstance.post(`/posts/${postId}/comments`, formData, { params });
+    formData.append('content', content || '');
+    if (parentId) {
+      formData.append('parenCommentId', parentId);
+    }
+    return axiosInstance.post(`/posts/${postId}/comments`, formData);
   },
 
   /**
@@ -83,7 +80,11 @@ const CommentService = {
     commentId: string,
     payload: UpdateCommentRequest,
   ): Promise<AxiosResponse<ApiResponse<CommentDetail>>> {
-    return axiosInstance.put(`/comments/${commentId}`, payload);
+    // Đảm bảo payload chỉ chứa content là string thuần
+    const cleanPayload = {
+      content: typeof payload.content === 'string' ? payload.content : String(payload.content)
+    };
+    return axiosInstance.put(`/comments/${commentId}`, cleanPayload);
   },
 
   /**
@@ -97,14 +98,16 @@ const CommentService = {
   },
 
   /**
-   * POST /comments/{commentId}/vote
-   * Vote cho comment (UP hoặc DOWN).
+   * POST /comments/{commentId}/vote?value={value}
+   * Vote cho comment với value: 1 (like) hoặc -1 (dislike).
    */
   voteComment(
     commentId: string,
-    payload: CommentVoteRequest,
+    value: number, // 1 for like, -1 for dislike
   ): Promise<AxiosResponse<ApiResponse<CommentDetail>>> {
-    return axiosInstance.post(`/comments/${commentId}/vote`, payload);
+    return axiosInstance.post(`/comments/${commentId}/vote`, null, {
+      params: { value }
+    });
   },
 
   /**

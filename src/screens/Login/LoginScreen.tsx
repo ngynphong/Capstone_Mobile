@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/types';
@@ -71,6 +72,18 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     toast.info('Google login functionality will be implemented later.');
   };
 
+  // Memoize styles để tránh re-render không cần thiết
+  const emailInputStyle = useMemo(() => [
+    styles.input,
+    emailError ? styles.inputError : styles.inputNormal
+  ], [emailError]);
+
+  const passwordInputStyle = useMemo(() => [
+    styles.input,
+    styles.passwordInput,
+    passwordError ? styles.inputError : styles.inputNormal
+  ], [passwordError]);
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -89,7 +102,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
           <View className="mb-4">
             <Text className="text-sm font-medium text-gray-700 mb-2">Email</Text>
             <TextInput
-              className={`w-full h-12 border rounded-lg px-4 bg-white ${emailError ? 'border-red-500' : 'border-gray-300'}`}
+              style={emailInputStyle}
               placeholder="Enter your email"
               value={email}
               onChangeText={(text) => {
@@ -112,7 +125,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             <Text className="text-sm font-medium text-gray-700 mb-2">Password</Text>
             <View className="relative">
               <TextInput
-                className={`w-full h-12 border rounded-lg px-4 pr-12 bg-white ${passwordError ? 'border-red-500' : 'border-gray-300'}`}
+                style={passwordInputStyle}
                 placeholder="Enter your password"
                 value={password}
                 onChangeText={(text) => {
@@ -205,5 +218,25 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     </KeyboardAvoidingView>
   );
 };
+
+const styles = StyleSheet.create({
+  input: {
+    width: '100%',
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  passwordInput: {
+    paddingRight: 48,
+  },
+  inputNormal: {
+    borderColor: '#D1D5DB',
+  },
+  inputError: {
+    borderColor: '#EF4444',
+  },
+});
 
 export default LoginScreen;

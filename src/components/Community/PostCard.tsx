@@ -1,25 +1,21 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, TouchableWithoutFeedback } from 'react-native';
-import { Heart, MessageCircle, Share2, Bookmark, MoreVertical, Trash2, Pin } from 'lucide-react-native';
+import { ThumbsUp, ThumbsDown, MessageCircle, MoreVertical, Trash2, Pin } from 'lucide-react-native';
 import type { Post } from '../../types/communityTypes';
 import { useTimeAgo } from '../../hooks/useTimeAgo';
 
 interface PostCardProps {
   post: Post;
-  onLike?: (postId: string) => void;
+  onVote?: (postId: string, value: number) => void; // value: 1 for like, -1 for dislike
   onComment?: (post: Post) => void;
-  onShare?: (post: Post) => void;
-  onBookmark?: (postId: string) => void;
   onDelete?: (postId: string) => void;
   isOwner?: boolean; // Kiểm tra xem user có phải là chủ sở hữu post không
 }
 
 const PostCard: React.FC<PostCardProps> = ({
   post,
-  onLike,
+  onVote,
   onComment,
-  onShare,
-  onBookmark,
   onDelete,
   isOwner = false,
 }) => {
@@ -221,17 +217,52 @@ const PostCard: React.FC<PostCardProps> = ({
 
       {/* Actions */}
       <View style={styles.actions}>
+        {/* Like Button */}
         <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => onLike?.(post.id)}
+          style={[
+            styles.voteButton,
+            post.userVote === 'UP' && styles.voteButtonActive,
+          ]}
+          onPress={() => onVote?.(post.id, 1)}
         >
-          <Heart
-            size={20}
-            color={post.userVote === 'UP' ? '#EF4444' : '#666'}
-            fill={post.userVote === 'UP' ? '#EF4444' : 'none'}
+          <ThumbsUp
+            size={18}
+            color={post.userVote === 'UP' ? '#FFFFFF' : '#6B7280'}
+            fill={post.userVote === 'UP' ? '#FFFFFF' : 'none'}
           />
-          <Text style={styles.actionText}>
-            {getSafeNumber(post.likes || post.voteCount)}
+          <Text
+            style={[
+              styles.voteButtonText,
+              post.userVote === 'UP' && styles.voteButtonTextActive,
+            ]}
+          >
+            Like
+          </Text>
+        </TouchableOpacity>
+        <Text style={styles.voteCount}>
+          {getSafeNumber(post.likes || post.voteCount)}
+        </Text>
+
+        {/* Dislike Button */}
+        <TouchableOpacity
+          style={[
+            styles.voteButton,
+            post.userVote === 'DOWN' && styles.voteButtonActiveDislike,
+          ]}
+          onPress={() => onVote?.(post.id, -1)}
+        >
+          <ThumbsDown
+            size={18}
+            color={post.userVote === 'DOWN' ? '#FFFFFF' : '#6B7280'}
+            fill={post.userVote === 'DOWN' ? '#FFFFFF' : 'none'}
+          />
+          <Text
+            style={[
+              styles.voteButtonText,
+              post.userVote === 'DOWN' && styles.voteButtonTextActive,
+            ]}
+          >
+            Dislike
           </Text>
         </TouchableOpacity>
 
@@ -241,20 +272,6 @@ const PostCard: React.FC<PostCardProps> = ({
         >
           <MessageCircle size={20} color="#666" />
           <Text style={styles.actionText}>{getSafeNumber(post.commentCount ?? post.comments)}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => onShare?.(post)}
-        >
-          <Share2 size={20} color="#666" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, styles.bookmarkButton]}
-          onPress={() => onBookmark?.(post.id)}
-        >
-          <Bookmark size={20} color="#666" />
         </TouchableOpacity>
       </View>
     </View>
@@ -391,14 +408,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 24,
   },
-  bookmarkButton: {
-    marginLeft: 'auto',
-    marginRight: 0,
-  },
   actionText: {
     fontSize: 13,
     color: '#6B7280',
     marginLeft: 6,
+  },
+  voteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    backgroundColor: 'transparent',
+    marginRight: 8,
+  },
+  voteButtonActive: {
+    backgroundColor: '#3CBCB2',
+    borderColor: '#3CBCB2',
+  },
+  voteButtonActiveDislike: {
+    backgroundColor: '#EF4444',
+    borderColor: '#EF4444',
+  },
+  voteButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B7280',
+    marginLeft: 6,
+  },
+  voteButtonTextActive: {
+    color: '#FFFFFF',
+  },
+  voteCount: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#3CBCB2',
+    marginRight: 12,
   },
 });
 

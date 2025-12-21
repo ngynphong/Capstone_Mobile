@@ -279,20 +279,85 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
     }
   };
 
-  const handleLike = async (postId: string) => {
+  const handleVote = async (postId: string, value: number) => {
     try {
-      await votePost(postId, { voteType: 'UP' });
+      const currentPost = allPostsFromCommunities.find(p => p.id === postId);
+      const currentVoteValue = currentPost?.userVote === 'UP' ? 1 : currentPost?.userVote === 'DOWN' ? -1 : 0;
+      
+      // Xác định giá trị vote mới: toggle nếu đã vote, set mới nếu chưa vote
+      let newVoteValue: number;
+      if (value === 1) {
+        newVoteValue = currentVoteValue === 1 ? 0 : 1;
+      } else if (value === -1) {
+        newVoteValue = currentVoteValue === -1 ? 0 : -1;
+      } else {
+        newVoteValue = 0;
+      }
+      
+      const newVote: 'UP' | 'DOWN' | null = newVoteValue === 1 ? 'UP' : newVoteValue === -1 ? 'DOWN' : null;
+      
+      // Tính toán vote count: Like +1, Dislike -1, chuyển từ like sang dislike -2
+      const currentCount = currentPost?.voteCount || currentPost?.likes || 0;
+      let newCount = currentCount;
+      
+      if (currentVoteValue === 1 && newVoteValue === 0) {
+        newCount = currentCount - 1; // Bỏ like
+      } else if (currentVoteValue === -1 && newVoteValue === 0) {
+        newCount = currentCount + 1; // Bỏ dislike
+      } else if (currentVoteValue === -1 && newVoteValue === 1) {
+        newCount = currentCount + 2; // Dislike -> Like
+      } else if (currentVoteValue === 0 && newVoteValue === 1) {
+        newCount = currentCount + 1; // Like
+      } else if (currentVoteValue === 1 && newVoteValue === -1) {
+        newCount = currentCount - 2; // Like -> Dislike
+      } else if (currentVoteValue === 0 && newVoteValue === -1) {
+        newCount = currentCount - 1; // Dislike
+      }
+      
+      // Optimistic update
+      setAllPostsFromCommunities(prev => 
+        prev.map(post => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              userVote: newVote,
+              voteCount: newCount,
+              likes: newCount,
+            };
+          }
+          return post;
+        })
+      );
+      
+      // Sync với server
+      const updatedPost = await votePost(postId, newVoteValue);
+      const serverVoteValue = (updatedPost as any).userVoteValue !== undefined 
+        ? (updatedPost as any).userVoteValue
+        : (updatedPost.userVote === 'UP' ? 1 : updatedPost.userVote === 'DOWN' ? -1 : newVoteValue);
+      const serverVote: 'UP' | 'DOWN' | null = serverVoteValue === 1 ? 'UP' : serverVoteValue === -1 ? 'DOWN' : null;
+      
+      setAllPostsFromCommunities(prev => 
+        prev.map(post => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              ...updatedPost,
+              userVote: serverVote || newVote,
+              voteCount: updatedPost.voteCount ?? updatedPost.likes ?? newCount,
+              likes: updatedPost.voteCount ?? updatedPost.likes ?? newCount,
+            };
+          }
+          return post;
+        })
+      );
     } catch (error) {
-      // Handle error silently
+      // Revert on error
+      if (selectedCommunityId) {
+        await loadPostsFromCommunity(selectedCommunityId);
+      } else {
+        await loadPosts();
+      }
     }
-  };
-
-  const handleShare = (post: Post) => {
-    // TODO: Implement share functionality
-  };
-
-  const handleBookmark = (postId: string) => {
-    // TODO: Implement bookmark functionality
   };
 
   const handleDelete = async (postId: string) => {
@@ -478,10 +543,8 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
               <PostCard
                 key={post.id}
                 post={post}
-                onLike={handleLike}
+                onVote={handleVote}
                 onComment={handleOpenComments}
-                onShare={handleShare}
-                onBookmark={handleBookmark}
                 onDelete={handleDelete}
                 isOwner={isPostOwner(post)}
               />
