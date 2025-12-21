@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import CommentService from '../services/commentService';
 import type {
   CommentDetail,
+  CreateCommentRequest,
   UpdateCommentRequest,
   CommentVoteRequest,
 } from '../types/communityTypes';
@@ -11,6 +12,105 @@ export const useComment = () => {
   const [comments, setComments] = useState<CommentDetail[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /**
+   * Lấy danh sách comments của post
+   */
+  const fetchPostComments = useCallback(
+    async (
+      postId: string,
+      params?: {
+        page?: number;
+        size?: number;
+      },
+    ): Promise<CommentDetail[]> => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const response = await CommentService.getPostComments(postId, params);
+        let commentsList: CommentDetail[] = [];
+        
+        // API trả về structure: { code, message, data: { items: [...], totalElement, ... } }
+        if (response.data?.data) {
+          const data = response.data.data;
+          
+          // Kiểm tra nếu có items array (paginated response)
+          if (data.items && Array.isArray(data.items)) {
+            commentsList = data.items;
+          } 
+          // Nếu data là array trực tiếp
+          else if (Array.isArray(data)) {
+            commentsList = data;
+          } 
+          // Nếu data là object đơn lẻ
+          else if (typeof data === 'object' && data.id) {
+            commentsList = [data];
+          }
+        }
+        
+        // Normalize comments - giữ nguyên author object từ API
+        const normalizedComments = commentsList.map((comment: any) => {
+          const authorAvatar = comment.author?.imgUrl || comment.author?.avatar;
+          const commentAvatar = comment.avatar;
+          
+          return {
+            ...comment,
+            author: comment.author || comment.user || 'Unknown',
+            avatar: authorAvatar || commentAvatar || comment.user?.imgUrl || comment.user?.avatar,
+            voteCount: comment.voteCount !== undefined ? comment.voteCount : (comment.likes || 0),
+            createdAt: comment.createdAt || comment.created_at || new Date().toISOString(),
+            postId: comment.postId || postId,
+          };
+        });
+        
+        setComments(normalizedComments);
+        return normalizedComments;
+      } catch (err: any) {
+        const message =
+          err?.response?.data?.message ||
+          err?.message ||
+          'Không thể tải danh sách comments.';
+        setError(message);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  /**
+   * Tạo comment mới cho post
+   */
+  const createComment = useCallback(
+    async (
+      postId: string,
+      payload: CreateCommentRequest & { image?: any },
+    ): Promise<CommentDetail> => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const response = await CommentService.createComment(postId, payload);
+        const newComment =
+          (response.data as ApiResponse<CommentDetail>).data ||
+          (response.data as any);
+        setComments(prev => [newComment, ...prev]);
+        return newComment;
+      } catch (err: any) {
+        const message =
+          err?.response?.data?.message ||
+          err?.message ||
+          'Không thể tạo comment.';
+        setError(message);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
 
   /**
    * Cập nhật comment
@@ -162,6 +262,8 @@ export const useComment = () => {
     error,
 
     // actions
+    fetchPostComments,
+    createComment,
     updateComment,
     deleteComment,
     voteComment,

@@ -10,6 +10,72 @@ import type {
 
 const CommentService = {
   /**
+   * GET /posts/{postId}/comments
+   * Lấy danh sách comments của post.
+   */
+  getPostComments(
+    postId: string,
+    params?: {
+      page?: number;
+      size?: number;
+    },
+  ): Promise<AxiosResponse<ApiResponse<CommentDetail[]>>> {
+    return axiosInstance.get(`/posts/${postId}/comments`, { params });
+  },
+
+  /**
+   * POST /posts/{postId}/comments
+   * Tạo comment mới cho post.
+   * content và parentCommentId là query parameters
+   * image là multipart/form-data trong body
+   */
+  createComment(
+    postId: string,
+    payload: CreateCommentRequest & { image?: any },
+  ): Promise<AxiosResponse<ApiResponse<CommentDetail>>> {
+    const { content, parentId, image } = payload;
+    
+    // Query parameters
+    const params: any = { content };
+    if (parentId) {
+      params.parentCommentId = parentId;
+    }
+    
+    // Nếu có image, gửi multipart/form-data
+    if (image && image.uri) {
+      const formData = new FormData();
+      
+      const imageUri = image.uri;
+      if (imageUri.startsWith('blob:')) {
+        // Web: fetch blob và tạo File
+        return fetch(imageUri)
+          .then(res => res.blob())
+          .then(blob => {
+            const file = new File([blob], image.name || `image_${Date.now()}.jpg`, {
+              type: image.type || 'image/jpeg',
+            });
+            formData.append('image', file);
+            return axiosInstance.post(`/posts/${postId}/comments`, formData, { params });
+          });
+      } else {
+        // Native: append file object
+        const fileData: any = {
+          uri: imageUri,
+          type: image.type || 'image/jpeg',
+          name: image.name || `image_${Date.now()}.jpg`,
+        };
+        formData.append('image', fileData);
+        return axiosInstance.post(`/posts/${postId}/comments`, formData, { params });
+      }
+    }
+    
+    // Không có image, gửi empty FormData với query params
+    // Một số API yêu cầu multipart/form-data ngay cả khi không có file
+    const formData = new FormData();
+    return axiosInstance.post(`/posts/${postId}/comments`, formData, { params });
+  },
+
+  /**
    * PUT /comments/{commentId}
    * Cập nhật comment.
    */

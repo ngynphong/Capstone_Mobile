@@ -102,6 +102,9 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
     // Map pinned từ API (có thể là pinned hoặc isPinned)
     const isPinned = post.isPinned || postAny.pinned || postAny.isPinned || false;
     
+    // Map commentCount từ API vào comments
+    const commentCount = postAny.commentCount !== undefined ? postAny.commentCount : (post.comments || 0);
+    
     // Nếu author là object và có avatar, map vào post.avatar
     if (post.author && typeof post.author === 'object') {
       const authorObj = post.author as any;
@@ -110,6 +113,8 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
         avatar: post.avatar || authorObj.avatar || authorObj.imgUrl,
         imageUrl: finalImageUrl,
         isPinned: isPinned,
+        comments: commentCount,
+        commentCount: commentCount,
         timeAgo: post.timeAgo || formatTimeAgo(post.createdAt),
       };
     }
@@ -117,6 +122,8 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
       ...post,
       imageUrl: finalImageUrl,
       isPinned: isPinned,
+      comments: commentCount,
+      commentCount: commentCount,
       timeAgo: post.timeAgo || formatTimeAgo(post.createdAt),
     };
   };
@@ -259,6 +266,17 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
   const handleOpenComments = (post: Post) => {
     setSelectedPost(post);
     setCommentModalVisible(true);
+  };
+
+  const handleCommentAdded = async () => {
+    // Refresh lại posts để cập nhật số comment
+    if (selectedPost) {
+      if (selectedCommunityId) {
+        await loadPostsFromCommunity(selectedCommunityId);
+      } else {
+        await loadPosts();
+      }
+    }
   };
 
   const handleLike = async (postId: string) => {
@@ -508,8 +526,10 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
           setCommentModalVisible(false);
           setSelectedPost(null);
         }}
+        postId={selectedPost?.id || ''}
         postTitle={selectedPost?.title || selectedPost?.content || ''}
         postAuthor={selectedPost ? getAuthorName(selectedPost.author) : ''}
+        onCommentAdded={handleCommentAdded}
       />
 
       <CommunitySidebar

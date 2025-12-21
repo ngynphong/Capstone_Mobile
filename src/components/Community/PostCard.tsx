@@ -240,7 +240,7 @@ const PostCard: React.FC<PostCardProps> = ({
           onPress={() => onComment?.(post)}
         >
           <MessageCircle size={20} color="#666" />
-          <Text style={styles.actionText}>{getSafeNumber(post.comments)}</Text>
+          <Text style={styles.actionText}>{getSafeNumber(post.commentCount ?? post.comments)}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
