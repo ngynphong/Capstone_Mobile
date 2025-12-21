@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,119 +8,182 @@ import {
   FlatList,
   Image,
   Alert,
+  ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
-import { X, Send, Heart, MessageCircle, TrendingUp } from 'lucide-react-native';
-import { Comment } from '../../types/communityTypes';
+import { X, Send, Heart, MessageCircle, Image as ImageIcon, XCircle } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { CommentDetail } from '../../types/communityTypes';
+import { useComment } from '../../hooks/useComment';
+import { useTimeAgo } from '../../hooks/useTimeAgo';
+import { useAuth } from '../../context/AuthContext';
 
 interface CommentModalProps {
   visible: boolean;
   onClose: () => void;
+  postId: string;
   postTitle: string;
   postAuthor: string;
-  initialComments?: Comment[];
+  onCommentAdded?: () => void; // Callback khi comment được thêm thành công
 }
 
 const CommentModal: React.FC<CommentModalProps> = ({
   visible,
   onClose,
+  postId,
   postTitle,
   postAuthor,
-  initialComments = [],
+  onCommentAdded,
 }) => {
-  const [comments, setComments] = useState<Comment[]>(initialComments);
+  const { user } = useAuth();
+  const { comments, isLoading, fetchPostComments, createComment } = useComment();
   const [newComment, setNewComment] = useState('');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  const sampleComments: Comment[] = [
-    {
-      id: '1',
-      postId: '1',
-      author: 'Sarah Chen',
-      content: 'This is really helpful! I was struggling with this exact topic in Calculus BC.',
-      timeAgo: '2h ago',
-      likes: 5,
-      avatar: 'https://placehold.co/32x32',
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: '2',
-      postId: '1',
-      author: 'Mike Johnson',
-      content: 'Great explanation! Could you also share some practice problems?',
-      timeAgo: '1h ago',
-      likes: 3,
-      avatar: 'https://placehold.co/32x32',
-      createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: '3',
-      postId: '1',
-      author: 'Emma Davis',
-      content: 'Thanks for sharing this! I\'ll definitely use this approach in my next assignment.',
-      timeAgo: '45m ago',
-      likes: 7,
-      avatar: 'https://placehold.co/32x32',
-      createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-    },
-  ];
+  useEffect(() => {
+    if (visible && postId) {
+      // Fetch comments khi modal mở
+      fetchPostComments(postId, { page: 1, size: 50 }).catch(() => {
+        // Error handled in hook
+      });
+    }
+    // Reset form khi đóng modal
+    if (!visible) {
+      setNewComment('');
+      setSelectedImage(null);
+    }
+  }, [visible, postId, fetchPostComments]);
 
-  const displayComments = comments.length > 0 ? comments : sampleComments;
+  const handlePickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please grant camera roll permissions to add images');
+        return;
+      }
 
-  const handleAddComment = () => {
-    if (!newComment.trim()) {
-      Alert.alert('Error', 'Please enter a comment');
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setSelectedImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to pick image');
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+  };
+
+  const handleAddComment = async () => {
+    if (!newComment.trim() && !selectedImage) {
+      Alert.alert('Error', 'Please enter a comment or select an image');
       return;
     }
 
-    const comment: Comment = {
-      id: Date.now().toString(),
-      postId: '1', // TODO: Get from props
-      author: 'You',
-      content: newComment.trim(),
-      timeAgo: 'now',
-      likes: 0,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const imageData = selectedImage
+        ? {
+            uri: selectedImage,
+            type: 'image/jpeg',
+            name: `comment_image_${Date.now()}.jpg`,
+          }
+        : undefined;
 
-    setComments(prev => [comment, ...prev]);
-    setNewComment('');
+      await createComment(postId, {
+        content: newComment.trim() || '',
+        postId: postId,
+        image: imageData,
+      });
+      setNewComment('');
+      setSelectedImage(null);
+      // Gọi callback để cập nhật số comment
+      if (onCommentAdded) {
+        onCommentAdded();
+      }
+    } catch (error: any) {
+      Alert.alert(
+        'Error',
+        error?.response?.data?.message || error?.message || 'Failed to create comment'
+      );
+    }
   };
 
-  const handleLikeComment = (commentId: string) => {
-    setComments(prev =>
-      prev.map(comment =>
-        comment.id === commentId
-          ? { ...comment, likes: comment.likes + 1 }
-          : comment
-      )
-    );
+  const getCommentAuthorName = (author: any): string => {
+    if (typeof author === 'string') return author;
+    if (author && typeof author === 'object') {
+      // Ưu tiên name hoặc username
+      if (author.name) return author.name;
+      if (author.username) return author.username;
+      
+      // Combine firstName và lastName nếu có
+      if (author.firstName || author.lastName) {
+        const parts = [author.firstName, author.lastName].filter(Boolean);
+        if (parts.length > 0) return parts.join(' ');
+      }
+      
+      return 'Unknown';
+    }
+    return 'Unknown';
   };
 
-  const renderComment = ({ item }: { item: Comment }) => (
-    <View className="bg-gray-50 rounded-xl p-3 mt-3">
-      <View className="flex-row items-start gap-2">
-        <View className="w-8 h-8 rounded-full overflow-hidden">
-          <Image
-            source={{ uri: item.avatar || 'https://placehold.co/32x32' }}
-            className="w-full h-full"
-          />
-        </View>
-        <View className="flex-1">
-          <View className="flex-row items-center gap-2 mb-1">
-            <Text className="text-sm font-semibold text-gray-800">{item.author}</Text>
-            <Text className="text-xs text-gray-500">{item.timeAgo}</Text>
+  const getCommentAuthorAvatar = (author: any): string => {
+    if (author && typeof author === 'object') {
+      // Ưu tiên imgUrl, sau đó avatar
+      return author.imgUrl || author.avatar || 'https://placehold.co/32x32';
+    }
+    return 'https://placehold.co/32x32';
+  };
+
+  const CommentItem: React.FC<{ comment: CommentDetail }> = ({ comment }) => {
+    const timeAgo = useTimeAgo(comment.createdAt);
+    const authorName = getCommentAuthorName(comment.author);
+    // Ưu tiên avatar từ comment, sau đó từ author
+    const authorAvatar = comment.avatar || getCommentAuthorAvatar(comment.author);
+    const voteCount = comment.voteCount || 0;
+    const commentImageUrl = (comment as any).imgUrl;
+
+    return (
+      <View style={styles.commentContainer}>
+        <View style={styles.commentHeader}>
+          <View style={styles.avatarContainer}>
+            <Image
+              source={{ uri: authorAvatar || 'https://placehold.co/32x32' }}
+              style={styles.avatar}
+            />
           </View>
-          <Text className="text-sm text-gray-700 mb-2">{item.content}</Text>
-          <TouchableOpacity
-            onPress={() => handleLikeComment(item.id)}
-            className="flex-row items-center gap-1 self-start"
-          >
-            <Heart size={14} color="#666" />
-            <Text className="text-xs text-gray-500">{item.likes}</Text>
-          </TouchableOpacity>
+          <View style={styles.commentContent}>
+            <View style={styles.authorRow}>
+              <Text style={styles.authorName}>{authorName}</Text>
+              <Text style={styles.timeAgo}>{timeAgo}</Text>
+            </View>
+            {comment.content && (
+              <Text style={styles.commentText}>{comment.content}</Text>
+            )}
+            {commentImageUrl && (
+              <View style={styles.commentImageContainer}>
+                <Image
+                  source={{ uri: commentImageUrl }}
+                  style={styles.commentImage}
+                  resizeMode="cover"
+                />
+              </View>
+            )}
+            <View style={styles.likeRow}>
+              <Heart size={12} color="#666" fill="transparent" />
+              <Text style={styles.likeCount}>{voteCount}</Text>
+            </View>
+          </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <Modal
@@ -129,45 +192,70 @@ const CommentModal: React.FC<CommentModalProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-white">
+      <View style={styles.container}>
         {/* Header */}
-        <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-200">
+        <View style={styles.header}>
           <TouchableOpacity onPress={onClose}>
             <X size={24} color="#666" />
           </TouchableOpacity>
-          <Text className="text-lg font-semibold text-gray-800">Comments</Text>
-          <View className="w-6" />
+          <Text style={styles.headerTitle}>Comments</Text>
+          <View style={styles.headerSpacer} />
         </View>
 
         {/* Post Info */}
-        <View className="px-4 py-3 bg-gray-50">
-          <Text className="text-sm font-semibold text-gray-800 mb-1">{postAuthor}</Text>
-          <Text className="text-sm text-gray-600">{postTitle}</Text>
+        <View style={styles.postInfo}>
+          <Text style={styles.postAuthor}>{postAuthor}</Text>
+          <Text style={styles.postTitle}>{postTitle}</Text>
         </View>
 
         {/* Comments List */}
-        <FlatList
-          data={displayComments}
-          renderItem={renderComment}
-          keyExtractor={(item) => item.id}
-          className="flex-1 px-4"
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View className="flex-1 items-center justify-center py-8">
-              <MessageCircle size={48} color="#ccc" />
-              <Text className="text-gray-500 mt-2">No comments yet</Text>
-              <Text className="text-gray-400 text-sm">Be the first to comment!</Text>
-            </View>
-          }
-        />
+        {isLoading && comments.length === 0 ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#3CBCB2" />
+          </View>
+        ) : (
+          <FlatList
+            data={comments}
+            renderItem={({ item }) => <CommentItem comment={item} />}
+            keyExtractor={(item) => item.id}
+            style={styles.commentsList}
+            contentContainerStyle={styles.commentsListContent}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <MessageCircle size={48} color="#ccc" />
+                <Text style={styles.emptyText}>No comments yet</Text>
+                <Text style={styles.emptySubtext}>Be the first to comment!</Text>
+              </View>
+            }
+          />
+        )}
 
         {/* Comment Input */}
-        <View className="px-4 py-3 border-t border-gray-200">
-          <View className="flex-row items-end gap-2">
-            <View className="flex-1">
+        <View style={styles.inputContainer}>
+          {selectedImage && (
+            <View style={styles.imagePreviewContainer}>
+              <Image source={{ uri: selectedImage }} style={styles.imagePreview} />
+              <TouchableOpacity
+                onPress={handleRemoveImage}
+                style={styles.removeImageButton}
+              >
+                <XCircle size={20} color="#EF4444" fill="white" />
+              </TouchableOpacity>
+            </View>
+          )}
+          <View style={styles.inputRow}>
+            <TouchableOpacity
+              onPress={handlePickImage}
+              style={styles.imageButton}
+            >
+              <ImageIcon size={20} color="#3CBCB2" />
+            </TouchableOpacity>
+            <View style={styles.inputWrapper}>
               <TextInput
-                className="bg-gray-50 rounded-xl px-4 py-3 text-base text-gray-800 max-h-20"
+                style={styles.textInput}
                 placeholder="Write a comment..."
+                placeholderTextColor="#9CA3AF"
                 value={newComment}
                 onChangeText={setNewComment}
                 multiline
@@ -177,7 +265,7 @@ const CommentModal: React.FC<CommentModalProps> = ({
             </View>
             <TouchableOpacity
               onPress={handleAddComment}
-              className="w-10 h-10 rounded-full bg-backgroundColor items-center justify-center"
+              style={styles.sendButton}
             >
               <Send size={16} color="white" />
             </TouchableOpacity>
@@ -187,5 +275,190 @@ const CommentModal: React.FC<CommentModalProps> = ({
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  headerSpacer: {
+    width: 24,
+  },
+  postInfo: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#F9FAFB',
+  },
+  postAuthor: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  postTitle: {
+    fontSize: 14,
+    color: '#4B5563',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  commentsList: {
+    flex: 1,
+  },
+  commentsListContent: {
+    paddingHorizontal: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 32,
+  },
+  emptyText: {
+    marginTop: 8,
+    color: '#6B7280',
+  },
+  emptySubtext: {
+    marginTop: 4,
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  inputContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+  inputWrapper: {
+    flex: 1,
+  },
+  textInput: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#111827',
+    maxHeight: 80,
+  },
+  sendButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#3CBCB2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  commentContainer: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 8,
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  avatarContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+  },
+  commentContent: {
+    flex: 1,
+  },
+  authorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  authorName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  timeAgo: {
+    fontSize: 11,
+    color: '#6B7280',
+  },
+  commentText: {
+    fontSize: 13,
+    color: '#374151',
+    marginBottom: 6,
+    lineHeight: 18,
+  },
+  likeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    alignSelf: 'flex-start',
+  },
+  likeCount: {
+    fontSize: 11,
+    color: '#6B7280',
+  },
+  imagePreviewContainer: {
+    position: 'relative',
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+  },
+  imagePreview: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: 'white',
+    borderRadius: 12,
+  },
+  imageButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  commentImageContainer: {
+    marginTop: 6,
+    marginBottom: 6,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  commentImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 8,
+  },
+});
 
 export default CommentModal;

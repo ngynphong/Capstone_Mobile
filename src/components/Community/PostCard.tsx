@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
-import { Heart, MessageCircle, Share2, Bookmark } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, TouchableWithoutFeedback } from 'react-native';
+import { Heart, MessageCircle, Share2, Bookmark, MoreVertical, Trash2, Pin } from 'lucide-react-native';
 import type { Post } from '../../types/communityTypes';
+import { useTimeAgo } from '../../hooks/useTimeAgo';
 
 interface PostCardProps {
   post: Post;
@@ -9,6 +10,8 @@ interface PostCardProps {
   onComment?: (post: Post) => void;
   onShare?: (post: Post) => void;
   onBookmark?: (postId: string) => void;
+  onDelete?: (postId: string) => void;
+  isOwner?: boolean; // Kiểm tra xem user có phải là chủ sở hữu post không
 }
 
 const PostCard: React.FC<PostCardProps> = ({
@@ -17,7 +20,34 @@ const PostCard: React.FC<PostCardProps> = ({
   onComment,
   onShare,
   onBookmark,
+  onDelete,
+  isOwner = false,
 }) => {
+  const [showMenu, setShowMenu] = React.useState(false);
+
+  const handleDelete = () => {
+    setShowMenu(false);
+    
+    if (!onDelete) return;
+    
+    Alert.alert(
+      'Delete Post',
+      'Are you sure you want to delete this post?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            onDelete(post.id);
+          },
+        },
+      ]
+    );
+  };
   // Extract hashtags from content
   const extractHashtags = (text: string) => {
     if (!text || typeof text !== 'string') return [];
@@ -29,13 +59,8 @@ const PostCard: React.FC<PostCardProps> = ({
   const hashtags = extractHashtags(postContent);
   const contentWithoutHashtags = postContent.replace(/#\w+/g, '').trim();
 
-  // Format time ago safely
-  const formatTimeAgo = (timeAgo: string | undefined) => {
-    if (!timeAgo || typeof timeAgo !== 'string') {
-      return '';
-    }
-    return timeAgo;
-  };
+  // Real-time time ago
+  const timeAgo = useTimeAgo(post.createdAt);
 
   // Get safe numeric value
   const getSafeNumber = (value: number | undefined | null, defaultValue: number = 0) => {
@@ -122,7 +147,7 @@ const PostCard: React.FC<PostCardProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, post.isPinned && styles.pinnedContainer]}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.userInfo}>
@@ -133,12 +158,43 @@ const PostCard: React.FC<PostCardProps> = ({
             style={styles.avatar}
           />
           <View style={styles.userDetails}>
-            <Text style={styles.authorName}>{getAuthorName()}</Text>
+            <View style={styles.authorNameRow}>
+              <Text style={styles.authorName}>{getAuthorName()}</Text>
+              {post.isPinned && (
+                <Pin size={14} color="#3CBCB2" fill="#3CBCB2" style={styles.pinIcon} />
+              )}
+            </View>
             <Text style={styles.username}>{getUsername()}</Text>
           </View>
         </View>
-        <Text style={styles.timeAgo}>{formatTimeAgo(post.timeAgo || '')}</Text>
+        <View style={styles.headerRight}>
+          <Text style={styles.timeAgo}>{timeAgo}</Text>
+          {isOwner && (
+            <TouchableOpacity
+              onPress={() => {
+                setShowMenu(!showMenu);
+              }}
+              style={styles.menuButton}
+            >
+              <MoreVertical size={20} color="#6B7280" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
+
+      {/* Menu Dropdown */}
+      {showMenu && isOwner && (
+        <View style={styles.menuContainer}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={handleDelete}
+            activeOpacity={0.7}
+          >
+            <Trash2 size={16} color="#EF4444" />
+            <Text style={styles.menuItemTextDelete}>Delete Post</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Content */}
       <View style={styles.content}>
@@ -184,7 +240,7 @@ const PostCard: React.FC<PostCardProps> = ({
           onPress={() => onComment?.(post)}
         >
           <MessageCircle size={20} color="#666" />
-          <Text style={styles.actionText}>{getSafeNumber(post.comments)}</Text>
+          <Text style={styles.actionText}>{getSafeNumber(post.commentCount ?? post.comments)}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -213,6 +269,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
+  pinnedContainer: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#3CBCB2',
+    backgroundColor: '#F0FDFA',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -233,19 +294,63 @@ const styles = StyleSheet.create({
   userDetails: {
     flex: 1,
   },
+  authorNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
   authorName: {
     fontSize: 15,
     fontWeight: '600',
     color: '#111827',
-    marginBottom: 2,
+  },
+  pinIcon: {
+    marginLeft: 6,
   },
   username: {
     fontSize: 13,
     color: '#6B7280',
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   timeAgo: {
     fontSize: 12,
     color: '#9CA3AF',
+  },
+  menuButton: {
+    padding: 4,
+  },
+  menuContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    paddingVertical: 4,
+    marginTop: 8,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  menuItemTextDelete: {
+    fontSize: 14,
+    color: '#EF4444',
+    fontWeight: '500',
   },
   content: {
     marginBottom: 12,

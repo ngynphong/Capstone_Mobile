@@ -37,12 +37,13 @@ export interface Post {
   isPinned?: boolean;
   voteCount?: number;
   userVote?: 'UP' | 'DOWN' | null;
+  commentCount?: number; // Số comment từ API
 }
 
 export interface Comment {
   id: string;
   postId: string;
-  author: string;
+  author: string | PostAuthor; // Có thể là string hoặc object
   content: string;
   timeAgo: string;
   likes: number;
