@@ -315,6 +315,41 @@ export const usePost = () => {
     [],
   );
 
+  /**
+   * Tạo post mới trong community
+   */
+  const createPost = useCallback(
+    async (
+      communityId: string,
+      data: {
+        title: string;
+        content: string;
+        image?: any;
+      },
+    ): Promise<Post> => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const response = await PostService.createPost(communityId, data);
+        const post =
+          (response.data as ApiResponse<Post>).data || (response.data as any);
+        setPosts(prev => [post, ...prev]);
+        return post;
+      } catch (err: any) {
+        const message =
+          err?.response?.data?.message ||
+          err?.message ||
+          'Không thể tạo post.';
+        setError(message);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
   return {
     // state
     posts,
@@ -332,6 +367,7 @@ export const usePost = () => {
     fetchPostComments,
     createPostComment,
     fetchMyPosts,
+    createPost,
   };
 };
 

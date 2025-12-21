@@ -8,6 +8,7 @@ import {
   TextInput,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { Sparkles, Menu } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
@@ -28,6 +29,8 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
   const {
     votePost,
     fetchPostComments,
+    createPost,
+    isLoading: isPostLoading,
   } = usePost();
   
   const {
@@ -87,17 +90,27 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
 
   // Normalize post data from API
   const normalizePost = (post: Post): Post => {
+    const postAny = post as any;
+    
+    // Map imageUrl từ API response
+    const imageUrl = post.imageUrl || postAny.imageUrl || null;
+    const finalImageUrl = (imageUrl && typeof imageUrl === 'string' && imageUrl.trim() !== '') 
+      ? imageUrl 
+      : undefined;
+    
     // Nếu author là object và có avatar, map vào post.avatar
     if (post.author && typeof post.author === 'object') {
       const authorObj = post.author as any;
       return {
         ...post,
         avatar: post.avatar || authorObj.avatar || authorObj.imgUrl,
+        imageUrl: finalImageUrl,
         timeAgo: post.timeAgo || formatTimeAgo(post.createdAt),
       };
     }
     return {
       ...post,
+      imageUrl: finalImageUrl,
       timeAgo: post.timeAgo || formatTimeAgo(post.createdAt),
     };
   };
@@ -140,8 +153,7 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
         fetchCommunityPosts(community.id, {
           page: 1,
           size: 20,
-        }).catch((err) => {
-          console.warn(`Error fetching posts from community ${community.id}:`, err);
+        }).catch(() => {
           return [];
         })
       );
@@ -150,7 +162,7 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
       const mergedPosts = allPostsArrays.flat();
       setAllPostsFromCommunities(mergedPosts);
     } catch (error: any) {
-      console.error('Error loading posts:', error);
+      // Handle error silently
     }
   };
 
@@ -169,7 +181,7 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
         setAllPostsFromCommunities(posts);
       }
     } catch (error: any) {
-      console.error('Error loading posts from community:', error);
+      // Handle error silently
     } finally {
       setIsLoadingPosts(false);
     }
@@ -186,20 +198,51 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
         await loadPosts();
       }
     } catch (error: any) {
-      console.error('Error refreshing posts:', error);
+      // Handle error silently
     } finally {
       setRefreshing(false);
     }
   };
 
-  const handleCreatePost = (postData: {
+  const handleCreatePost = async (postData: {
     title: string;
     content: string;
     subject: string;
+    image?: any;
   }) => {
-    console.log('Creating post:', postData);
-    // TODO: Implement API call to create post
-    setCreatePostModalVisible(false);
+    try {
+      // Nếu chưa chọn community, sử dụng community đầu tiên
+      let communityId = selectedCommunityId;
+      if (!communityId && communities.length > 0) {
+        communityId = communities[0].id;
+        setSelectedCommunityId(communityId);
+      }
+
+      if (!communityId) {
+        Alert.alert('Error', 'No community available. Please join a community first.');
+        return;
+      }
+
+      const newPost = await createPost(communityId, {
+        title: postData.title,
+        content: postData.content,
+        image: postData.image,
+      });
+
+      // Normalize post mới tạo và thêm vào danh sách
+      const normalizedNewPost = normalizePost(newPost);
+      setAllPostsFromCommunities(prev => [normalizedNewPost, ...prev]);
+
+      // Refresh posts để đảm bảo sync với server
+      await loadPostsFromCommunity(communityId);
+      
+      setCreatePostModalVisible(false);
+    } catch (error: any) {
+      Alert.alert(
+        'Error',
+        error?.response?.data?.message || error?.message || 'Failed to create post'
+      );
+    }
   };
 
   const handleOpenComments = (post: Post) => {
@@ -211,17 +254,15 @@ const CommunityScreen: React.FC<CommunityScreenProps> = ({ navigation }) => {
     try {
       await votePost(postId, { voteType: 'UP' });
     } catch (error) {
-      console.error('Error voting post:', error);
+      // Handle error silently
     }
   };
 
   const handleShare = (post: Post) => {
-    console.log('Sharing post:', post.id);
     // TODO: Implement share functionality
   };
 
   const handleBookmark = (postId: string) => {
-    console.log('Bookmarking post:', postId);
     // TODO: Implement bookmark functionality
   };
 

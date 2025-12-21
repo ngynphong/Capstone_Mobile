@@ -35,6 +35,12 @@ axiosInstance.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+        
+        // Nếu là FormData, không override Content-Type để axios tự động set boundary
+        if (config.data instanceof FormData) {
+            delete config.headers['Content-Type'];
+        }
+        
         return config;
     },
     (error) => Promise.reject(error)
