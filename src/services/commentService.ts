@@ -101,14 +101,16 @@ const CommentService = {
   },
 
   /**
-   * POST /comments/{commentId}/vote
-   * Vote cho comment (UP hoặc DOWN).
+   * POST /comments/{commentId}/vote?value={value}
+   * Vote cho comment với value: 1 (like) hoặc -1 (dislike).
    */
   voteComment(
     commentId: string,
-    payload: CommentVoteRequest,
+    value: number, // 1 for like, -1 for dislike
   ): Promise<AxiosResponse<ApiResponse<CommentDetail>>> {
-    return axiosInstance.post(`/comments/${commentId}/vote`, payload);
+    return axiosInstance.post(`/comments/${commentId}/vote`, null, {
+      params: { value }
+    });
   },
 
   /**

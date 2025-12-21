@@ -132,15 +132,15 @@ export const usePost = () => {
   );
 
   /**
-   * Vote cho post (UP hoặc DOWN)
+   * Vote cho post với value: 1 (like) hoặc -1 (dislike)
    */
   const votePost = useCallback(
-    async (postId: string, payload: PostVoteRequest): Promise<Post> => {
+    async (postId: string, value: number): Promise<Post> => {
       try {
         setIsLoading(true);
         setError(null);
 
-        const response = await PostService.votePost(postId, payload);
+        const response = await PostService.votePost(postId, value);
         const updated =
           (response.data as ApiResponse<Post>).data || (response.data as any);
         setPosts(prev =>

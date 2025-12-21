@@ -12,7 +12,7 @@ import {
   StyleSheet,
   TouchableWithoutFeedback,
 } from 'react-native';
-import { X, Send, Heart, MessageCircle, Image as ImageIcon, XCircle, MoreVertical, Trash2, Edit2 } from 'lucide-react-native';
+import { X, Send, ThumbsUp, ThumbsDown, MessageCircle, Image as ImageIcon, XCircle, MoreVertical, Trash2, Edit2 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { CommentDetail } from '../../types/communityTypes';
 import { useComment } from '../../hooks/useComment';
@@ -38,11 +38,17 @@ const CommentModal: React.FC<CommentModalProps> = ({
   onCommentAdded,
 }) => {
   const { user } = useAuth();
-  const { comments, isLoading, fetchPostComments, createComment, deleteComment, updateComment } = useComment();
+  const { comments, isLoading, fetchPostComments, createComment, deleteComment, updateComment, voteComment } = useComment();
   const [newComment, setNewComment] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showMenuId, setShowMenuId] = useState<string | null>(null);
   const [editingComment, setEditingComment] = useState<{ id: string; content: string } | null>(null);
+  const [localComments, setLocalComments] = useState<CommentDetail[]>([]);
+  
+  // Sync localComments với comments từ hook
+  useEffect(() => {
+    setLocalComments(comments);
+  }, [comments]);
 
   useEffect(() => {
     if (visible && postId) {
@@ -220,6 +226,81 @@ const CommentModal: React.FC<CommentModalProps> = ({
     setShowMenuId(id);
   }, []);
 
+  const handleVoteComment = useCallback(async (commentId: string, value: number) => {
+    try {
+      const currentComment = localComments.find(c => c.id === commentId);
+      const currentVoteValue = currentComment?.userVote === 'UP' ? 1 : currentComment?.userVote === 'DOWN' ? -1 : 0;
+      
+      // Xác định giá trị vote mới: toggle nếu đã vote, set mới nếu chưa vote
+      let newVoteValue: number;
+      if (value === 1) {
+        newVoteValue = currentVoteValue === 1 ? 0 : 1;
+      } else if (value === -1) {
+        newVoteValue = currentVoteValue === -1 ? 0 : -1;
+      } else {
+        newVoteValue = 0;
+      }
+      
+      const newVote: 'UP' | 'DOWN' | null = newVoteValue === 1 ? 'UP' : newVoteValue === -1 ? 'DOWN' : null;
+      
+      // Tính toán vote count: Like +1, Dislike -1, chuyển từ like sang dislike -2
+      const currentCount = currentComment?.voteCount || 0;
+      let newCount = currentCount;
+      
+      if (currentVoteValue === 1 && newVoteValue === 0) {
+        newCount = currentCount - 1; // Bỏ like
+      } else if (currentVoteValue === -1 && newVoteValue === 0) {
+        newCount = currentCount + 1; // Bỏ dislike
+      } else if (currentVoteValue === -1 && newVoteValue === 1) {
+        newCount = currentCount + 2; // Dislike -> Like
+      } else if (currentVoteValue === 0 && newVoteValue === 1) {
+        newCount = currentCount + 1; // Like
+      } else if (currentVoteValue === 1 && newVoteValue === -1) {
+        newCount = currentCount - 2; // Like -> Dislike
+      } else if (currentVoteValue === 0 && newVoteValue === -1) {
+        newCount = currentCount - 1; // Dislike
+      }
+      
+      // Optimistic update
+      setLocalComments(prev =>
+        prev.map(c => {
+          if (c.id === commentId) {
+            return {
+              ...c,
+              userVote: newVote,
+              voteCount: newCount,
+            };
+          }
+          return c;
+        })
+      );
+      
+      // Sync với server
+      const updatedComment = await voteComment(commentId, newVoteValue);
+      const serverVoteValue = (updatedComment as any).userVoteValue !== undefined 
+        ? (updatedComment as any).userVoteValue
+        : (updatedComment.userVote === 'UP' ? 1 : updatedComment.userVote === 'DOWN' ? -1 : newVoteValue);
+      const serverVote: 'UP' | 'DOWN' | null = serverVoteValue === 1 ? 'UP' : serverVoteValue === -1 ? 'DOWN' : null;
+      
+      setLocalComments(prev =>
+        prev.map(c => {
+          if (c.id === commentId) {
+            return {
+              ...c,
+              ...updatedComment,
+              userVote: serverVote || newVote,
+              voteCount: updatedComment.voteCount ?? newCount,
+            };
+          }
+          return c;
+        })
+      );
+    } catch (error) {
+      // Revert on error
+      await fetchPostComments(postId, { page: 1, size: 50 });
+    }
+  }, [voteComment, localComments, fetchPostComments, postId]);
+
 
   const CommentItem: React.FC<{ 
     comment: CommentDetail;
@@ -227,12 +308,14 @@ const CommentModal: React.FC<CommentModalProps> = ({
     onSetShowMenuId: (id: string | null) => void;
     onStartEdit: (comment: CommentDetail) => void;
     onDeleteComment: (commentId: string) => void;
+    onVoteComment: (commentId: string, value: number) => void;
   }> = React.memo(({ 
     comment,
     showMenuId,
     onSetShowMenuId,
     onStartEdit,
     onDeleteComment,
+    onVoteComment,
   }) => {
     const timeAgo = useTimeAgo(comment.createdAt);
     const authorName = getCommentAuthorName(comment.author);
@@ -240,6 +323,7 @@ const CommentModal: React.FC<CommentModalProps> = ({
     const voteCount = comment.voteCount || 0;
     const commentImageUrl = (comment as any).imgUrl;
     const isOwner = isCommentOwner(comment);
+    const userVote = (comment as any).userVote; // 'UP' | 'DOWN' | null
 
     return (
       <View style={styles.commentContainer}>
@@ -301,9 +385,53 @@ const CommentModal: React.FC<CommentModalProps> = ({
                 />
               </View>
             )}
-            <View style={styles.likeRow}>
-              <Heart size={12} color="#666" fill="transparent" />
-              <Text style={styles.likeCount}>{voteCount}</Text>
+            <View style={styles.voteRow}>
+              {/* Like Button */}
+              <TouchableOpacity
+                style={[
+                  styles.voteButton,
+                  userVote === 'UP' && styles.voteButtonActive,
+                ]}
+                onPress={() => onVoteComment(comment.id, 1)}
+              >
+                <ThumbsUp
+                  size={14}
+                  color={userVote === 'UP' ? '#FFFFFF' : '#6B7280'}
+                  fill={userVote === 'UP' ? '#FFFFFF' : 'none'}
+                />
+                <Text
+                  style={[
+                    styles.voteButtonText,
+                    userVote === 'UP' && styles.voteButtonTextActive,
+                  ]}
+                >
+                  Like
+                </Text>
+              </TouchableOpacity>
+              <Text style={styles.voteCount}>{voteCount}</Text>
+
+              {/* Dislike Button */}
+              <TouchableOpacity
+                style={[
+                  styles.voteButton,
+                  userVote === 'DOWN' && styles.voteButtonActiveDislike,
+                ]}
+                onPress={() => onVoteComment(comment.id, -1)}
+              >
+                <ThumbsDown
+                  size={14}
+                  color={userVote === 'DOWN' ? '#FFFFFF' : '#6B7280'}
+                  fill={userVote === 'DOWN' ? '#FFFFFF' : 'none'}
+                />
+                <Text
+                  style={[
+                    styles.voteButtonText,
+                    userVote === 'DOWN' && styles.voteButtonTextActive,
+                  ]}
+                >
+                  Dislike
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -339,13 +467,13 @@ const CommentModal: React.FC<CommentModalProps> = ({
         </View>
 
         {/* Comments List */}
-        {isLoading && comments.length === 0 ? (
+        {isLoading && (localComments.length === 0 && comments.length === 0) ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#3CBCB2" />
           </View>
         ) : (
           <FlatList
-            data={comments}
+            data={localComments.length > 0 ? localComments : comments}
             renderItem={({ item }) => (
               <CommentItem 
                 comment={item}
@@ -353,6 +481,7 @@ const CommentModal: React.FC<CommentModalProps> = ({
                 onSetShowMenuId={handleSetShowMenuId}
                 onStartEdit={handleStartEdit}
                 onDeleteComment={handleDeleteComment}
+                onVoteComment={handleVoteComment}
               />
             )}
             keyExtractor={(item) => item.id}
@@ -639,6 +768,45 @@ const styles = StyleSheet.create({
   menuItemTextDelete: {
     fontSize: 13,
     color: '#EF4444',
+  },
+  voteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  voteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    backgroundColor: 'transparent',
+  },
+  voteButtonActive: {
+    backgroundColor: '#3CBCB2',
+    borderColor: '#3CBCB2',
+  },
+  voteButtonActiveDislike: {
+    backgroundColor: '#EF4444',
+    borderColor: '#EF4444',
+  },
+  voteButtonText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#6B7280',
+    marginLeft: 4,
+  },
+  voteButtonTextActive: {
+    color: '#FFFFFF',
+  },
+  voteCount: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#3CBCB2',
+    marginRight: 4,
   },
 });
 

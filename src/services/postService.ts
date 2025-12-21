@@ -80,14 +80,16 @@ const PostService = {
   },
 
   /**
-   * POST /posts/{postId}/vote
-   * Vote cho post (UP hoặc DOWN).
+   * POST /posts/{postId}/vote?value={value}
+   * Vote cho post với value: 1 (like) hoặc -1 (dislike).
    */
   votePost(
     postId: string,
-    payload: PostVoteRequest,
+    value: number, // 1 for like, -1 for dislike
   ): Promise<AxiosResponse<ApiResponse<Post>>> {
-    return axiosInstance.post(`/posts/${postId}/vote`, payload);
+    return axiosInstance.post(`/posts/${postId}/vote`, null, {
+      params: { value }
+    });
   },
 
   /**

@@ -209,18 +209,18 @@ export const useComment = () => {
   );
 
   /**
-   * Vote cho comment (UP hoặc DOWN)
+   * Vote cho comment với value: 1 (like) hoặc -1 (dislike)
    */
   const voteComment = useCallback(
     async (
       commentId: string,
-      payload: CommentVoteRequest,
+      value: number,
     ): Promise<CommentDetail> => {
       try {
         setIsLoading(true);
         setError(null);
 
-        const response = await CommentService.voteComment(commentId, payload);
+        const response = await CommentService.voteComment(commentId, value);
         const updated =
           (response.data as ApiResponse<CommentDetail>).data ||
           (response.data as any);
