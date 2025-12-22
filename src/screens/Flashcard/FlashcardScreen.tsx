@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Search, Layers, Eye, User } from 'lucide-react-native';
+import { Search, Layers, Eye, User, FolderOpen } from 'lucide-react-native';
 import { useFlashcardSets } from '../../hooks/useFlashcardSets';
 import { FlashcardStackParamList } from '../../types/types';
 import type { FlashcardSetListItem } from '../../types/flashcardSet';
@@ -122,7 +122,16 @@ const FlashcardScreen: React.FC = () => {
         <>
             {/* Header Section */}
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Flashcard Sets</Text>
+                <View style={styles.headerRow}>
+                    <Text style={styles.headerTitle}>Flashcard Sets</Text>
+                    <TouchableOpacity
+                        style={styles.mySetsButton}
+                        onPress={() => navigation.navigate('MyFlashcards')}
+                    >
+                        <FolderOpen size={18} color="#FFFFFF" />
+                        <Text style={styles.mySetsButtonText}>My Sets</Text>
+                    </TouchableOpacity>
+                </View>
                 <Text style={styles.headerSubtitle}>
                     Study with flashcards and test your knowledge with quizzes
                 </Text>
@@ -223,11 +232,30 @@ const styles = StyleSheet.create({
         paddingBottom: 24,
         paddingHorizontal: 20,
     },
+    headerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
     headerTitle: {
         fontSize: 28,
         fontWeight: 'bold',
         color: '#FFFFFF',
-        marginBottom: 8,
+    },
+    mySetsButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 20,
+    },
+    mySetsButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#FFFFFF',
     },
     headerSubtitle: {
         fontSize: 14,

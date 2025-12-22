@@ -30,6 +30,9 @@ export type FlashcardStackParamList = {
   FlashcardMain: undefined;
   FlashcardDetail: { flashcardSetId: string };
   FlashcardQuiz: { flashcardSetId: string };
+  MyFlashcards: undefined;
+  FlashcardCreate: undefined;
+  FlashcardEdit: { flashcardSetId: string };
 };
 
 export type MaterialStackParamList = {
