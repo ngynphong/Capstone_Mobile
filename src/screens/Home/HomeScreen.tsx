@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View, Text, ActivityIndicator } from "react-native";
+import { ScrollView, StyleSheet, View, Text, ActivityIndicator, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { HomeStackParamList } from "../../types/types";
@@ -98,8 +98,16 @@ const HomeScreen = () => {
         {/* Your Course Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Your Material</Text>
-            <Text style={styles.seeAll}>See All</Text>
+            <Text style={styles.sectionTitle}> Material</Text>
+            <TouchableOpacity
+              onPress={() => {
+                // Chuyển sang tab Materials
+                const parent = (navigation as any).getParent?.();
+                parent?.navigate?.("Materials");
+              }}
+            >
+              <Text style={styles.seeAll}>See All</Text>
+            </TouchableOpacity>
           </View>
           {materialsLoading ? (
             <ActivityIndicator size="small" color="#3CBCB2" style={styles.loader} />

@@ -269,3 +269,22 @@ export const getPaymentsByUser = async (): Promise<PaymentsByUserResponse> => {
     throw error;
   }
 };
+
+// Transfer from parent to student - API POST /payments/transfer-parent-to-student
+export const transferParentToStudent = async (
+  parentId: string,
+  studentId: string,
+  amount: number,
+): Promise<PaymentResponse> => {
+  try {
+    const response = await axiosInstance.post<PaymentResponse>(
+      '/payments/transfer-parent-to-student',
+      null,
+      { params: { parentId, studentId, amount } },
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Failed to transfer to student:', error);
+    throw error;
+  }
+};
