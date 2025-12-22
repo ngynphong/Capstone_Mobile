@@ -1,8 +1,8 @@
 import React from "react";
-import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, Image, StyleSheet, TouchableOpacity, ImageSourcePropType } from "react-native";
 
 interface SmallCourseCardProps {
-  image: string;
+  image: ImageSourcePropType;
   title: string;
   author: string;
   progress: number;
@@ -19,10 +19,7 @@ const SmallCourseCard: React.FC<SmallCourseCardProps> = ({
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       <View style={styles.imageContainer}>
-        <Image source={{ uri: image }} style={styles.image} />
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>📘</Text>
-        </View>
+        <Image source={image} style={styles.image} />
       </View>
       <View style={styles.content}>
         <Text style={styles.title} numberOfLines={2}>

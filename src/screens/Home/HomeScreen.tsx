@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View, Text, ActivityIndicator } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -15,6 +15,9 @@ import ChatBotBubble from "../../components/ChatBotCard";
 import { useBrowseExams } from "../../hooks/useExam";
 import { useTeachersList } from "../../hooks/useTeachersList";
 import { SafeAreaView } from "react-native-safe-area-context";
+import MaterialService from "../../services/materialService";
+import type { Material } from "../../types/material";
+import useMaterialImageSource from "../../hooks/useMaterialImageSource";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, "HomeMain">;
 
@@ -24,6 +27,43 @@ const HomeScreen = () => {
   // Fetch exams and teachers
   const { templates: exams, loading: examsLoading } = useBrowseExams({ pageSize: 10 });
   const { teachers, loading: teachersLoading } = useTeachersList({ pageSize: 10 });
+
+  // Fetch public materials
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [materialsLoading, setMaterialsLoading] = useState<boolean>(false);
+  const [materialsError, setMaterialsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMaterials = async () => {
+      try {
+        setMaterialsLoading(true);
+        setMaterialsError(null);
+        const res = await MaterialService.getPublicMaterials({
+          pageNo: 0,
+          pageSize: 3,
+          isPublic: true,
+        });
+
+        const data = res.data?.data;
+        if (data && Array.isArray(data.items)) {
+          setMaterials(data.items);
+        } else {
+          setMaterials([]);
+        }
+      } catch (error: any) {
+        const msg =
+          error?.response?.data?.message ||
+          error?.message ||
+          "Không thể tải danh sách học liệu.";
+        setMaterialsError(msg);
+        setMaterials([]);
+      } finally {
+        setMaterialsLoading(false);
+      }
+    };
+
+    fetchMaterials();
+  }, []);
 
   return (
     <View style={styles.mainContainer}>
@@ -61,31 +101,24 @@ const HomeScreen = () => {
             <Text style={styles.sectionTitle}>Your Material</Text>
             <Text style={styles.seeAll}>See All</Text>
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.horizontalScroll}
-            contentContainerStyle={styles.horizontalScrollContent}
-          >
-            <SmallCourseCard
-              image="https://placehold.co/175x120"
-              title="Inovative Instructional"
-              author="Jansie Smit"
-              progress={75}
-            />
-            <SmallCourseCard
-              image="https://placehold.co/175x120"
-              title="Inovative Instructional"
-              author="Jansie Smit"
-              progress={75}
-            />
-            <SmallCourseCard
-              image="https://placehold.co/175x120"
-              title="Inovative Instructional"
-              author="Jansie Smit"
-              progress={75}
-            />
-          </ScrollView>
+          {materialsLoading ? (
+            <ActivityIndicator size="small" color="#3CBCB2" style={styles.loader} />
+          ) : materialsError ? (
+            <Text style={styles.emptyText}>{materialsError}</Text>
+          ) : materials.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.horizontalScroll}
+              contentContainerStyle={styles.horizontalScrollContent}
+            >
+              {materials.slice(0, 3).map((material) => (
+                <HomeMaterialCard key={material.id} material={material} />
+              ))}
+            </ScrollView>
+          ) : (
+            <Text style={styles.emptyText}>Chưa có học liệu công khai</Text>
+          )}
         </View>
 
         {/* Popular Course Section */}
@@ -173,6 +206,19 @@ const HomeScreen = () => {
 };
 
 export default HomeScreen;
+
+const HomeMaterialCard: React.FC<{ material: Material }> = ({ material }) => {
+  const { source } = useMaterialImageSource(material.fileImage);
+
+  return (
+    <SmallCourseCard
+      image={source}
+      title={material.title}
+      author={material.authorName}
+      progress={75}
+    />
+  );
+};
 
 const styles = StyleSheet.create({
   mainContainer: {
