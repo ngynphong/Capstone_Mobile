@@ -23,6 +23,7 @@ import ChatBotBubble from "../../components/ChatBotCard";
 import { useBrowseExams } from "../../hooks/useExam";
 import { useTeachersList } from "../../hooks/useTeachersList";
 import { SafeAreaView } from "react-native-safe-area-context";
+import SmallCourseCard from "./SmallCourseCard";
 import MaterialService from "../../services/materialService";
 import type { Material } from "../../types/material";
 import useMaterialImageSource from "../../hooks/useMaterialImageSource";
@@ -203,6 +204,8 @@ const HomeScreen = () => {
             </ScrollView>
           ) : (
             <Text style={styles.emptyText}>Chưa có học liệu công khai</Text>
+          )}
+
           {renderSectionHeader("Popular Flashcards", () => navigation.navigate("Flashcard" as any))}
           {flashcardsLoading ? (
             <ActivityIndicator size="small" color="#3CBCB2" style={styles.loader} />
@@ -340,6 +343,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 14,
   },
+  seeAll: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#3CBCB2",
+  },
   sectionTitle: {
     fontSize: 17,
     fontWeight: "600",
@@ -358,6 +366,9 @@ const styles = StyleSheet.create({
   horizontalScrollContent: {
     paddingRight: 20,
   },
+  horizontalScroll: {
+    marginBottom: 8,
+  },
   bottomSpacer: {
     height: 100,
   },
@@ -371,4 +382,3 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
 });
-
