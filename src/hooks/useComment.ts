@@ -30,21 +30,31 @@ export const useComment = () => {
 
         const response = await CommentService.getPostComments(postId, params);
         let commentsList: CommentDetail[] = [];
-        
+
         if (response.data?.data) {
-          const data = response.data.data;
+          // response.data.data có thể là mảng thuần, object phân trang { items: [...] } hoặc 1 object đơn
+          const data: any = response.data.data;
           if (data.items && Array.isArray(data.items)) {
-            commentsList = data.items;
+            commentsList = data.items as CommentDetail[];
           } else if (Array.isArray(data)) {
-            commentsList = data;
-          } else if (typeof data === 'object' && data.id) {
-            commentsList = [data];
+            commentsList = data as CommentDetail[];
+          } else if (typeof data === 'object' && (data as any).id) {
+            commentsList = [data as CommentDetail];
           }
         }
         
         // Normalize comments - giữ nguyên author object từ API
         const normalizedComments = commentsList.map((comment: any) => {
-          const authorAvatar = comment.author?.imgUrl || comment.author?.avatar;
+          const authorObj =
+            typeof comment.author === 'object' && comment.author !== null
+              ? (comment.author as any)
+              : undefined;
+          const userObj =
+            typeof comment.user === 'object' && comment.user !== null
+              ? (comment.user as any)
+              : undefined;
+
+          const authorAvatar = authorObj?.imgUrl || authorObj?.avatar;
           const commentAvatar = comment.avatar;
           
           
@@ -63,10 +73,20 @@ export const useComment = () => {
           const normalizedComment: CommentDetail = {
             ...comment,
             content: normalizedContent,
-            author: comment.author || comment.user || 'Unknown',
-            avatar: authorAvatar || commentAvatar || comment.user?.imgUrl || comment.user?.avatar,
-            voteCount: comment.voteCount !== undefined ? comment.voteCount : (comment.likes || 0),
-            createdAt: comment.createdAt || comment.created_at || new Date().toISOString(),
+            author: comment.author || (comment as any).user || 'Unknown',
+            avatar:
+              authorAvatar ||
+              commentAvatar ||
+              userObj?.imgUrl ||
+              userObj?.avatar,
+            voteCount:
+              comment.voteCount !== undefined
+                ? comment.voteCount
+                : (comment.likes || 0),
+            createdAt:
+              comment.createdAt ||
+              (comment as any).created_at ||
+              new Date().toISOString(),
             postId: comment.postId || postId,
             parenCommentId: comment.parenCommentId,
           };
@@ -103,13 +123,21 @@ export const useComment = () => {
         setError(null);
 
         const response = await CommentService.createComment(postId, payload);
-        const newCommentRaw =
+        const newCommentRaw: any =
           (response.data as ApiResponse<CommentDetail>).data ||
           (response.data as any);
-        
-        
+
         // Normalize comment mới
-        const authorAvatar = newCommentRaw.author?.imgUrl || newCommentRaw.author?.avatar;
+        const authorObj =
+          typeof newCommentRaw.author === 'object' && newCommentRaw.author !== null
+            ? (newCommentRaw.author as any)
+            : undefined;
+        const userObj =
+          typeof newCommentRaw.user === 'object' && newCommentRaw.user !== null
+            ? (newCommentRaw.user as any)
+            : undefined;
+
+        const authorAvatar = authorObj?.imgUrl || authorObj?.avatar;
         const commentAvatar = newCommentRaw.avatar;
         
         let normalizedContent = newCommentRaw.content || '';
@@ -128,9 +156,19 @@ export const useComment = () => {
           ...newCommentRaw,
           content: normalizedContent,
           author: newCommentRaw.author || newCommentRaw.user || 'Unknown',
-          avatar: authorAvatar || commentAvatar || newCommentRaw.user?.imgUrl || newCommentRaw.user?.avatar,
-          voteCount: newCommentRaw.voteCount !== undefined ? newCommentRaw.voteCount : (newCommentRaw.likes || 0),
-          createdAt: newCommentRaw.createdAt || newCommentRaw.created_at || new Date().toISOString(),
+          avatar:
+            authorAvatar ||
+            commentAvatar ||
+            userObj?.imgUrl ||
+            userObj?.avatar,
+          voteCount:
+            newCommentRaw.voteCount !== undefined
+              ? newCommentRaw.voteCount
+              : (newCommentRaw.likes || 0),
+          createdAt:
+            newCommentRaw.createdAt ||
+            newCommentRaw.created_at ||
+            new Date().toISOString(),
           parenCommentId: parenCommentIdValue,
         };
         
@@ -163,10 +201,10 @@ export const useComment = () => {
         setError(null);
 
         const response = await CommentService.updateComment(commentId, payload);
-        const updated =
+        const updated: any =
           (response.data as ApiResponse<CommentDetail>).data ||
           (response.data as any);
-        
+
         // Normalize updated comment
         // Đảm bảo content là string, không phải JSON string
         let normalizedContent = updated.content || '';
@@ -180,13 +218,33 @@ export const useComment = () => {
           }
         }
         
-        const normalizedUpdated = {
+        const authorObj =
+          typeof updated.author === 'object' && updated.author !== null
+            ? (updated.author as any)
+            : undefined;
+        const userObj =
+          typeof updated.user === 'object' && updated.user !== null
+            ? (updated.user as any)
+            : undefined;
+
+        const normalizedUpdated: CommentDetail = {
           ...updated,
           content: normalizedContent,
           author: updated.author || updated.user || 'Unknown',
-          avatar: updated.avatar || updated.author?.imgUrl || updated.author?.avatar || updated.user?.imgUrl || updated.user?.avatar,
-          voteCount: updated.voteCount !== undefined ? updated.voteCount : (updated.likes || 0),
-          createdAt: updated.createdAt || updated.created_at || new Date().toISOString(),
+          avatar:
+            updated.avatar ||
+            authorObj?.imgUrl ||
+            authorObj?.avatar ||
+            userObj?.imgUrl ||
+            userObj?.avatar,
+          voteCount:
+            updated.voteCount !== undefined
+              ? updated.voteCount
+              : (updated.likes || 0),
+          createdAt:
+            updated.createdAt ||
+            updated.created_at ||
+            new Date().toISOString(),
         };
         
         setComments(prev =>
@@ -290,13 +348,13 @@ export const useComment = () => {
         // Parse paginated response với structure: { data: { items: [...], ... } }
         let repliesList: CommentDetail[] = [];
         if (response.data?.data) {
-          const data = response.data.data;
+          const data: any = response.data.data;
           if (data.items && Array.isArray(data.items)) {
-            repliesList = data.items;
+            repliesList = data.items as CommentDetail[];
           } else if (Array.isArray(data)) {
-            repliesList = data;
-          } else if (typeof data === 'object' && data.id) {
-            repliesList = [data];
+            repliesList = data as CommentDetail[];
+          } else if (typeof data === 'object' && (data as any).id) {
+            repliesList = [data as CommentDetail];
           }
         }
         

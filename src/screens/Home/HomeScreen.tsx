@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from "react";
 import {
   ScrollView,
@@ -21,6 +22,10 @@ import TeacherCard from "./TeacherCard";
 import ChatBotBubble from "../../components/ChatBotCard";
 import { useBrowseExams } from "../../hooks/useExam";
 import { useTeachersList } from "../../hooks/useTeachersList";
+import { SafeAreaView } from "react-native-safe-area-context";
+import MaterialService from "../../services/materialService";
+import type { Material } from "../../types/material";
+import useMaterialImageSource from "../../hooks/useMaterialImageSource";
 import { useFlashcardSets } from "../../hooks/useFlashcardSets";
 import DashboardService from "../../services/dashboardService";
 import CommunityService from "../../services/communityService";
@@ -103,6 +108,43 @@ const HomeScreen = () => {
     </View>
   );
 
+  // Fetch public materials
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [materialsLoading, setMaterialsLoading] = useState<boolean>(false);
+  const [materialsError, setMaterialsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMaterials = async () => {
+      try {
+        setMaterialsLoading(true);
+        setMaterialsError(null);
+        const res = await MaterialService.getPublicMaterials({
+          pageNo: 0,
+          pageSize: 3,
+          isPublic: true,
+        });
+
+        const data = res.data?.data;
+        if (data && Array.isArray(data.items)) {
+          setMaterials(data.items);
+        } else {
+          setMaterials([]);
+        }
+      } catch (error: any) {
+        const msg =
+          error?.response?.data?.message ||
+          error?.message ||
+          "Không thể tải danh sách học liệu.";
+        setMaterialsError(msg);
+        setMaterials([]);
+      } finally {
+        setMaterialsLoading(false);
+      }
+    };
+
+    fetchMaterials();
+  }, []);
+
   return (
     <View style={styles.mainContainer}>
       <ScrollView
@@ -132,6 +174,35 @@ const HomeScreen = () => {
 
         {/* Popular Flashcards Section */}
         <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}> Material</Text>
+            <TouchableOpacity
+              onPress={() => {
+                // Chuyển sang tab Materials
+                const parent = (navigation as any).getParent?.();
+                parent?.navigate?.("Materials");
+              }}
+            >
+              <Text style={styles.seeAll}>See All</Text>
+            </TouchableOpacity>
+          </View>
+          {materialsLoading ? (
+            <ActivityIndicator size="small" color="#3CBCB2" style={styles.loader} />
+          ) : materialsError ? (
+            <Text style={styles.emptyText}>{materialsError}</Text>
+          ) : materials.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.horizontalScroll}
+              contentContainerStyle={styles.horizontalScrollContent}
+            >
+              {materials.slice(0, 3).map((material) => (
+                <HomeMaterialCard key={material.id} material={material} />
+              ))}
+            </ScrollView>
+          ) : (
+            <Text style={styles.emptyText}>Chưa có học liệu công khai</Text>
           {renderSectionHeader("Popular Flashcards", () => navigation.navigate("Flashcard" as any))}
           {flashcardsLoading ? (
             <ActivityIndicator size="small" color="#3CBCB2" style={styles.loader} />
@@ -237,6 +308,19 @@ const HomeScreen = () => {
 };
 
 export default HomeScreen;
+
+const HomeMaterialCard: React.FC<{ material: Material }> = ({ material }) => {
+  const { source } = useMaterialImageSource(material.fileImage);
+
+  return (
+    <SmallCourseCard
+      image={source}
+      title={material.title}
+      author={material.authorName}
+      progress={75}
+    />
+  );
+};
 
 const styles = StyleSheet.create({
   mainContainer: {
