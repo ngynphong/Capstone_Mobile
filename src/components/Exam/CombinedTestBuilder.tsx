@@ -8,7 +8,7 @@ import {
     Alert,
     ActivityIndicator,
 } from 'react-native';
-import { Check, BookOpen } from 'lucide-react-native';
+import { Check } from 'lucide-react-native';
 import { ExamTemplate } from '../../types/examTypes';
 import ExamCard from './ExamCard';
 import { useAppToast } from '../../utils/toast';
@@ -72,12 +72,12 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest, 
 
     const handleStartAutoTest = async () => {
         if (selectedSubjects.length === 0) {
-            toast.error('Vui lòng chọn ít nhất một môn học');
+            toast.error('Please select at least one subject');
             return;
         }
 
         if (!onStartAutoTest) {
-            toast.error('Tính năng này chưa được hỗ trợ');
+            toast.error('Feature not supported yet');
             return;
         }
 
@@ -86,26 +86,26 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest, 
             await onStartAutoTest(selectedSubjects);
         } catch (error) {
             console.error('Error starting random combined test:', error);
-            toast.error('Không thể tạo bài thi tổ hợp. Vui lòng thử lại.');
+            toast.error('Failed to create random combined test. Please try again.');
         } finally {
             setIsStartingTest(false);
         }
     };
 
     const handleStartTest = () => {
-        
+
         if (selectedExams.length === 0) {
-            toast.error('Vui lòng chọn ít nhất một bài thi');
+            toast.error('Please select at least one exam');
             return;
         }
 
         Alert.alert(
-            'Bắt đầu Thi Tổ hợp',
-            `Bạn sẽ bắt đầu làm ${selectedExams.length} bài thi. Token: ${selectedExams.reduce((total, exam) => total + exam.tokenCost, 0)} 💰`,
+            'Start Combined Test',
+            `You will start ${selectedExams.length} exams. Cost: ${selectedExams.reduce((total, exam) => total + exam.tokenCost, 0)} VNĐ`,
             [
-                { text: 'Hủy', style: 'cancel' },
+                { text: 'Cancel', style: 'cancel' },
                 {
-                    text: 'Bắt đầu',
+                    text: 'Start',
                     onPress: () => {
                         setIsStartingTest(true);
                         onStartTest(selectedExams.map(e => e.id));
@@ -133,12 +133,12 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest, 
                 </Text> */}
                 {mode === 'manual' && selectedExams.length > 0 && (
                     <Text className="text-sm text-gray-600 mt-1">
-                        Đã chọn: {selectedExams.length} bài thi
+                        Selected: {selectedExams.length} exams
                     </Text>
                 )}
                 {mode === 'auto' && selectedSubjects.length > 0 && (
                     <Text className="text-sm text-gray-600 mt-1">
-                        Đã chọn: {selectedSubjects.length} môn học
+                        Selected: {selectedSubjects.length} subjects
                     </Text>
                 )}
             </View>
@@ -151,7 +151,7 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest, 
                         className={`flex-1 py-2 rounded-lg ${mode === 'manual' ? 'bg-teal-400' : ''}`}
                     >
                         <Text className={`font-semibold text-center text-sm ${mode === 'manual' ? 'text-white' : 'text-gray-600'}`}>
-                            Tự chọn
+                            Manual
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -159,7 +159,7 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest, 
                         className={`flex-1 py-2 rounded-lg ${mode === 'auto' ? 'bg-teal-400' : ''}`}
                     >
                         <Text className={`font-semibold text-center text-sm ${mode === 'auto' ? 'text-white' : 'text-gray-600'}`}>
-                            Hệ thống tự tạo
+                            System choice
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -172,36 +172,32 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest, 
                     {/* Subject Filter */}
                     <View className="bg-white px-6 py-4 border-b border-gray-200">
                         <Text className="text-base font-medium text-gray-900 mb-3">
-                            Lọc theo môn học
+                            Subject filter
                         </Text>
                         <View className="flex-row flex-wrap">
                             <TouchableOpacity
                                 onPress={() => setFilterSubjectId('')}
-                                className={`mr-3 mb-2 px-4 py-2 rounded-xl border ${
-                                    filterSubjectId === ''
+                                className={`mr-3 mb-2 px-4 py-2 rounded-xl border ${filterSubjectId === ''
                                         ? 'bg-teal-400 border-teal-400'
                                         : 'bg-white border-gray-300'
-                                }`}
+                                    }`}
                             >
-                                <Text className={`font-medium ${
-                                    filterSubjectId === '' ? 'text-white' : 'text-gray-700'
-                                }`}>
-                                    Tất cả
+                                <Text className={`font-medium ${filterSubjectId === '' ? 'text-white' : 'text-gray-700'
+                                    }`}>
+                                    All
                                 </Text>
                             </TouchableOpacity>
                             {subjects.map((subject) => (
                                 <TouchableOpacity
                                     key={subject.id}
                                     onPress={() => setFilterSubjectId(subject.id)}
-                                    className={`mr-3 mb-2 px-4 py-2 rounded-xl border ${
-                                        filterSubjectId === subject.id
+                                    className={`mr-3 mb-2 px-4 py-2 rounded-xl border ${filterSubjectId === subject.id
                                             ? 'bg-teal-400 border-teal-400'
                                             : 'bg-white border-gray-300'
-                                    }`}
+                                        }`}
                                 >
-                                    <Text className={`font-medium ${
-                                        filterSubjectId === subject.id ? 'text-white' : 'text-gray-700'
-                                    }`}>
+                                    <Text className={`font-medium ${filterSubjectId === subject.id ? 'text-white' : 'text-gray-700'
+                                        }`}>
                                         {subject.name}
                                     </Text>
                                 </TouchableOpacity>
@@ -209,7 +205,7 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest, 
                         </View>
                         {filterSubjectId && (
                             <Text className="text-sm text-gray-600 mt-2">
-                                Đang lọc: {subjects.find(s => s.id === filterSubjectId)?.name}
+                                Filter: {subjects.find(s => s.id === filterSubjectId)?.name}
                             </Text>
                         )}
                     </View>
@@ -239,7 +235,7 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest, 
                         ListEmptyComponent={
                             <View className="items-center py-8">
                                 <Text className="text-gray-500">
-                                    {filterSubjectId ? 'Không có bài thi nào cho môn học này' : 'Không có bài thi nào'}
+                                    {filterSubjectId ? 'No exams found for this subject' : 'No exams found'}
                                 </Text>
                             </View>
                         }
@@ -253,7 +249,7 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest, 
                                 className="bg-teal-400 py-4 rounded-xl"
                             >
                                 <Text className="text-white font-bold text-center text-lg">
-                                    Bắt đầu Thi Tổ hợp ({selectedExams.length} bài)
+                                    Start Combined Test ({selectedExams.length} exams)
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -264,7 +260,7 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest, 
                 <>
                     <View className="px-6 py-4">
                         <Text className="text-base font-medium text-gray-900 mb-4">
-                            Chọn môn học để hệ thống tự tạo bài thi
+                            Select subjects to let the system create the test
                         </Text>
 
                         <View className="flex-row flex-wrap">
@@ -274,19 +270,17 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest, 
                                     <TouchableOpacity
                                         key={subject.id}
                                         onPress={() => handleSelectSubject(subject.id)}
-                                        className={`mr-3 mb-3 px-4 py-3 rounded-xl border ${
-                                            isSelected
+                                        className={`mr-3 mb-3 px-4 py-3 rounded-xl border ${isSelected
                                                 ? 'bg-teal-400 border-teal-400'
                                                 : 'bg-white border-gray-300'
-                                        }`}
+                                            }`}
                                     >
                                         <View className="flex-row items-center">
                                             {isSelected && (
                                                 <Check size={16} color="white" className="mr-2" />
                                             )}
-                                            <Text className={`font-medium ${
-                                                isSelected ? 'text-white' : 'text-gray-700'
-                                            }`}>
+                                            <Text className={`font-medium ${isSelected ? 'text-white' : 'text-gray-700'
+                                                }`}>
                                                 {subject.name}
                                             </Text>
                                         </View>
@@ -297,7 +291,7 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest, 
 
                         {subjects.length === 0 && (
                             <View className="items-center py-8">
-                                <Text className="text-gray-500">Không có môn học nào</Text>
+                                <Text className="text-gray-500">No subjects found</Text>
                             </View>
                         )}
                     </View>
@@ -310,7 +304,7 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest, 
                                 className="bg-teal-400 py-4 rounded-xl"
                             >
                                 <Text className="text-white font-bold text-center text-lg">
-                                    Bắt đầu Thi Tổ hợp ({selectedSubjects.length} môn)
+                                    Start Combined Test ({selectedSubjects.length} subjects)
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -322,12 +316,12 @@ const CombinedTestBuilder: React.FC<CombinedTestBuilderProps> = ({ onStartTest, 
                 <View className="absolute inset-0 bg-white bg-opacity-50 justify-center items-center">
                     <View className="bg-white rounded-2xl p-8 items-center shadow-lg">
                         <ActivityIndicator size="large" color="#3CBCB2" />
-                            <Text className="text-gray-900 font-semibold mt-4 text-lg">
-                                        Đang khởi tạo bài thi...
-                            </Text>
-                            <Text className="text-gray-600 text-center mt-2">
-                                        Vui lòng đợi trong giây lát
-                            </Text>
+                        <Text className="text-gray-900 font-semibold mt-4 text-lg">
+                            Creating test...
+                        </Text>
+                        <Text className="text-gray-600 text-center mt-2">
+                            Please wait a moment
+                        </Text>
                     </View>
                 </View>
             )}

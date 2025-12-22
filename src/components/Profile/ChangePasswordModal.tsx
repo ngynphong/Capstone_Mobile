@@ -13,6 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 import { changePassword } from '../../services/userService';
 import { ChangePasswordRequest } from '../../types/userTypes';
 import { useAppToast } from '../../utils/toast';
+import { Eye, EyeOff } from 'lucide-react-native';
 
 interface ChangePasswordModalProps {
   visible: boolean;
@@ -118,7 +119,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                 onPress={() => setShowPassword(!showPassword)}
               >
                 <Text className="text-gray-500 text-lg opacity-60">
-                  {showPassword ? '🙈' : '👁️'}
+                  {showPassword ? <Eye size={18}  /> : <EyeOff size={18}/>}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -140,7 +141,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                 onPress={() => setShowNewPassword(!showNewPassword)}
               >
                 <Text className="text-gray-500 text-lg opacity-60">
-                  {showNewPassword ? '🙈' : '👁️'}
+                  {showNewPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -162,7 +163,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
               >
                 <Text className="text-gray-500 text-lg opacity-60">
-                  {showConfirmPassword ? '🙈' : '👁️'}
+                  {showConfirmPassword ? <Eye size={18}/> : <EyeOff size={18}/>}
                 </Text>
               </TouchableOpacity>
             </View>

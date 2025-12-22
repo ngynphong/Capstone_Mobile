@@ -6,7 +6,7 @@ interface MenuItemData {
   id: string;
   title: string;
   subtitle?: string;
-  icon?: string;
+  icon?: React.ReactNode;
   onPress: () => void;
   variant?: 'default' | 'danger';
   showArrow?: boolean;

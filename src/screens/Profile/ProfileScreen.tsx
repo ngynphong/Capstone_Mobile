@@ -11,6 +11,20 @@ import EditProfileModal from '../../components/Profile/EditProfileModal';
 import ChangePasswordModal from '../../components/Profile/ChangePasswordModal';
 import { useStudentConnection } from '../../hooks/useStudentConnection';
 import { useStudent } from '../../hooks/useStudent';
+import {
+  User,
+  Wallet,
+  Lock,
+  BarChart3,
+  PiggyBank,
+  FileText,
+  Link,
+  Settings,
+  LogOut,
+  School,
+  Phone,
+  Goal,
+} from 'lucide-react-native';
 
 type NavigationProp = NativeStackNavigationProp<ProfileStackParamList>;
 
@@ -93,63 +107,63 @@ const ProfileScreen = () => {
       id: 'edit-profile',
       title: 'Edit Profile',
       subtitle: 'Update your personal information',
-      icon: '👤',
+      icon: <User size={20} color="#3CBCB2" />,
       onPress: () => setIsEditModalVisible(true),
     },
     {
       id: 'my-wallet',
       title: 'My Wallet',
       subtitle: 'Manage tokens and subscription',
-      icon: '💳',
+      icon: <Wallet size={20} color="#3CBCB2" />,
       onPress: () => navigation.navigate('Store'),
     },
     {
       id: 'change-password',
       title: 'Change Password',
       subtitle: 'Update your account password',
-      icon: '🔒',
+      icon: <Lock size={20} color="#3CBCB2" />,
       onPress: () => setIsChangePasswordModalVisible(true),
     },
     {
       id: 'exam-stats',
       title: 'Exam Statistics',
       subtitle: 'View your exam performance and progress',
-      icon: '📊',
+      icon: <BarChart3 size={20} color="#3CBCB2" />,
       onPress: () => navigation.navigate('StudentExamStats'),
     },
     {
       id: 'financial-stats',
       title: 'Financial Statistics',
       subtitle: 'View your spending and purchase history',
-      icon: '💰',
+      icon: <PiggyBank size={20} color="#3CBCB2" />,
       onPress: () => navigation.navigate('StudentFinancialStats'),
     },
     {
       id: 'exam',
       title: 'Exams',
       subtitle: 'Do Exams and view results',
-      icon: '📝',
+      icon: <FileText size={20} color="#3CBCB2" />,
       onPress: () => navigation.navigate('ExamResults'),
     },
     {
       id: 'connection-code',
       title: 'Connection Code',
       subtitle: 'Share your code with parents to connect',
-      icon: '🔗',
+      icon: <Link size={20} color="#3CBCB2" />,
       onPress: handleConnectionCode,
     },
     {
       id: 'settings',
       title: 'Settings',
       subtitle: 'App preferences and notifications',
-      icon: '⚙️',
+      icon: <Settings size={20} color="#3CBCB2" />,
       onPress: handleSettings,
     },
     {
       id: 'logout',
       title: 'Logout',
       subtitle: 'Sign out from your account',
-      icon: '🚪',
+      icon: <LogOut size={20} color="#EF4444" />,
       onPress: handleLogout,
       variant: 'danger' as const,
       showArrow: false,
@@ -184,27 +198,33 @@ const ProfileScreen = () => {
         {user.studentProfile && (
           <View className="mx-6 mt-4 mb-2">
             <View className="bg-white rounded-2xl p-6 shadow-lg">
-              <Text className="text-lg font-bold text-gray-800 mb-4">👨‍🎓 Student Profile</Text>
+              <Text className="text-lg font-bold text-gray-800 mb-4">Student Profile</Text>
 
               <View className="space-y-3">
-                <View className="flex-row items-center py-2">
-                  <Text className="text-gray-600 flex-1">🏫 School Name</Text>
+                <View className="flex-row items-center gap-2 py-2">
+                  <School size={20} color="#3CBCB2" />
+                  <Text className="text-gray-600 flex-1">School Name</Text>
                   <Text className="text-gray-800 font-medium">{user.studentProfile.schoolName}</Text>
                 </View>
-                <View className="flex-row items-center py-2">
-                  <Text className="text-gray-600 flex-1">📞 Emergency Contact</Text>
+                <View className="flex-row items-center gap-2 py-2">
+                  <Phone size={20} color="#3CBCB2" />
+                  <Text className="text-gray-600 flex-1">Emergency Contact</Text>
                   <Text className="text-gray-800 font-medium">{user.studentProfile.emergencyContact}</Text>
                 </View>
-                <View className="flex-row items-center py-2">
-                  <Text className="text-gray-600 flex-1">📱 Parent Phone</Text>
+                <View className="flex-row items-center gap-2 py-2">
+                  <Phone size={20} color="#3CBCB2" />
+                  <Text className="text-gray-600 flex-1">Parent Phone</Text>
                   <Text className="text-gray-800 font-medium">{user.studentProfile.parentPhone}</Text>
                 </View>
-                <View className="flex-row items-center py-2">
-                  <Text className="text-gray-600 flex-1">🎯 Goal</Text>
+                <View className="flex-row items-center gap-2 py-2">
+                  <View className="flex-row items-center gap-2 w-[20%]">
+                    <Goal size={20} color="#3CBCB2" />
+                    <Text className="text-gray-600 flex-1">Goal</Text>
+                  </View>
                   {user.studentProfile.goal ? (
                     <Text className="text-gray-800 font-medium">{user.studentProfile.goal}</Text>
                   ) : (
-                    <Text className="text-gray-600">What result do you want to achieve ?</Text>
+                      <Text className="text-gray-600">What result do you want to achieve ?</Text>
                   )}
                 </View>
               </View>
@@ -329,34 +349,34 @@ const ProfileScreen = () => {
         <View className="flex-1 bg-black/50 justify-end">
           <View className="bg-white rounded-t-3xl px-6 py-8">
             <View className="items-center mb-6">
-              <Text className="text-xl font-bold text-gray-800 mb-2">Mã kết nối</Text>
+              <Text className="text-xl font-bold text-gray-800 mb-2">Connection Code</Text>
               <Text className="text-gray-600 text-center">
-                Chia sẻ mã này với phụ huynh để họ có thể kết nối tài khoản
+                Share this code with your parent to connect your account
               </Text>
             </View>
 
             {connectionLoading ? (
               <View className="items-center py-8">
                 <ActivityIndicator size="large" color="#3CBCB2" />
-                <Text className="text-gray-500 mt-4">Đang tải mã kết nối...</Text>
+                <Text className="text-gray-500 mt-4">Loading connection code...</Text>
               </View>
             ) : connectionCode ? (
               <View className="mb-6">
                 <Text className="text-sm font-medium text-gray-700 mb-3">
-                  Mã kết nối của bạn:
+                  Your connection code:
                 </Text>
                 <View className="bg-gray-100 rounded-xl p-6 items-center">
                   <Text className="text-3xl font-bold text-teal-600 mb-2">
                     {connectionCode}
                   </Text>
                   <Text className="text-gray-600 text-center text-sm">
-                    Yêu cầu phụ huynh nhập mã này khi liên kết tài khoản
+                    Request your parent to enter this code when connecting your account
                   </Text>
                 </View>
               </View>
             ) : (
               <View className="items-center py-8">
-                <Text className="text-gray-500">Không thể tải mã kết nối</Text>
+                <Text className="text-gray-500">Unable to load connection code</Text>
               </View>
             )}
 
@@ -365,11 +385,11 @@ const ProfileScreen = () => {
                 className="flex-1 bg-gray-200 py-3 rounded-xl items-center"
                 onPress={() => setIsConnectionCodeModalVisible(false)}
               >
-                <Text className="text-gray-700 font-medium">Đóng</Text>
+                <Text className="text-gray-700 font-medium">Close</Text>
               </TouchableOpacity>
               {connectionCode && (
                 <TouchableOpacity className="flex-1 bg-teal-500 py-3 rounded-xl items-center flex-row justify-center">
-                  <Text className="text-white font-medium">Chia sẻ</Text>
+                  <Text className="text-white font-medium">Share</Text>
                 </TouchableOpacity>
               )}
             </View>

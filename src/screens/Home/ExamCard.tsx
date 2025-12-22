@@ -56,8 +56,7 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onPress }) => {
 
             <View style={styles.footer}>
                 <View style={styles.tokenBadge}>
-                    <Ionicons name="diamond-outline" size={12} color="#3CBCB2" />
-                    <Text style={styles.tokenText}>{exam.tokenCost} tokens</Text>
+                    <Text style={styles.tokenText}>{exam.tokenCost.toLocaleString('vi-VN')} VNĐ</Text>
                 </View>
             </View>
         </TouchableOpacity>

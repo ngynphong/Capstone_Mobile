@@ -15,6 +15,7 @@ import { RootStackParamList } from '../../types/types';
 import { useAuth } from '../../context/AuthContext';
 import { useAppToast } from '../../utils/toast';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import { Eye, EyeOff } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -148,7 +149,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 onPress={() => setShowPassword(!showPassword)}
               >
                 <Text className="text-gray-500 text-lg opacity-60">
-                  {showPassword ? '🙈' : '👁️'}
+                  {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                 </Text>
               </TouchableOpacity>
             </View>

@@ -24,6 +24,7 @@ import {
     Calendar,
     BookOpen,
     FileText,
+    ChartNoAxesGantt,
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
@@ -93,19 +94,19 @@ const StudentFinancialStatsScreen = () => {
                     >
                         <ChevronLeft size={24} color="white" />
                     </TouchableOpacity>
-                    <Text className="text-white text-xl font-bold flex-1">Thống kê tài chính</Text>
+                    <Text className="text-white text-xl font-bold flex-1">Financial Statistics</Text>
                 </View>
 
                 <View className="flex-row items-start justify-between mb-4">
                     <View className="flex-1 mr-4">
                         <Text className="text-white/70 text-xs font-medium uppercase tracking-wider">
-                            Xin chào
+                            Hello
                         </Text>
                         <Text className="text-white text-2xl font-bold mt-2 mb-1">
                             {user?.firstName || 'Student'}
                         </Text>
                         <Text className="text-white/80 text-sm leading-5">
-                            Theo dõi chi tiêu{'\n'}của bạn 💰
+                            Follows{'\n'}your expenses
                         </Text>
                     </View>
 
@@ -130,17 +131,17 @@ const StudentFinancialStatsScreen = () => {
                 <View className="flex-row items-center justify-between bg-white/10 rounded-xl px-4 py-3 backdrop-blur">
                     <View className="items-center flex-1">
                         <Text className="text-white text-xl font-bold">{formatCurrency(currentBalance)}</Text>
-                        <Text className="text-white/70 text-xs mt-0.5">Số dư</Text>
+                        <Text className="text-white/70 text-xs mt-0.5">Balance</Text>
                     </View>
                     <View className="w-px h-8 bg-white/20" />
                     <View className="items-center flex-1">
                         <Text className="text-white text-xl font-bold">{formatCurrency(totalSpent)}</Text>
-                        <Text className="text-white/70 text-xs mt-0.5">Đã chi</Text>
+                        <Text className="text-white/70 text-xs mt-0.5">Spent</Text>
                     </View>
                     <View className="w-px h-8 bg-white/20" />
                     <View className="items-center flex-1">
                         <Text className="text-white text-xl font-bold">{totalRegisteredMaterials}</Text>
-                        <Text className="text-white/70 text-xs mt-0.5">Tài liệu</Text>
+                        <Text className="text-white/70 text-xs mt-0.5">Registered Materials</Text>
                     </View>
                 </View>
             </View>
@@ -155,13 +156,16 @@ const StudentFinancialStatsScreen = () => {
                 {loading && !stats ? (
                     <View className="flex-1 items-center justify-center py-20">
                         <ActivityIndicator size="large" color="#3CBCB2" />
-                        <Text className="text-gray-500 mt-4">Đang tải thống kê...</Text>
+                        <Text className="text-gray-500 mt-4">Loading statistics...</Text>
                     </View>
                 ) : (
                     <>
                         {/* Stats Cards */}
                         <View className="px-6 py-6">
-                            <Text className="text-lg font-bold text-gray-800 mb-4">📊 Tổng quan</Text>
+                            <View className="flex-row items-center gap-2 mb-4">
+                                <ChartNoAxesGantt size={20} color={"#3CBCB2"} />
+                                <Text className="text-lg font-bold text-gray-800">Overview</Text>
+                            </View>
                             <View className="flex-row flex-wrap justify-between">
                                 {/* Current Balance */}
                                 <View className="w-[48%] mb-4">
@@ -172,7 +176,7 @@ const StudentFinancialStatsScreen = () => {
                                         <Text className="text-white text-xl font-bold" numberOfLines={1}>
                                             {formatCurrency(currentBalance)}
                                         </Text>
-                                        <Text className="text-white/90 text-sm mt-1">Số dư hiện tại</Text>
+                                        <Text className="text-white/90 text-sm mt-1">Current Balance</Text>
                                     </View>
                                 </View>
 
@@ -185,7 +189,7 @@ const StudentFinancialStatsScreen = () => {
                                         <Text className="text-white text-xl font-bold" numberOfLines={1}>
                                             {formatCurrency(totalSpent)}
                                         </Text>
-                                        <Text className="text-white/90 text-sm mt-1">Tổng đã chi</Text>
+                                        <Text className="text-white/90 text-sm mt-1">Total Spent</Text>
                                     </View>
                                 </View>
 
@@ -196,7 +200,7 @@ const StudentFinancialStatsScreen = () => {
                                             <ShoppingBag size={20} color="white" />
                                         </View>
                                         <Text className="text-white text-3xl font-bold">{totalRegisteredMaterials}</Text>
-                                        <Text className="text-white/90 text-sm mt-1">Tài liệu đã mua</Text>
+                                        <Text className="text-white/90 text-sm mt-1">Registered Materials</Text>
                                     </View>
                                 </View>
 
@@ -206,12 +210,12 @@ const StudentFinancialStatsScreen = () => {
                                         <View className="w-10 h-10 bg-white/20 rounded-full items-center justify-center mb-3">
                                             <CreditCard size={20} color="white" />
                                         </View>
-                                        <Text className="text-white text-xl font-bold" numberOfLines={1}>
+                                        <Text className="text-white text-3xl font-bold" numberOfLines={1}>
                                             {totalRegisteredMaterials > 0
                                                 ? formatCurrency(totalSpent / totalRegisteredMaterials)
                                                 : formatCurrency(0)}
                                         </Text>
-                                        <Text className="text-white/90 text-sm mt-1">Trung bình/tài liệu</Text>
+                                        <Text className="text-white/90 text-sm mt-1">Average/Material</Text>
                                     </View>
                                 </View>
                             </View>
@@ -222,7 +226,7 @@ const StudentFinancialStatsScreen = () => {
                             <View className="px-6 pb-6">
                                 <View className="flex-row items-center mb-4">
                                     <BookOpen size={20} color="#374151" />
-                                    <Text className="text-lg font-bold text-gray-800 ml-2">Chi tiêu theo môn học</Text>
+                                    <Text className="text-lg font-bold text-gray-800 ml-2">Spending by Subject</Text>
                                 </View>
                                 <View className="bg-white rounded-2xl p-4 shadow-sm">
                                     {Object.entries(spendingBySubject).map(([subject, amount], index) => (
@@ -255,7 +259,7 @@ const StudentFinancialStatsScreen = () => {
                             <View className="px-6 pb-6">
                                 <View className="flex-row items-center mb-4">
                                     <FileText size={20} color="#374151" />
-                                    <Text className="text-lg font-bold text-gray-800 ml-2">Chi tiêu theo loại</Text>
+                                    <Text className="text-lg font-bold text-gray-800 ml-2">Spending by Type</Text>
                                 </View>
                                 <View className="bg-white rounded-2xl p-4 shadow-sm">
                                     {Object.entries(spendingByType).map(([type, amount], index) => (
@@ -288,7 +292,7 @@ const StudentFinancialStatsScreen = () => {
                             <View className="px-6 pb-6">
                                 <View className="flex-row items-center mb-4">
                                     <Calendar size={20} color="#374151" />
-                                    <Text className="text-lg font-bold text-gray-800 ml-2">Chi tiêu theo tháng</Text>
+                                    <Text className="text-lg font-bold text-gray-800 ml-2">Monthly Spending</Text>
                                 </View>
                                 <View className="bg-white rounded-2xl p-4 shadow-sm">
                                     {Object.entries(monthlySpending)
@@ -309,7 +313,7 @@ const StudentFinancialStatsScreen = () => {
                             <View className="flex-row items-center justify-between mb-4">
                                 <View className="flex-row items-center">
                                     <ShoppingBag size={20} color="#374151" />
-                                    <Text className="text-lg font-bold text-gray-800 ml-2">Giao dịch gần đây</Text>
+                                    <Text className="text-lg font-bold text-gray-800 ml-2">Recent Purchases</Text>
                                 </View>
                             </View>
 
@@ -319,10 +323,10 @@ const StudentFinancialStatsScreen = () => {
                                         <ShoppingBag size={40} color="#3CBCB2" />
                                     </View>
                                     <Text className="text-gray-800 font-semibold text-lg mb-2">
-                                        Chưa có giao dịch
+                                        No recent purchases
                                     </Text>
                                     <Text className="text-gray-500 text-center">
-                                        Bạn chưa mua tài liệu nào.{'\n'}Hãy khám phá thư viện!
+                                        You haven't made any purchases yet.{'\n'}Explore the library!
                                     </Text>
                                 </View>
                             ) : (

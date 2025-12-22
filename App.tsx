@@ -16,6 +16,15 @@ import { RootStackParamList } from './src/types/types';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { ScrollProvider } from './src/context/ScrollContext';
 
+// Disable console logs in production
+if (!__DEV__) {
+  console.log = () => { };
+  console.warn = () => { };
+  console.error = () => { };
+  console.info = () => { };
+  console.debug = () => { };
+}
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const AppContent: React.FC = () => {

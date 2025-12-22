@@ -45,7 +45,7 @@ export const loginApi = async (credentials: LoginRequest): Promise<AuthResponse>
 
 export const registerApi = async (userData: RegisterRequest): Promise<RegisterResponse> => {
   try {
-    const response = await api.post<RegisterResponse>('/users', userData);
+    const response = await api.post<RegisterResponse>('/auth/register', userData);
     return response.data;
   } catch (error: unknown) {
     return handleApiError(error, 'Registration failed');
