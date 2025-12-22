@@ -64,13 +64,13 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onPress }) => {
         <View className="flex-row items-center">
           <BookOpen size={16} color="#6B7280" />
           <Text className="text-sm text-gray-600 ml-1">
-            {getQuestionCount(exam)} câu hỏi
+            {getQuestionCount(exam)} Questions
           </Text>
         </View>
         <View className="flex-row items-center">
           <Clock size={16} color="#6B7280" />
           <Text className="text-sm text-gray-600 ml-1">
-            {exam.duration} phút
+            {exam.duration} minutes
           </Text>
         </View>
       </View>
@@ -78,7 +78,7 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onPress }) => {
       {/* Subjects */}
       {getSubjectNames(exam).length > 0 && (
         <View className="mb-4">
-          <Text className="text-xs text-gray-500 mb-1">Môn học:</Text>
+          <Text className="text-xs text-gray-500 mb-1">Subjects:</Text>
           <View className="flex-row flex-wrap gap-1">
             {getSubjectNames(exam).slice(0, 3).map((subject, index) => (
               <View key={index} className="bg-gray-100 px-2 py-1 rounded">

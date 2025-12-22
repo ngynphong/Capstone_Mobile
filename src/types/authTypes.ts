@@ -10,7 +10,7 @@ export interface AuthResponse {
     message: string;
     data: {
         token: string;
-        refreshToken: string; 
+        refreshToken: string;
         authenticated: boolean;
         roles: string[];
     };
@@ -21,7 +21,8 @@ export interface RegisterRequest {
     password: string;
     firstName: string;
     lastName: string;
-    dob: string; 
+    dob: string;
+    roleName: string;
 }
 
 export interface RegisterResponse {

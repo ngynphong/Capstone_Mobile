@@ -26,6 +26,8 @@ import {
     Star,
     Calendar,
     BarChart3,
+    ChartNoAxesGantt,
+    BookCheck,
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
@@ -127,8 +129,9 @@ const StudentExamStatsScreen = () => {
                             {user?.firstName || 'Student'}
                         </Text>
                         <Text className="text-white/80 text-sm leading-5">
-                            Track your progress{'\n'}in exams 📚
+                            Track your progress{'\n'}in exams
                         </Text>
+                        <BookCheck size={20} color="white" />
                     </View>
 
                     {/* User Avatar */}
@@ -156,7 +159,7 @@ const StudentExamStatsScreen = () => {
                     </View>
                     <View className="w-px h-8 bg-white/20" />
                     <View className="items-center flex-1">
-                        <Text className="text-white text-xl font-bold">{stats?.averageScore?.toFixed(1) || 0}%</Text>
+                        <Text className="text-white text-xl font-bold">{stats?.averageScore?.toFixed(1) || 0}</Text>
                         <Text className="text-white/70 text-xs mt-0.5">Average Score</Text>
                     </View>
                     <View className="w-px h-8 bg-white/20" />
@@ -183,7 +186,10 @@ const StudentExamStatsScreen = () => {
                     <>
                         {/* Stats Cards */}
                         <View className="px-6 py-6">
-                            <Text className="text-lg font-bold text-gray-800 mb-4">📊 Overview</Text>
+                            <View className="flex-row items-center gap-2 mb-4">
+                                <ChartNoAxesGantt color={"#3CBCB2"} />
+                                <Text className="text-lg font-bold text-gray-800">Overview</Text>
+                            </View>
                             <View className="flex-row flex-wrap justify-between">
                                 {/* Total Exams */}
                                 <View className="w-[48%] mb-4">

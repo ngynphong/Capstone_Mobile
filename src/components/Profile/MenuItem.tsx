@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { ChevronRight } from 'lucide-react-native';
 
 interface MenuItemProps {
   title: string;
   subtitle?: string;
-  icon?: string;
+  icon?: React.ReactNode;
   onPress: () => void;
   variant?: 'default' | 'danger';
   showArrow?: boolean;
@@ -59,25 +60,27 @@ const MenuItem: React.FC<MenuItemProps> = ({
       onPress={onPress}
     >
       <View className="flex-row items-center justify-between">
-        <View className="flex-1">
-          <View className="flex-row items-center mb-1">
-            {icon && (
-              <Text className="text-lg mr-3">{icon}</Text>
-            )}
-            <Text className={`text-lg font-semibold ${getTextColor()}`}>
+        <View className="flex-row items-center flex-1">
+          {icon && (
+            <View className="w-10 h-10 rounded-xl items-center justify-center mr-4"
+              style={{ backgroundColor: variant === 'danger' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(60, 188, 178, 0.1)' }}>
+              {icon}
+            </View>
+          )}
+          <View className="flex-1">
+            <Text className={`text-base font-semibold ${getTextColor()}`}>
               {title}
             </Text>
+            {subtitle && (
+              <Text className="text-gray-500 text-sm mt-0.5">
+                {subtitle}
+              </Text>
+            )}
           </View>
-
-          {subtitle && (
-            <Text className="text-gray-600 text-sm ml-0 mt-1">
-              {subtitle}
-            </Text>
-          )}
         </View>
 
         {showArrow && (
-          <Text className="text-gray-400 text-lg">›</Text>
+          <ChevronRight size={20} color="#9CA3AF" />
         )}
       </View>
     </TouchableOpacity>
@@ -85,3 +88,4 @@ const MenuItem: React.FC<MenuItemProps> = ({
 };
 
 export default MenuItem;
+

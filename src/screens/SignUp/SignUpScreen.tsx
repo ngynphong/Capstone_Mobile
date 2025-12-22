@@ -16,6 +16,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/types';
 import { useAuth } from '../../context/AuthContext';
 import { useAppToast } from '../../utils/toast';
+import { Eye, EyeOff, GraduationCap, Users, BookOpen } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
@@ -35,20 +36,28 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [dobError, setDobError] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string>('STUDENT');
+  const [roleError, setRoleError] = useState('');
   const { register, isLoading } = useAuth();
   const toast = useAppToast();
+
+  const roleOptions = [
+    { id: 'STUDENT', label: 'Student', icon: GraduationCap, description: 'Learn and take exams' },
+    { id: 'PARENT', label: 'Parent', icon: Users, description: 'Monitor your children' },
+    { id: 'TEACHER', label: 'Teacher', icon: BookOpen, description: 'Create and manage exams' },
+  ];
 
   const validateForm = () => {
     const errors: string[] = [];
 
-    
+
     if (!firstName.trim()) {
       errors.push('First name is required');
     } else if (firstName.trim().length < 2) {
       errors.push('First name must be at least 2 characters long');
     }
 
-    
+
     if (!lastName.trim()) {
       errors.push('Last name is required');
     } else if (lastName.trim().length < 2) {
@@ -78,7 +87,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       }
     }
 
-    
+
     if (!email.trim()) {
       errors.push('Email is required');
     } else {
@@ -90,7 +99,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       }
     }
 
-   
+
     if (!password) {
       errors.push('Password is required');
     } else {
@@ -111,11 +120,16 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       }
     }
 
-   
+
     if (!confirmPassword) {
       errors.push('Please confirm your password');
     } else if (password !== confirmPassword) {
       errors.push('Passwords do not match');
+    }
+
+    // Validate role
+    if (!selectedRole) {
+      errors.push('Please select a role');
     }
 
     return errors;
@@ -124,7 +138,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const handleSignUp = async () => {
     const errors = validateForm();
     if (errors.length > 0) {
-      
+
       setFirstNameError(errors.find(e => e.includes('First name')) || '');
       setLastNameError(errors.find(e => e.includes('Last name')) || '');
       setDobError(errors.find(e => e.includes('Date of birth') || e.includes('age')) || '');
@@ -133,13 +147,14 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       setConfirmPasswordError(errors.find(e => e.includes('Passwords do not match')) || '');
       return;
     } else {
-    
+
       setFirstNameError('');
       setLastNameError('');
       setDobError('');
       setEmailError('');
       setPasswordError('');
       setConfirmPasswordError('');
+      setRoleError('');
     }
 
     const success = await register({
@@ -147,7 +162,8 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       password: password,
       firstName: firstName.trim(),
       lastName: lastName.trim(),
-      dob: dob, 
+      dob: dob,
+      roleName: selectedRole,
     });
 
     if (!success) {
@@ -331,6 +347,42 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             {emailError && <Text className="text-red-500 text-sm mt-1">{emailError}</Text>}
           </View>
 
+          {/* Role Selection */}
+          <View className="mb-4">
+            <Text className="text-sm font-medium text-gray-700 mb-2">Select Role</Text>
+            <View className="flex-row justify-between gap-2">
+              {roleOptions.map((role) => {
+                const IconComponent = role.icon;
+                const isSelected = selectedRole === role.id;
+                return (
+                  <TouchableOpacity
+                    key={role.id}
+                    className={`flex-1 py-3 px-2 rounded-xl border-2 items-center ${isSelected
+                        ? 'border-backgroundColor bg-backgroundColor/10'
+                        : 'border-gray-200 bg-white'
+                      }`}
+                    onPress={() => {
+                      setSelectedRole(role.id);
+                      setRoleError('');
+                    }}
+                  >
+                    <IconComponent
+                      size={24}
+                      color={isSelected ? '#3CBCB2' : '#9CA3AF'}
+                    />
+                    <Text
+                      className={`text-sm font-medium mt-1 ${isSelected ? 'text-backgroundColor' : 'text-gray-500'
+                        }`}
+                    >
+                      {role.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            {roleError && <Text className="text-red-500 text-sm mt-1">{roleError}</Text>}
+          </View>
+
           {/* Password Input */}
           <View className="mb-4">
             <Text className="text-sm font-medium text-gray-700 mb-2">Password</Text>
@@ -366,7 +418,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                 onPress={() => setShowPassword(!showPassword)}
               >
                 <Text className="text-gray-500 text-lg opacity-60">
-                  {showPassword ? '🙈' : '👁️'}
+                  {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -400,7 +452,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
               >
                 <Text className="text-gray-500 text-lg opacity-60">
-                  {showConfirmPassword ? '🙈' : '👁️'}
+                  {showConfirmPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                 </Text>
               </TouchableOpacity>
             </View>

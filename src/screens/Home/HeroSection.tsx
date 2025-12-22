@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Text, Image, StyleSheet } from "react-native";
+import { View, Text, Image, StyleSheet, TouchableOpacity, TextInput } from "react-native";
 import { useAuth } from "../../context/AuthContext";
+import { Search, Bell, Sparkles } from "lucide-react-native";
 
 const getGreeting = (): string => {
   const hour = new Date().getHours();
@@ -13,9 +14,11 @@ const getGreeting = (): string => {
   }
 };
 
+interface HeroSectionProps {
+  onSearch?: (text: string) => void;
+}
 
-
-const HeroSection = () => {
+const HeroSection: React.FC<HeroSectionProps> = ({ onSearch }) => {
   const { user } = useAuth();
   const greeting = getGreeting();
 
@@ -28,6 +31,10 @@ const HeroSection = () => {
 
   return (
     <View style={styles.container}>
+      {/* Decorative elements */}
+      <View style={styles.decorativeCircle1} />
+      <View style={styles.decorativeCircle2} />
+
       {/* Header user info */}
       <View style={styles.headerRow}>
         <View style={styles.profileSection}>
@@ -38,9 +45,11 @@ const HeroSection = () => {
                 style={styles.avatar}
               />
             ) : (
-              <Text className="text-center text-white text-2xl font-bold">{getUserInitials()}</Text>
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>{getUserInitials()}</Text>
+              </View>
             )}
-
+            <View style={styles.onlineIndicator} />
           </View>
           <View style={styles.textSection}>
             <Text style={styles.greeting}>{greeting}</Text>
@@ -50,25 +59,32 @@ const HeroSection = () => {
           </View>
         </View>
 
-        <View style={styles.iconWrapper}>
-          <Image
-            source={{ uri: "https://placehold.co/20x20" }}
-            style={styles.icon}
-          />
-        </View>
+        <TouchableOpacity style={styles.notificationButton}>
+          <Bell size={22} color="#FFFFFF" />
+          <View style={styles.notificationBadge}>
+            <Text style={styles.notificationCount}>0</Text>
+          </View>
+        </TouchableOpacity>
       </View>
 
       {/* Search bar */}
       <View style={styles.searchContainer}>
-        <Image
-          source={{ uri: "https://placehold.co/20x21" }}
-          style={styles.searchIcon}
+        <Search size={20} color="#9CA3AF" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search courses, materials..."
+          placeholderTextColor="#9CA3AF"
+          onChangeText={onSearch}
         />
-        <Text style={styles.searchText}>Search courses</Text>
       </View>
 
-      {/* Continue learning */}
-      <Text style={styles.continueText}>Continue Learning</Text>
+      {/* Welcome message */}
+      <View style={styles.welcomeSection}>
+        <View style={styles.welcomeRow}>
+          <Sparkles size={18} color="#FCD34D" />
+          <Text style={styles.welcomeText}>Start your learning journey today</Text>
+        </View>
+      </View>
     </View>
   );
 };
@@ -78,102 +94,151 @@ export default HeroSection;
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    height: 284,
     backgroundColor: "#3CBCB2",
-    borderRadius: 10,
-    paddingTop: 35,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    paddingTop: 50,
+    paddingBottom: 24,
     overflow: "hidden",
+  },
+  decorativeCircle1: {
+    position: "absolute",
+    top: -60,
+    right: -40,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+  },
+  decorativeCircle2: {
+    position: "absolute",
+    top: 80,
+    left: -50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
   },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
   },
   profileSection: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 12,
   },
   avatarContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 50,
-    overflow: "hidden",
-    borderWidth: 0.5,
-    borderColor: "white",
+    position: "relative",
   },
   avatar: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 9999,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.6)",
+  },
+  avatarPlaceholder: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.6)",
+  },
+  avatarText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+  },
+  onlineIndicator: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#22C55E",
+    borderWidth: 2,
+    borderColor: "#3CBCB2",
   },
   textSection: {
     flexDirection: "column",
     gap: 2,
   },
   greeting: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "400",
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-    lineHeight: 20,
+    color: "rgba(255, 255, 255, 0.85)",
+    fontSize: 13,
+    fontWeight: "500",
   },
   name: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-    lineHeight: 20,
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "700",
   },
-  iconWrapper: {
-    width: 50,
-    height: 50,
-    borderRadius: 50,
-    borderWidth: 0.5,
-    borderColor: "white",
+  notificationButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     alignItems: "center",
     justifyContent: "center",
+    position: "relative",
   },
-  icon: {
-    width: 20,
-    height: 20,
+  notificationBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#EF4444",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  notificationCount: {
+    fontSize: 10,
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   searchContainer: {
-    position: "absolute",
-    top: 115,
-    left: 16,
-    right: 16,
-    height: 48,
-    backgroundColor: "white",
-    borderRadius: 10,
+    marginTop: 20,
+    marginHorizontal: 20,
+    height: 52,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
+    gap: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  searchIcon: {
-    width: 20,
-    height: 21,
-    marginRight: 8,
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: "#111827",
   },
-  searchText: {
-    color: "#707070",
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "capitalize",
-    letterSpacing: 1.2,
+  welcomeSection: {
+    marginTop: 16,
+    marginHorizontal: 20,
   },
-  continueText: {
-    position: "absolute",
-    top: 189,
-    left: 16,
-    color: "white",
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "capitalize",
-    letterSpacing: 1.2,
-    lineHeight: 20,
+  welcomeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  welcomeText: {
+    color: "rgba(255, 255, 255, 0.9)",
+    fontSize: 14,
+    fontWeight: "500",
   },
 });
+
