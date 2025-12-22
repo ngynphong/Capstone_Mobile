@@ -96,7 +96,14 @@ Feel free to share your solutions or ask questions in the comments!`,
     setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
   };
 
-
+  // Đảm bảo luôn render tên author dưới dạng string
+  const postAuthorName =
+    typeof post.author === 'string'
+      ? post.author
+      : post.author?.name ||
+        post.author?.username ||
+        `${post.author?.firstName ?? ''} ${post.author?.lastName ?? ''}`.trim() ||
+        'Unknown';
 
   return (
     <ScrollView
@@ -124,7 +131,9 @@ Feel free to share your solutions or ask questions in the comments!`,
         <View className="flex-row items-center gap-3 mb-3">
           <Image source={{ uri: post.avatar }} className="w-12 h-12 rounded-full" />
           <View className="flex-1">
-            <Text className="text-base font-semibold text-gray-800">{post.author}</Text>
+            <Text className="text-base font-semibold text-gray-800">
+              {postAuthorName}
+            </Text>
             <Text className="text-sm text-gray-500">{post.subject} • {post.timeAgo}</Text>
           </View>
           <TouchableOpacity className="w-8 h-8 rounded-full items-center justify-center">
@@ -186,7 +195,16 @@ Feel free to share your solutions or ask questions in the comments!`,
 
         {comments.length > 0 ? (
           <ScrollView showsVerticalScrollIndicator={false} className="">
-            {comments.map((comment) => (
+            {comments.map((comment) => {
+              const commentAuthorName =
+                typeof comment.author === 'string'
+                  ? comment.author
+                  : comment.author?.name ||
+                    comment.author?.username ||
+                    `${comment.author?.firstName ?? ''} ${comment.author?.lastName ?? ''}`.trim() ||
+                    'Unknown';
+
+              return (
               <View key={comment.id} className="bg-gray-50 rounded-xl p-4 mb-3">
                 <View className="flex-row items-start gap-3">
                   <View className="w-8 h-8 rounded-full overflow-hidden">
@@ -197,7 +215,9 @@ Feel free to share your solutions or ask questions in the comments!`,
                   </View>
                   <View className="flex-1">
                     <View className="flex-row items-center gap-2 mb-1">
-                      <Text className="text-sm font-semibold text-gray-800">{comment.author}</Text>
+                      <Text className="text-sm font-semibold text-gray-800">
+                        {commentAuthorName}
+                      </Text>
                       <Text className="text-xs text-gray-500">{comment.timeAgo}</Text>
                     </View>
                     <Text className="text-sm text-gray-700 mb-2">{comment.content}</Text>
@@ -208,7 +228,7 @@ Feel free to share your solutions or ask questions in the comments!`,
                   </View>
                 </View>
               </View>
-            ))}
+            )})}
           </ScrollView>
         ) : (
           <View className="bg-white rounded-xl p-8 items-center">
