@@ -56,7 +56,8 @@ const HomeScreen = () => {
       const data = await DashboardService.getStudentExamStats();
       setStats(data);
     } catch (error) {
-      console.error("Error fetching stats:", error);
+      // Silently fail - this API is only for students, will fail for parents
+      // console.error("Error fetching stats:", error);
     } finally {
       setStatsLoading(false);
     }

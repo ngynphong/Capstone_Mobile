@@ -64,7 +64,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
           {icon && (
             <View className="w-10 h-10 rounded-xl items-center justify-center mr-4"
               style={{ backgroundColor: variant === 'danger' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(60, 188, 178, 0.1)' }}>
-              {icon}
+              {typeof icon === 'string' ? <Text className="text-xl">{icon}</Text> : icon}
             </View>
           )}
           <View className="flex-1">

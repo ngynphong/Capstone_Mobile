@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Alert, Modal, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../context/AuthContext';
 import { useScroll } from '../../context/ScrollContext';
+import { useNotifications } from '../../hooks/useNotifications';
 import ProfileHeader from '../../components/Profile/ProfileHeader';
 import MenuSection from '../../components/Profile/MenuSection';
 import EditParentProfileModal from '../../components/Parent/EditParentProfileModal';
@@ -10,10 +13,13 @@ import { getPaymentsByUser, getAllTransactions, transferParentToStudent } from '
 import ParentService from '../../services/parentService';
 import type { WalletTransaction } from '../../types/storeTypes';
 import type { ChildInfo } from '../../types/parent';
+import type { ParentProfileStackParamList } from '../../types/types';
 
 const ParentProfileScreen = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<ParentProfileStackParamList>>();
   const { user, logout, refreshUser } = useAuth();
   const { handleScroll } = useScroll();
+  const { unreadCount } = useNotifications();
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isChangePasswordModalVisible, setIsChangePasswordModalVisible] = useState(false);
   const [isWalletVisible, setIsWalletVisible] = useState(false);
@@ -253,6 +259,13 @@ const ParentProfileScreen = () => {
 
   const menuItems = [
     {
+      id: 'notifications',
+      title: 'Notifications',
+      subtitle: unreadCount > 0 ? `${unreadCount} unread message${unreadCount > 1 ? 's' : ''}` : 'View all notifications',
+      icon: '🔔',
+      onPress: () => navigation.navigate('Notifications'),
+    },
+    {
       id: 'edit-profile',
       title: 'Edit profile',
       subtitle: 'Update your occupation',
@@ -469,9 +482,8 @@ const ParentProfileScreen = () => {
                           )}
                         </View>
                         <Text
-                          className={`text-sm font-semibold ${
-                            isIn ? 'text-emerald-600' : 'text-red-500'
-                          }`}
+                          className={`text-sm font-semibold ${isIn ? 'text-emerald-600' : 'text-red-500'
+                            }`}
                         >
                           {isIn ? '+' : '-'}{' '}
                           {amountAbs.toLocaleString('vi-VN')} VND
@@ -525,9 +537,8 @@ const ParentProfileScreen = () => {
                     return (
                       <TouchableOpacity
                         key={child.studentId}
-                        className={`mb-2 p-3 rounded-lg border ${
-                          selected ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white'
-                        }`}
+                        className={`mb-2 p-3 rounded-lg border ${selected ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white'
+                          }`}
                         onPress={() => setTransferStudentId(child.studentId)}
                       >
                         <Text className="text-sm font-semibold text-gray-900">

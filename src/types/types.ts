@@ -48,6 +48,11 @@ export type ParentTabParamList = {
   Profile: undefined;
 };
 
+export type ParentProfileStackParamList = {
+  ProfileMain: undefined;
+  Notifications: undefined;
+};
+
 export type ProfileStackParamList = {
   ProfileMain: undefined;
   ExamResults: undefined;

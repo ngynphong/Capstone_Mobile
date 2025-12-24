@@ -146,7 +146,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     // Stop polling
     const stopPolling = useCallback(() => {
         if (pollingIntervalRef.current) {
-            console.log("[NotificationContext] Stopping polling...");
+            // console.log("[NotificationContext] Stopping polling...");
             clearInterval(pollingIntervalRef.current);
             pollingIntervalRef.current = null;
         }

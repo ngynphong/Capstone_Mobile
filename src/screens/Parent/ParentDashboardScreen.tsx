@@ -13,14 +13,25 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '../../context/AuthContext';
 import { useParent } from '../../hooks/useParent';
-import { TrendingUp, Users, BookOpen, Award, ChevronRight, Star } from 'lucide-react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useNotifications } from '../../hooks/useNotifications';
+import { TrendingUp, Users, BookOpen, Award, ChevronRight, Star, Bell } from 'lucide-react-native';
+import { useFocusEffect, useNavigation, CompositeNavigationProp } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ParentTabParamList, ParentProfileStackParamList } from '../../types/types';
+
+type ParentDashboardNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<ParentTabParamList, 'Dashboard'>,
+  NativeStackNavigationProp<ParentProfileStackParamList>
+>;
 
 const { width } = Dimensions.get('window');
 
 const ParentDashboardScreen = () => {
   const { user } = useAuth();
   const { children, loading, fetchChildren } = useParent();
+  const { unreadCount } = useNotifications();
+  const navigation = useNavigation<ParentDashboardNavigationProp>();
   const [refreshing, setRefreshing] = useState(false);
   const fadeAnim = new Animated.Value(0);
 
@@ -46,6 +57,11 @@ const ParentDashboardScreen = () => {
     if (hour < 12) return 'Good morning';
     if (hour < 18) return 'Good afternoon';
     return 'Good evening';
+  };
+
+  const handleNotificationPress = () => {
+    // Navigate to Profile stack, then to Notifications
+    navigation.navigate('Profile', { screen: 'Notifications' } as any);
   };
 
   const totalChildren = children.length;
@@ -83,8 +99,24 @@ const ParentDashboardScreen = () => {
             </Text>
           </View>
 
-          {/* User Avatar with Gradient Border */}
-          <View className="items-center">
+          {/* Bell Icon and User Avatar */}
+          <View className="flex-row items-center">
+            {/* Notification Bell */}
+            <TouchableOpacity
+              onPress={handleNotificationPress}
+              className="w-10 h-10 bg-white/20 rounded-full items-center justify-center mr-3"
+            >
+              <Bell size={20} color="#FFFFFF" />
+              {unreadCount > 0 && (
+                <View className="absolute -top-1 -right-1 bg-red-500 rounded-full min-w-[18px] h-[18px] items-center justify-center px-1">
+                  <Text className="text-white text-[10px] font-bold">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            {/* User Avatar */}
             <View className="w-16 h-16 bg-white rounded-full items-center justify-center p-0.5">
               <View className="w-full h-full bg-teal-500 rounded-full items-center justify-center">
                 {user?.imgUrl ? (

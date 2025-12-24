@@ -9,7 +9,7 @@ import ParentDashboardScreen from '../screens/Parent/ParentDashboardScreen';
 import ChildManagementScreen from '../screens/Parent/ChildManagementScreen';
 import ChildProgressScreen from '../screens/Parent/ChildProgressScreen';
 import ParentExamStatsScreen from '../screens/Parent/ParentExamStatsScreen';
-import ParentProfileScreen from '../screens/Parent/ParentProfileScreen';
+import ParentProfileStack from './ParentProfileStack';
 
 const Tab = createBottomTabNavigator<ParentTabParamList>();
 
@@ -173,7 +173,7 @@ const ParentTabNavigator = () => {
       <Tab.Screen name="Children" component={ChildManagementScreen} />
       <Tab.Screen name="Reports" component={ChildProgressScreen} />
       <Tab.Screen name="ExamStats" component={ParentExamStatsScreen} />
-      <Tab.Screen name="Profile" component={ParentProfileScreen} />
+      <Tab.Screen name="Profile" component={ParentProfileStack} />
     </Tab.Navigator>
   );
 };
