@@ -6,6 +6,7 @@ import ExamResultDetailScreen from '../screens/Profile/ExamResultDetailScreen';
 import StudentExamStatsScreen from '../screens/Profile/StudentExamStatsScreen';
 import StudentFinancialStatsScreen from '../screens/Profile/StudentFinancialStatsScreen';
 import StoreScreen from '../screens/Store/StoreScreen';
+import NotificationScreen from '../screens/Notification/NotificationScreen';
 import { ProfileStackParamList } from '../types/types';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
@@ -23,6 +24,7 @@ const ProfileStack = () => {
       <Stack.Screen name="StudentExamStats" component={StudentExamStatsScreen} />
       <Stack.Screen name="StudentFinancialStats" component={StudentFinancialStatsScreen} />
       <Stack.Screen name="Store" component={StoreScreen} />
+      <Stack.Screen name="Notifications" component={NotificationScreen} />
     </Stack.Navigator>
   );
 };

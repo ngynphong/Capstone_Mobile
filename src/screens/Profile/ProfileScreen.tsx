@@ -24,7 +24,9 @@ import {
   School,
   Phone,
   Goal,
+  Bell,
 } from 'lucide-react-native';
+import { useNotifications } from '../../hooks/useNotifications';
 
 type NavigationProp = NativeStackNavigationProp<ProfileStackParamList>;
 
@@ -38,6 +40,7 @@ const ProfileScreen = () => {
   const [isStudentProfileModalVisible, setIsStudentProfileModalVisible] = useState(false);
   const { connectionCode, loading: connectionLoading, fetchConnectionCode } = useStudentConnection();
   const { updateStudentProfile, loading: studentLoading } = useStudent();
+  const { unreadCount } = useNotifications();
 
   // Student profile edit fields
   const [studentSchoolName, setStudentSchoolName] = useState('');
@@ -153,6 +156,14 @@ const ProfileScreen = () => {
       onPress: handleConnectionCode,
     },
     {
+      id: 'notifications',
+      title: 'Notifications',
+      subtitle: unreadCount > 0 ? `${unreadCount} unread message${unreadCount > 1 ? 's' : ''}` : 'View all notifications',
+      icon: <Bell size={20} color="#3CBCB2" />,
+      onPress: () => navigation.navigate('Notifications'),
+      badge: unreadCount > 0 ? unreadCount : undefined,
+    },
+    {
       id: 'settings',
       title: 'Settings',
       subtitle: 'App preferences and notifications',
@@ -224,7 +235,7 @@ const ProfileScreen = () => {
                   {user.studentProfile.goal ? (
                     <Text className="text-gray-800 font-medium">{user.studentProfile.goal}</Text>
                   ) : (
-                      <Text className="text-gray-600">What result do you want to achieve ?</Text>
+                    <Text className="text-gray-600">What result do you want to achieve ?</Text>
                   )}
                 </View>
               </View>

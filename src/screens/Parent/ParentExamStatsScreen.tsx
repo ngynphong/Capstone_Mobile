@@ -330,7 +330,7 @@ const ParentExamStatsScreen = () => {
                                                     className="font-bold"
                                                     style={{ color: getScoreColor(score) }}
                                                 >
-                                                    {score.toFixed(1)}%
+                                                    {score.toFixed(1)}
                                                 </Text>
                                             </View>
                                             <View className="h-3 bg-gray-100 rounded-full overflow-hidden">

@@ -98,7 +98,7 @@ const ChildProgressScreen = () => {
                       <Text className="font-bold text-gray-800 text-base">{child.studentName}</Text>
                       <Text className="text-sm text-gray-500">{child.email}</Text>
                       <Text className="text-xs text-gray-400 mt-1">
-                        Exams: {child.totalExamsTaken} | Average Score: {child.averageScore}%
+                        Exams: {child.totalExamsTaken} | Average Score: {child.averageScore}
                       </Text>
                     </View>
                     <TouchableOpacity

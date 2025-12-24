@@ -15,6 +15,7 @@ import LoadingScreen from './src/components/LoadingScreen';
 import { RootStackParamList } from './src/types/types';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { ScrollProvider } from './src/context/ScrollContext';
+import { NotificationProvider } from './src/context/NotificationContext';
 
 // Disable console logs in production
 if (!__DEV__) {
@@ -27,6 +28,38 @@ if (!__DEV__) {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+// Logged in navigation with NotificationProvider
+const LoggedInNavigator: React.FC<{ isParent: boolean }> = ({ isParent }) => {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {isParent ? (
+        <>
+          <Stack.Screen name="MainTabs" component={ParentTabNavigator} />
+          <Stack.Screen name="ChatBot" component={ChatBotScreen} />
+        </>
+      ) : (
+        <>
+          <Stack.Screen name="MainTabs" component={TabNavigator} />
+          <Stack.Screen name="ChatBot" component={ChatBotScreen} />
+        </>
+      )}
+    </Stack.Navigator>
+  );
+};
+
+// Auth navigation (login, signup, etc.)
+const AuthNavigator: React.FC = () => {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="SignUp" component={SignUpScreen} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <Stack.Screen name="VerifyOTP" component={VerifyOTPScreen} />
+    </Stack.Navigator>
+  );
+};
+
+// Main app content with auth check
 const AppContent: React.FC = () => {
   const { isLoggedIn, isLoading, user } = useAuth();
 
@@ -37,34 +70,16 @@ const AppContent: React.FC = () => {
 
   const isParent = user?.roles?.includes('PARENT');
 
-
   return (
-    <>
-      <NavigationContainer>
-        {isLoggedIn ? (
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
-            {isParent ? (
-              <>
-                <Stack.Screen name="MainTabs" component={ParentTabNavigator} />
-                <Stack.Screen name="ChatBot" component={ChatBotScreen} />
-              </>
-            ) : (
-              <>
-                <Stack.Screen name="MainTabs" component={TabNavigator} />
-                <Stack.Screen name="ChatBot" component={ChatBotScreen} />
-              </>
-            )}
-          </Stack.Navigator>
-        ) : (
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="SignUp" component={SignUpScreen} />
-            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-            <Stack.Screen name="VerifyOTP" component={VerifyOTPScreen} />
-          </Stack.Navigator>
-        )}
-      </NavigationContainer>
-    </>
+    <NavigationContainer>
+      {isLoggedIn ? (
+        <NotificationProvider>
+          <LoggedInNavigator isParent={!!isParent} />
+        </NotificationProvider>
+      ) : (
+        <AuthNavigator />
+      )}
+    </NavigationContainer>
   );
 };
 

@@ -195,7 +195,7 @@ const ChildManagementScreen = () => {
                               className="text-xs ml-1 font-semibold"
                               style={{ color: getScoreColor(child.averageScore) }}
                             >
-                              {child.averageScore}%
+                              {child.averageScore}
                             </Text>
                           </View>
                         </View>

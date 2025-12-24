@@ -55,6 +55,7 @@ export type ProfileStackParamList = {
   Store: undefined;
   StudentExamStats: undefined;
   StudentFinancialStats: undefined;
+  Notifications: undefined;
 };
 
 

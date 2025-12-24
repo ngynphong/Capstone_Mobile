@@ -29,10 +29,10 @@ interface CustomTabBarProps {
 const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigation }) => {
   // Debug: Log số lượng routes
   React.useEffect(() => {
-    console.log('=== TAB BAR DEBUG ===');
-    console.log('Total routes:', state.routes.length);
-    console.log('Route names:', state.routes.map((r: any) => r.name));
-    console.log('Current index:', state.index);
+    // console.log('=== TAB BAR DEBUG ===');
+    // console.log('Total routes:', state.routes.length);
+    // console.log('Route names:', state.routes.map((r: any) => r.name));
+    // console.log('Current index:', state.index);
   }, [state.routes, state.index]);
 
   const animatedValues = React.useRef(state.routes.map(() => new Animated.Value(0))).current;

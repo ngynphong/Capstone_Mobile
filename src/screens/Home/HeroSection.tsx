@@ -1,6 +1,8 @@
 import React from "react";
 import { View, Text, Image, StyleSheet, TouchableOpacity, TextInput } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../../context/AuthContext";
+import { useNotifications } from "../../hooks/useNotifications";
 import { Search, Bell, Sparkles } from "lucide-react-native";
 
 const getGreeting = (): string => {
@@ -20,6 +22,8 @@ interface HeroSectionProps {
 
 const HeroSection: React.FC<HeroSectionProps> = ({ onSearch }) => {
   const { user } = useAuth();
+  const { unreadCount } = useNotifications();
+  const navigation = useNavigation();
   const greeting = getGreeting();
 
   const getUserInitials = () => {
@@ -27,6 +31,16 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onSearch }) => {
     const last = user?.lastName?.[0] || '';
     const initials = (first + last).toUpperCase() || 'U';
     return initials;
+  };
+
+  const handleNotificationPress = () => {
+    // Navigate to Notifications screen in Profile stack
+    const parent = (navigation as any).getParent?.();
+    if (parent) {
+      parent.navigate('Profile', { screen: 'Notifications' });
+    } else {
+      (navigation as any).navigate('Profile', { screen: 'Notifications' });
+    }
   };
 
   return (
@@ -59,11 +73,18 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onSearch }) => {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.notificationButton}>
+        <TouchableOpacity
+          style={styles.notificationButton}
+          onPress={handleNotificationPress}
+        >
           <Bell size={22} color="#FFFFFF" />
-          <View style={styles.notificationBadge}>
-            <Text style={styles.notificationCount}>0</Text>
-          </View>
+          {unreadCount > 0 && (
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationCount}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
