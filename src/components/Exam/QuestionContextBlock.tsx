@@ -20,6 +20,11 @@ const QuestionContextBlock: React.FC<QuestionContextBlockProps> = ({
     context,
     questionCount,
 }) => {
+    // Safety check: return null if context is invalid
+    if (!context) {
+        return null;
+    }
+
     const [isExpanded, setIsExpanded] = useState(true);
 
     return (

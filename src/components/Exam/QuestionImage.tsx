@@ -20,6 +20,11 @@ interface QuestionImageProps {
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const QuestionImage: React.FC<QuestionImageProps> = ({ imageUrl, alt }) => {
+    // Safety check: return null if imageUrl is invalid
+    if (!imageUrl) {
+        return null;
+    }
+
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
     const [isModalVisible, setIsModalVisible] = useState(false);

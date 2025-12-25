@@ -22,15 +22,20 @@ const LatexText: React.FC<LatexTextProps> = ({
   const [webViewHeight, setWebViewHeight] = useState(50);
   const { width } = useWindowDimensions();
 
+  // Normalize content to empty string if null/undefined
+  const safeContent = content ?? '';
+
   // Check if content contains LaTeX patterns
   const hasLatex = useMemo(() => {
-    return /\$\$[\s\S]*?\$\$|\$[^$\n]+?\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)/g.test(content);
-  }, [content]);
+    if (!safeContent || typeof safeContent !== 'string') return false;
+    return /\$\$[\s\S]*?\$\$|\$[^$\n]+?\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)/g.test(safeContent);
+  }, [safeContent]);
 
   // Convert LaTeX delimiters to MathJax-compatible format
   // Must be called unconditionally to satisfy React hooks rules
   const processedContent = useMemo(() => {
-    return content
+    if (!safeContent || typeof safeContent !== 'string') return '';
+    return safeContent
       // Escape HTML entities
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')

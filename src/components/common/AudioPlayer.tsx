@@ -18,6 +18,11 @@ interface AudioPlayerProps {
 }
 
 const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, title }) => {
+    // Safety check: return null if audioUrl is invalid
+    if (!audioUrl) {
+        return null;
+    }
+
     const [sound, setSound] = useState<Audio.Sound | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
