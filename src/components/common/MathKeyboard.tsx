@@ -126,14 +126,17 @@ const MathKeyboard: React.FC<MathKeyboardProps> = ({
     placeholder = 'Nhập câu trả lời...',
     style
 }) => {
+    // Normalize value to prevent crash when undefined
+    const safeValue = value ?? '';
+
     const [showKeyboard, setShowKeyboard] = useState(false);
     const [activeCategory, setActiveCategory] = useState('Cơ bản');
-    const [cursorPosition, setCursorPosition] = useState(value.length);
+    const [cursorPosition, setCursorPosition] = useState(safeValue.length);
     // const [showPreview, setShowPreview] = useState(true); // Show preview by default
 
     const insertSymbol = (latex: string, cursorOffset?: number) => {
-        const before = value.slice(0, cursorPosition);
-        const after = value.slice(cursorPosition);
+        const before = safeValue.slice(0, cursorPosition);
+        const after = safeValue.slice(cursorPosition);
         const newValue = before + latex + after;
         onChangeText(newValue);
 
@@ -148,8 +151,8 @@ const MathKeyboard: React.FC<MathKeyboardProps> = ({
     };
 
     const wrapWithLatex = () => {
-        if (!value.includes('$')) {
-            onChangeText(`$${value}$`);
+        if (!safeValue.includes('$')) {
+            onChangeText(`$${safeValue}$`);
         }
     };
 
@@ -168,10 +171,10 @@ const MathKeyboard: React.FC<MathKeyboardProps> = ({
                     <Text style={styles.answerLabel}>Your answer:</Text>
                     <Text style={styles.editHint}>{showInput ? '▼ Hide input' : '▶ Tap to edit'}</Text>
                 </View>
-                {value.trim() ? (
+                {safeValue.trim() ? (
                     <View style={styles.renderedContent}>
                         <LatexText
-                            content={value.includes('$') ? value : `$${value}$`}
+                            content={safeValue.includes('$') ? safeValue : `$${safeValue}$`}
                             fontSize={18}
                         />
                     </View>
@@ -185,7 +188,7 @@ const MathKeyboard: React.FC<MathKeyboardProps> = ({
                 <View style={styles.inputContainer}>
                     <TextInput
                         multiline
-                        value={value}
+                        value={safeValue}
                         onChangeText={handleTextChange}
                         placeholder="Enter your answer..."
                         placeholderTextColor="#9CA3AF"

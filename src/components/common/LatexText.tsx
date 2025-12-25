@@ -42,7 +42,8 @@ const LatexText: React.FC<LatexTextProps> = ({
       .replace(/>/g, '&gt;')
       // Keep LaTeX delimiters as-is for MathJax
       .replace(/\n/g, '<br/>');
-  }, [content]);
+  }, [safeContent]);
+
 
   // Generate HTML for WebView (must be called unconditionally)
   const html = useMemo(() => `
@@ -106,7 +107,7 @@ const LatexText: React.FC<LatexTextProps> = ({
 
   // If no LaTeX, render as plain text  
   if (!hasLatex) {
-    return <Text style={[styles.text, textStyle]}>{content}</Text>;
+    return <Text style={[styles.text, textStyle]}>{safeContent}</Text>;
   }
 
   const onMessage = (event: any) => {
@@ -130,6 +131,12 @@ const LatexText: React.FC<LatexTextProps> = ({
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
         onMessage={onMessage}
+        onError={(syntheticEvent) => {
+          console.warn('WebView error:', syntheticEvent.nativeEvent);
+        }}
+        onHttpError={(syntheticEvent) => {
+          console.warn('WebView HTTP error:', syntheticEvent.nativeEvent);
+        }}
         javaScriptEnabled={true}
         domStorageEnabled={true}
         scalesPageToFit={false}
