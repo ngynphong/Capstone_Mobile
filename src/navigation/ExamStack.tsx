@@ -1,6 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ExamStackParamList } from '../types/examTypes';
+import ErrorBoundary from '../components/common/ErrorBoundary';
 
 // Import all exam screens
 import ExamLibraryScreen from '../screens/Exam/ExamLibraryScreen';
@@ -13,6 +14,13 @@ import FullTestScreen from '../screens/Exam/FullTestScreen';
 import TestResultsScreen from '../screens/Exam/TestResultsScreen';
 
 const Stack = createNativeStackNavigator<ExamStackParamList>();
+
+// Wrapper component to add ErrorBoundary to FullTestScreen
+const FullTestScreenWithErrorBoundary = (props: any) => (
+  <ErrorBoundary>
+    <FullTestScreen {...props} />
+  </ErrorBoundary>
+);
 
 const ExamStack = () => {
   return (
@@ -27,10 +35,11 @@ const ExamStack = () => {
       <Stack.Screen name="FlashCard" component={FlashCardScreen} />
       <Stack.Screen name="Quiz" component={QuizScreen} />
       <Stack.Screen name="FRQ" component={FRQScreen} />
-      <Stack.Screen name="FullTest" component={FullTestScreen} />
+      <Stack.Screen name="FullTest" component={FullTestScreenWithErrorBoundary} />
       <Stack.Screen name="TestResults" component={TestResultsScreen} />
     </Stack.Navigator>
   );
 };
 
 export default ExamStack;
+

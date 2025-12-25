@@ -201,7 +201,9 @@ const TabNavigator = () => {
       <Tab.Screen name="Home" component={HomeStack} />
 
       <Tab.Screen name="Flashcard" component={FlashcardStack} />
-      <Tab.Screen name="Exams" component={ExamScreen} />
+      {/* TEMPORARILY HIDDEN: Exam feature causes crash on production
+          Users can use web app for exams instead */}
+      {/* <Tab.Screen name="Exams" component={ExamScreen} /> */}
       <Tab.Screen name="Materials" component={MaterialsStack} />
       <Tab.Screen name="Community" component={CommunityStack} />
       <Tab.Screen name="Profile" component={ProfileStack} />
