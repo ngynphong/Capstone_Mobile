@@ -184,6 +184,19 @@ const FullTestScreen = () => {
     }
   }, [timeRemaining]);
 
+  // ============== EARLY RETURN AFTER ALL HOOKS ==============
+  // This MUST come after all hooks to comply with React's Rules of Hooks
+  // Fix for production crash: check if attempt is null before rendering UI
+  if (!attempt || !attempt.questions) {
+    return (
+      <View className="flex-1 justify-center items-center bg-gray-50">
+        <ActivityIndicator size="large" color="#3CBCB2" />
+        <Text className="text-gray-600 mt-4">Loading exam...</Text>
+      </View>
+    );
+  }
+  // ==========================================================
+
   const handleTimeUp = () => {
     Alert.alert(
       'Time up!',
@@ -409,13 +422,7 @@ const FullTestScreen = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (!attempt) {
-    return (
-      <View className="flex-1 justify-center items-center bg-gray-50">
-        <Text className="text-gray-600">Exam attempt not found</Text>
-      </View>
-    );
-  }
+  // Note: Early return for null attempt is handled after hooks (around line 186)
 
   return (
     <View className="flex-1 bg-gray-50">
