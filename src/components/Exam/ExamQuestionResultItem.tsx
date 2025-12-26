@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, ActivityIndicator, TextInput } from 'reac
 import { CheckCircle, Sparkles, Send } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useAiExamAsk } from '../../hooks/useAiExamAsk';
-import Markdown from 'react-native-markdown-display';
 import LatexText from '../common/LatexText';
 import QuestionImage from './QuestionImage';
 import AudioPlayer from '../common/AudioPlayer';
@@ -29,6 +28,9 @@ const ExamQuestionResultItem: React.FC<QuestionItemProps> = ({ questionItem, ind
     const handleAskAi = () => {
         if (!userQuestion.trim()) return;
 
+        // Extract answer contents from question answers
+        const answerContents: string[] = questionItem.question.answers?.map((a: any) => a.content) || [];
+
         askAi({
             attemptId: attemptId,
             questionContent: questionItem.question.content,
@@ -38,6 +40,7 @@ const ExamQuestionResultItem: React.FC<QuestionItemProps> = ({ questionItem, ind
             studentAsking: userQuestion,
             doneBy: user?.email || 'User',
             questionContext: questionContext?.content || '',
+            answerContents: answerContents,
         });
     };
 
@@ -206,14 +209,11 @@ const ExamQuestionResultItem: React.FC<QuestionItemProps> = ({ questionItem, ind
                                 </View>
                             ) : (
                                 <View>
-                                    <Markdown
-                                        style={{
-                                            body: { color: '#4B5563', fontSize: 14 },
-                                            paragraph: { marginBottom: 8 },
-                                        }}
-                                    >
-                                        {response}
-                                    </Markdown>
+                                    <LatexText
+                                        content={response}
+                                        fontSize={14}
+                                        textStyle={{ color: '#4B5563' }}
+                                    />
                                     {isLoading && (
                                         <Text className="text-purple-500 text-xs mt-2">Generating...</Text>
                                     )}
