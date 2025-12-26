@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -8,10 +8,11 @@ import {
   ActivityIndicator,
   RefreshControl,
   TouchableOpacity,
+  Modal,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { ChevronRight } from "lucide-react-native";
+import { ChevronRight, X, Bell } from "lucide-react-native";
 import { HomeStackParamList } from "../../types/types";
 import HeroSection from "./HeroSection";
 import StatsCard from "./StatsCard";
@@ -30,8 +31,10 @@ import useMaterialImageSource from "../../hooks/useMaterialImageSource";
 import { useFlashcardSets } from "../../hooks/useFlashcardSets";
 import DashboardService from "../../services/dashboardService";
 import CommunityService from "../../services/communityService";
+import { notificationService } from "../../services/notificationService";
 import type { StudentExamStatsResponse } from "../../types/dashboard";
 import type { Community } from "../../types/communityTypes";
+import type { NotificationResponse } from "../../types/notification";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, "HomeMain">;
 
@@ -49,6 +52,29 @@ const HomeScreen = () => {
   const [statsLoading, setStatsLoading] = useState(true);
   const [communities, setCommunities] = useState<Community[]>([]);
   const [communitiesLoading, setCommunitiesLoading] = useState(true);
+
+  // Public notification banner
+  const [publicNotification, setPublicNotification] = useState<NotificationResponse | null>(null);
+  const [showPublicNotification, setShowPublicNotification] = useState(true);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+
+  // Parse nested JSON from notification message
+  const parsedNotificationData = useMemo(() => {
+    if (!publicNotification?.message) return null;
+    try {
+      const parsed = JSON.parse(publicNotification.message);
+      return {
+        type: parsed.type || publicNotification.type,
+        message: parsed.message || publicNotification.message,
+      };
+    } catch {
+      // If not JSON, use raw message
+      return {
+        type: publicNotification.type,
+        message: publicNotification.message,
+      };
+    }
+  }, [publicNotification]);
 
   // Fetch dashboard stats
   const fetchStats = useCallback(async () => {
@@ -80,12 +106,24 @@ const HomeScreen = () => {
     }
   }, []);
 
+  // Fetch public notification for home screen banner
+  const fetchPublicNotification = useCallback(async () => {
+    try {
+      const notification = await notificationService.getPublicNotification();
+      setPublicNotification(notification);
+      setShowPublicNotification(!!notification);
+    } catch (error) {
+      console.log("No public notification available");
+    }
+  }, []);
+
   // Initial data fetch
   useEffect(() => {
     fetchStats();
     fetchCommunities();
     fetchFlashcardSets({ page: 1, size: 6 });
-  }, [fetchStats, fetchCommunities, fetchFlashcardSets]);
+    fetchPublicNotification();
+  }, [fetchStats, fetchCommunities, fetchFlashcardSets, fetchPublicNotification]);
 
   // Pull to refresh
   const onRefresh = useCallback(async () => {
@@ -163,6 +201,68 @@ const HomeScreen = () => {
       >
         {/* Hero Section */}
         <HeroSection />
+
+        {/* Public Notification Banner */}
+        {parsedNotificationData && showPublicNotification && (
+          <TouchableOpacity
+            style={styles.notificationBanner}
+            onPress={() => setShowNotificationModal(true)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.notificationIconContainer}>
+              <Bell size={20} color="#FFFFFF" />
+            </View>
+            <View style={styles.notificationContent}>
+              <Text style={styles.notificationType}>{parsedNotificationData.type}</Text>
+              <Text style={styles.notificationMessage} numberOfLines={2}>
+                {parsedNotificationData.message}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.notificationCloseButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                setShowPublicNotification(false);
+              }}
+            >
+              <X size={18} color="#6B7280" />
+            </TouchableOpacity>
+          </TouchableOpacity>
+        )}
+
+        {/* Notification Detail Modal */}
+        <Modal
+          visible={showNotificationModal}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => setShowNotificationModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <View style={styles.modalIconContainer}>
+                  <Bell size={24} color="#FFFFFF" />
+                </View>
+                <Text style={styles.modalTitle}>{parsedNotificationData?.type}</Text>
+                <TouchableOpacity
+                  style={styles.modalCloseButton}
+                  onPress={() => setShowNotificationModal(false)}
+                >
+                  <X size={24} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
+              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                <Text style={styles.modalMessage}>{parsedNotificationData?.message}</Text>
+              </ScrollView>
+              {/* <TouchableOpacity
+                style={styles.modalDismissButton}
+                onPress={() => setShowNotificationModal(false)}
+              >
+                <Text style={styles.modalDismissButtonText}>Close</Text>
+              </TouchableOpacity> */}
+            </View>
+          </View>
+        </Modal>
 
         {/* Stats Section */}
         <View style={styles.section}>
@@ -381,5 +481,117 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     textAlign: "center",
     paddingVertical: 20,
+  },
+  // Public notification banner styles
+  notificationBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    marginHorizontal: 20,
+    marginTop: 16,
+    borderRadius: 12,
+    padding: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderLeftWidth: 4,
+    borderLeftColor: "#3CBCB2",
+  },
+  notificationIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#3CBCB2",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  notificationContent: {
+    flex: 1,
+  },
+  notificationType: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#3CBCB2",
+    textTransform: "uppercase",
+    marginBottom: 2,
+  },
+  notificationMessage: {
+    fontSize: 14,
+    color: "#374151",
+    lineHeight: 18,
+  },
+  notificationCloseButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    width: "100%",
+    maxHeight: "80%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+  },
+  modalIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#3CBCB2",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  modalTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#111827",
+    textAlign: "center",
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalBody: {
+    padding: 16,
+    maxHeight: 300,
+  },
+  modalMessage: {
+    fontSize: 15,
+    color: "#374151",
+    lineHeight: 24,
+  },
+  modalDismissButton: {
+    backgroundColor: "#3CBCB2",
+    marginHorizontal: 16,
+    marginBottom: 16,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  modalDismissButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

@@ -37,9 +37,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onSearch }) => {
     // Navigate to Notifications screen in Profile stack
     const parent = (navigation as any).getParent?.();
     if (parent) {
-      parent.navigate('Profile', { screen: 'Notifications' });
+      parent.navigate('Home', { screen: 'Notification' });
     } else {
-      (navigation as any).navigate('Profile', { screen: 'Notifications' });
+      (navigation as any).navigate('Home', { screen: 'Notification' });
     }
   };
 
@@ -89,7 +89,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onSearch }) => {
       </View>
 
       {/* Search bar */}
-      <View style={styles.searchContainer}>
+      {/* <View style={styles.searchContainer}>
         <Search size={20} color="#9CA3AF" />
         <TextInput
           style={styles.searchInput}
@@ -97,7 +97,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onSearch }) => {
           placeholderTextColor="#9CA3AF"
           onChangeText={onSearch}
         />
-      </View>
+      </View> */}
 
       {/* Welcome message */}
       <View style={styles.welcomeSection}>

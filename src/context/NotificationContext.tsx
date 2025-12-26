@@ -16,6 +16,7 @@ interface NotificationContextType {
     fetchNotifications: (params?: GetNotificationsParams) => Promise<void>;
     fetchUnreadNotifications: () => Promise<void>;
     fetchAllNotifications: () => Promise<void>;
+    fetchPublicNotifications: () => Promise<void>;
     markAsRead: (notificationId: string) => Promise<void>;
     markAllAsRead: () => Promise<void>;
     getUnreadNotifications: () => NotificationResponse[];
@@ -69,6 +70,23 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const fetchAllNotifications = useCallback(async () => {
         await fetchNotifications({ unreadOnly: false });
     }, [fetchNotifications]);
+
+    // Fetch public notifications and merge with existing
+    const fetchPublicNotifications = useCallback(async () => {
+        try {
+            const publicNotifications = await notificationService.getPublicNotificationList();
+            if (publicNotifications.length > 0) {
+                setNotifications(prev => {
+                    // Merge and avoid duplicates
+                    const existingIds = new Set(prev.map(n => n.id));
+                    const newNotifications = publicNotifications.filter(n => !existingIds.has(n.id));
+                    return [...newNotifications, ...prev];
+                });
+            }
+        } catch (err) {
+            console.log('[NotificationContext] Failed to fetch public notifications');
+        }
+    }, []);
 
     // Mark as read
     const markAsRead = useCallback(async (notificationId: string) => {
@@ -209,6 +227,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         fetchNotifications,
         fetchUnreadNotifications,
         fetchAllNotifications,
+        fetchPublicNotifications,
         markAsRead,
         markAllAsRead,
         getUnreadNotifications,

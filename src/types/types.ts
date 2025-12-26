@@ -15,6 +15,7 @@ export type RootStackParamList = {
 export type HomeStackParamList = {
   HomeMain: undefined;
   TeacherDetail: { teacherId: string };
+  Notification: undefined;
 };
 
 export type TabParamList = {
@@ -51,6 +52,7 @@ export type ParentTabParamList = {
 export type ParentProfileStackParamList = {
   ProfileMain: undefined;
   Notifications: undefined;
+  SystemNotifications: undefined;
 };
 
 export type ProfileStackParamList = {
@@ -61,6 +63,7 @@ export type ProfileStackParamList = {
   StudentExamStats: undefined;
   StudentFinancialStats: undefined;
   Notifications: undefined;
+  SystemNotifications: undefined;
 };
 
 

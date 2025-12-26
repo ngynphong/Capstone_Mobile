@@ -33,5 +33,29 @@ export const notificationService = {
    */
   async markAllAsRead(): Promise<void> {
     await axiosInstance.post('/notifications/readAll');
+  },
+
+  /**
+   * Get public notification for home screen display (single notification)
+   * GET /notifications/public
+   */
+  async getPublicNotification(): Promise<NotificationResponse | null> {
+    try {
+      const response = await axiosInstance.get<NotificationResponse>('/notifications/public');
+      console.log(response.data);
+      return response.data || null;
+    } catch (error) {
+      console.log('[notificationService] No public notification available');
+      return null;
+    }
+  },
+
+  /**
+   * Get list of public notifications
+   * GET /notifications/public/list
+   */
+  async getPublicNotificationList(): Promise<NotificationResponse[]> {
+    const response = await axiosInstance.get<NotificationResponse[]>('/notifications/public/list');
+    return response.data || [];
   }
 };

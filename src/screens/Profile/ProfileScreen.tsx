@@ -25,6 +25,7 @@ import {
   Phone,
   Goal,
   Bell,
+  Megaphone,
 } from 'lucide-react-native';
 import { useNotifications } from '../../hooks/useNotifications';
 
@@ -162,6 +163,13 @@ const ProfileScreen = () => {
       icon: <Bell size={20} color="#3CBCB2" />,
       onPress: () => navigation.navigate('Notifications'),
       badge: unreadCount > 0 ? unreadCount : undefined,
+    },
+    {
+      id: 'system-notifications',
+      title: 'System Notifications',
+      subtitle: 'View announcements from the system',
+      icon: <Megaphone size={20} color="#9333EA" />,
+      onPress: () => navigation.navigate('SystemNotifications'),
     },
     {
       id: 'settings',
