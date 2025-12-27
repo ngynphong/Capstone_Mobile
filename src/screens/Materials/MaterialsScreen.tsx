@@ -9,6 +9,8 @@ import { useAuth } from '../../context/AuthContext';
 const MaterialsScreen = () => {
   const [searchText, setSearchText] = useState('');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState('All');
+  const [selectedSubject, setSelectedSubject] = useState('All');
   const { isLoggedIn } = useAuth();
 
   if (!isLoggedIn) {
@@ -28,15 +30,19 @@ const MaterialsScreen = () => {
   };
 
   const handleFilterClearAll = () => {
-    console.log('Clear all filters');
-    // Add clear all logic here
+    setSelectedTeacher('All');
+    setSelectedSubject('All');
   };
 
-  const handleFilterSubmit = () => {
-    console.log('Apply filters');
+  const handleFilterSubmit = (teacher: string, subject: string) => {
+    setSelectedTeacher(teacher);
+    setSelectedSubject(subject);
     setFilterModalVisible(false);
-    // Add submit logic here
+    console.log('Applied filters:', { teacher, subject });
   };
+
+  // Check if any filter is active
+  const hasActiveFilters = selectedTeacher !== 'All' || selectedSubject !== 'All';
 
   return (
     <View style={styles.container}>
@@ -53,11 +59,15 @@ const MaterialsScreen = () => {
       />
 
       {/* Filter Button */}
-      <FilterButton onPress={handleFilterPress} />
+      <FilterButton onPress={handleFilterPress} hasActiveFilters={hasActiveFilters} />
 
       {/* Materials List */}
       <View style={styles.materialsContainer}>
-        <MaterialList />
+        <MaterialList 
+          searchQuery={searchText}
+          teacherFilter={selectedTeacher}
+          subjectFilter={selectedSubject}
+        />
       </View>
 
       {/* Filter Modal */}
@@ -66,6 +76,8 @@ const MaterialsScreen = () => {
         onClose={handleFilterClose}
         onClearAll={handleFilterClearAll}
         onSubmit={handleFilterSubmit}
+        initialTeacher={selectedTeacher}
+        initialSubject={selectedSubject}
       />
     </View>
   );

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,13 +6,17 @@ import {
   StyleSheet,
   Modal,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
+import { useTeachersList } from "../../hooks/useTeachersList";
 
 interface FilterModalProps {
   visible: boolean;
   onClose: () => void;
   onClearAll: () => void;
-  onSubmit: () => void;
+  onSubmit: (selectedTeacher: string, selectedSubject: string) => void;
+  initialTeacher?: string;
+  initialSubject?: string;
 }
 
 const FilterModal: React.FC<FilterModalProps> = ({
@@ -20,19 +24,22 @@ const FilterModal: React.FC<FilterModalProps> = ({
   onClose,
   onClearAll,
   onSubmit,
+  initialTeacher = "All",
+  initialSubject = "All",
 }) => {
-  const topics = [
-    "All",
-    "Art & Design",
-    "Math",
-    "History",
-    "English",
-    "Computer Science",
-    "Sciences",
-    "World Languages",
-    "Social Sciences",
-    "Ap Capstone",
-  ];
+  const [selectedTeacher, setSelectedTeacher] = useState(initialTeacher);
+  const [selectedSubject, setSelectedSubject] = useState(initialSubject);
+  
+  // Fetch teachers from API
+  const { teachers, loading: loadingTeachers } = useTeachersList({ pageNo: 0, pageSize: 100 });
+
+  // Sync with initial values when modal opens
+  useEffect(() => {
+    if (visible) {
+      setSelectedTeacher(initialTeacher);
+      setSelectedSubject(initialSubject);
+    }
+  }, [visible, initialTeacher, initialSubject]);
 
   const subjects = [
     "All",
@@ -49,9 +56,34 @@ const FilterModal: React.FC<FilterModalProps> = ({
     "Geography",
   ];
 
-  const FilterTag = ({ title, isActive = false }: { title: string; isActive?: boolean }) => (
+  // Build teacher list with "All" option
+  const teacherOptions = ["All", ...teachers.map(t => {
+    const name = `${t.firstName || ''} ${t.lastName || ''}`.trim();
+    return name || "Unknown";
+  })];
+
+  const handleClearAll = () => {
+    setSelectedTeacher("All");
+    setSelectedSubject("All");
+    onClearAll();
+  };
+
+  const handleSubmit = () => {
+    onSubmit(selectedTeacher, selectedSubject);
+  };
+
+  const FilterTag = ({ 
+    title, 
+    isActive = false,
+    onPress,
+  }: { 
+    title: string; 
+    isActive?: boolean;
+    onPress: () => void;
+  }) => (
     <TouchableOpacity
       style={[styles.tag, isActive && styles.activeTag]}
+      onPress={onPress}
     >
       <Text style={[styles.tagText, isActive && styles.activeTagText]}>
         {title}
@@ -71,24 +103,29 @@ const FilterModal: React.FC<FilterModalProps> = ({
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Text style={styles.closeText}>✕</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={onClearAll} style={styles.clearButton}>
+          <TouchableOpacity onPress={handleClearAll} style={styles.clearButton}>
             <Text style={styles.clearText}>Clear All</Text>
           </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Topics Section */}
+          {/* Teachers Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Topics</Text>
-            <View style={styles.tagsContainer}>
-              {topics.map((topic) => (
-                <FilterTag
-                  key={topic}
-                  title={topic}
-                  isActive={topic === "All"}
-                />
-              ))}
-            </View>
+            <Text style={styles.sectionTitle}>Teachers</Text>
+            {loadingTeachers ? (
+              <ActivityIndicator size="small" color="#3CBCB2" />
+            ) : (
+              <View style={styles.tagsContainer}>
+                {teacherOptions.map((teacher) => (
+                  <FilterTag
+                    key={teacher}
+                    title={teacher}
+                    isActive={selectedTeacher === teacher}
+                    onPress={() => setSelectedTeacher(teacher)}
+                  />
+                ))}
+              </View>
+            )}
           </View>
 
           {/* Subjects Section */}
@@ -99,7 +136,8 @@ const FilterModal: React.FC<FilterModalProps> = ({
                 <FilterTag
                   key={subject}
                   title={subject}
-                  isActive={subject === "All"}
+                  isActive={selectedSubject === subject}
+                  onPress={() => setSelectedSubject(subject)}
                 />
               ))}
             </View>
@@ -107,7 +145,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
         </ScrollView>
 
         {/* Submit Button */}
-        <TouchableOpacity style={styles.submitButton} onPress={onSubmit}>
+        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
           <Text style={styles.submitText}>Submit</Text>
         </TouchableOpacity>
       </View>

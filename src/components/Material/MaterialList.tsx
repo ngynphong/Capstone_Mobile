@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -28,8 +28,17 @@ import useMaterialRating from "../../hooks/useMaterialRating";
 
 const REGISTERED_MATERIALS_KEY = '@registered_materials';
 
+interface MaterialListProps {
+  searchQuery?: string;
+  teacherFilter?: string;
+  subjectFilter?: string;
+}
 
-const MaterialList = () => {
+const MaterialList: React.FC<MaterialListProps> = ({
+  searchQuery = '',
+  teacherFilter = 'All',
+  subjectFilter = 'All',
+}) => {
   const {
     materials,
     isLoading,
@@ -52,6 +61,38 @@ const MaterialList = () => {
     fetchRatingsByMaterial,
     isLoading: isLoadingRatings,
   } = useMaterialRating();
+
+  // Filter materials based on search query, teacher, and subject
+  const filteredMaterials = useMemo(() => {
+    let result = materials;
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(
+        (m) =>
+          m.title?.toLowerCase().includes(query) ||
+          m.description?.toLowerCase().includes(query) ||
+          m.authorName?.toLowerCase().includes(query)
+      );
+    }
+
+    // Filter by subject (if not "All")
+    if (subjectFilter && subjectFilter !== 'All') {
+      result = result.filter(
+        (m) => m.subjectName?.toLowerCase() === subjectFilter.toLowerCase()
+      );
+    }
+
+    // Filter by teacher (authorName)
+    if (teacherFilter && teacherFilter !== 'All') {
+      result = result.filter(
+        (m) => m.authorName?.toLowerCase() === teacherFilter.toLowerCase()
+      );
+    }
+
+    return result;
+  }, [materials, searchQuery, teacherFilter, subjectFilter]);
 
   // Lấy thống kê rating khi chọn một material để mở modal
   useEffect(() => {
@@ -250,7 +291,7 @@ const MaterialList = () => {
   return (
     <>
       <FlatList
-        data={materials}
+        data={filteredMaterials}
         keyExtractor={(item) => item.id}
         refreshControl={
            <RefreshControl refreshing={isRefreshing} onRefresh={refreshMaterials} />
