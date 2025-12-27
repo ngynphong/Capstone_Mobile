@@ -39,22 +39,34 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
       console.log('All transactions:', allTransactions);
 
       // Map allTransactions từ WalletTransaction sang Transaction format
-      const mappedAllTransactions: Transaction[] = allTransactions.map((wt: WalletTransaction) => ({
-        id: wt.id,
-        type: (wt.type?.name === 'subscription' 
-          ? 'subscription' 
-          : wt.type?.name === 'refund' 
-            ? 'refund' 
-            : 'token_purchase') as Transaction['type'],
-        amount: wt.amount,
-        currency: 'VND',
-        description: wt.description ?? '',
-        status: (['pending', 'completed', 'failed', 'cancelled'].includes(wt.status) 
-          ? wt.status 
-          : 'pending') as Transaction['status'],
-        createdAt: wt.createdAt,
-        referenceId: wt.externalReference,
-      }));
+      const mappedAllTransactions: Transaction[] = allTransactions.map((wt: WalletTransaction) => {
+        // Normalize status to lowercase and map API status values to Transaction status
+        const normalizedStatus = wt.status?.toLowerCase() || 'pending';
+        const statusMap: Record<string, Transaction['status']> = {
+          'pending': 'pending',
+          'completed': 'completed',
+          'success': 'completed', // API returns "Success" for completed transactions
+          'failed': 'failed',
+          'cancelled': 'cancelled',
+          'canceled': 'cancelled',
+        };
+        const mappedStatus = statusMap[normalizedStatus] || 'pending';
+
+        return {
+          id: wt.id,
+          type: (wt.type?.name === 'subscription' 
+            ? 'subscription' 
+            : wt.type?.name === 'refund' 
+              ? 'refund' 
+              : 'token_purchase') as Transaction['type'],
+          amount: wt.amount,
+          currency: 'VND',
+          description: wt.description ?? '',
+          status: mappedStatus,
+          createdAt: wt.createdAt,
+          referenceId: wt.externalReference,
+        };
+      });
 
       // Merge transactions từ cả 2 API, ưu tiên user transactions
       let newTransactions: Transaction[] = [];

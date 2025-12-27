@@ -3,21 +3,23 @@ import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
 
 interface FilterButtonProps {
   onPress: () => void;
+  hasActiveFilters?: boolean;
 }
 
-const FilterButton: React.FC<FilterButtonProps> = ({ onPress }) => {
+const FilterButton: React.FC<FilterButtonProps> = ({ onPress, hasActiveFilters = false }) => {
   return (
     <TouchableOpacity style={styles.button} onPress={onPress}>
       <View style={styles.iconContainer}>
         <View style={styles.filterIcon}>
           <View style={styles.filterLines}>
-            <View style={styles.line} />
-            <View style={styles.line} />
-            <View style={styles.line} />
+            <View style={[styles.line, hasActiveFilters && styles.activeLine]} />
+            <View style={[styles.line, hasActiveFilters && styles.activeLine]} />
+            <View style={[styles.line, hasActiveFilters && styles.activeLine]} />
           </View>
         </View>
+        {hasActiveFilters && <View style={styles.badge} />}
       </View>
-      <Text style={styles.text}>Filters</Text>
+      <Text style={[styles.text, hasActiveFilters && styles.activeText]}>Filters</Text>
       <View style={styles.arrow}>
         <Text style={styles.arrowText}>⌄</Text>
       </View>
@@ -45,6 +47,7 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     marginRight: 8,
+    position: "relative",
   },
   filterIcon: {
     width: 20,
@@ -62,11 +65,26 @@ const styles = StyleSheet.create({
     backgroundColor: "#666",
     borderRadius: 1,
   },
+  activeLine: {
+    backgroundColor: "#3CBCB2",
+  },
+  badge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#3CBCB2",
+  },
   text: {
     flex: 1,
     fontSize: 14,
     fontWeight: "500",
     color: "#000",
+  },
+  activeText: {
+    color: "#3CBCB2",
   },
   arrow: {
     marginLeft: 8,
