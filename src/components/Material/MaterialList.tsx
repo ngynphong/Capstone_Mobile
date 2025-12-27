@@ -77,18 +77,23 @@ const MaterialList: React.FC<MaterialListProps> = ({
       );
     }
 
-    // Filter by subject (if not "All")
+    // Filter by subject (if not "All") - use includes for flexible matching
     if (subjectFilter && subjectFilter !== 'All') {
-      result = result.filter(
-        (m) => m.subjectName?.toLowerCase() === subjectFilter.toLowerCase()
-      );
+      const subjectLower = subjectFilter.toLowerCase().trim();
+      result = result.filter((m) => {
+        const materialSubject = m.subjectName?.toLowerCase().trim() || '';
+        return materialSubject.includes(subjectLower) || subjectLower.includes(materialSubject);
+      });
     }
 
-    // Filter by teacher (authorName)
+    // Filter by teacher (authorName) - use includes for flexible matching
     if (teacherFilter && teacherFilter !== 'All') {
-      result = result.filter(
-        (m) => m.authorName?.toLowerCase() === teacherFilter.toLowerCase()
-      );
+      const filterLower = teacherFilter.toLowerCase().trim();
+      result = result.filter((m) => {
+        const authorLower = m.authorName?.toLowerCase().trim() || '';
+        // Check if either contains the other (handles different name formats)
+        return authorLower.includes(filterLower) || filterLower.includes(authorLower);
+      });
     }
 
     return result;
